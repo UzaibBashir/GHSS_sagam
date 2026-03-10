@@ -21,62 +21,77 @@ export default function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-20 overflow-visible border-b border-slate-400/35 bg-linear-to-r from-slate-900/96 to-slate-800/96 text-slate-50 shadow-[0_10px_24px_rgba(15,23,42,0.22)] backdrop-blur"
+      className="sticky top-0 z-20 overflow-visible border-b border-slate-200/20 bg-linear-to-r from-slate-950/95 via-slate-900/94 to-blue-950/93 text-slate-50 shadow-[0_14px_30px_rgba(2,6,23,0.28)] backdrop-blur-md"
       id="home"
     >
       <div
-        className="pointer-events-none absolute -left-15 -top-10 h-35 w-70 bg-[radial-gradient(circle,rgba(245,158,11,0.3),rgba(245,158,11,0))]"
+        className="pointer-events-none absolute -left-18 -top-12 h-42 w-82 bg-[radial-gradient(circle,rgba(56,189,248,0.28),rgba(56,189,248,0))]"
         aria-hidden="true"
       />
-      <div className="relative mx-auto flex min-h-22 w-[min(1100px,calc(100%-2rem))] items-center justify-between gap-4 py-[1.15rem] max-[900px]:min-h-[3.6rem] max-[900px]:py-[0.62rem] max-sm:w-[min(1100px,calc(100%-1rem))]">
-        <div className="flex min-w-0 flex-1 items-center gap-3.5">
+      <div
+        className="pointer-events-none absolute -right-10 top-0 h-30 w-52 bg-[radial-gradient(circle,rgba(14,165,233,0.22),rgba(14,165,233,0))]"
+        aria-hidden="true"
+      />
+
+      <div className="relative mx-auto flex min-h-24 w-[min(1120px,calc(100%-2rem))] items-center justify-between gap-4 py-[1.05rem] max-[900px]:min-h-[4.4rem] max-[900px]:py-[0.7rem] max-sm:w-[min(1120px,calc(100%-1rem))]">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
           <div
-            className="relative h-11.5 w-11.5 shrink-0 overflow-hidden rounded-full shadow-[0_0_0_3px_rgba(255,255,255,0.16),0_8px_14px_rgba(15,23,42,0.35)] max-[900px]:h-8.5 max-[900px]:w-8.5"
+            className="relative h-15 w-15 shrink-0 rounded-full bg-linear-to-br from-sky-300/55 via-white/55 to-cyan-200/55 p-[3px] shadow-[0_0_0_3px_rgba(255,255,255,0.16),0_10px_22px_rgba(14,116,144,0.36)] max-[900px]:h-10 max-[900px]:w-10"
             aria-label="School logo"
           >
-            <Image
-              src="/logo.jpeg"
-              alt="Govt Girls Higher Secondary School Sagam logo"
-              fill
-              sizes="(max-width: 900px) 34px, 46px"
-              className="object-cover"
-              priority
-            />
+            <div className="relative h-full w-full overflow-hidden rounded-full border border-white/65 bg-white">
+              <Image
+                src="/logo.jpeg"
+                alt="Govt Girls Higher Secondary School Sagam logo"
+                fill
+                sizes="(max-width: 900px) 40px, 60px"
+                quality={100}
+                className="object-cover"
+                priority
+              />
+            </div>
           </div>
+
           <div className="min-w-0">
-            <p className="m-0 truncate text-[0.95rem] leading-tight font-extrabold max-[900px]:text-[0.78rem] max-[900px]:leading-[1.15]">
+            <p className="m-0 truncate text-[1.04rem] leading-tight font-extrabold tracking-[0.02em] text-slate-50 max-[900px]:text-[0.82rem] max-[900px]:leading-[1.2]">
               Govt Girls Higher Secondary School, Sagam
             </p>
-            <p className="m-0 mt-0.5 truncate text-[0.8rem] opacity-85 max-[900px]:text-[0.62rem] max-[900px]:leading-[1.1]">
+            <p className="m-0 mt-0.5 truncate text-[0.82rem] font-medium tracking-[0.03em] text-sky-100/90 max-[900px]:text-[0.64rem] max-[900px]:leading-[1.1]">
               Empowering Young Minds
             </p>
           </div>
         </div>
 
         <button
-          className="ml-auto inline-flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-lg border border-slate-200/45 bg-slate-200/10 p-0 text-slate-50 max-[900px]:inline-flex min-[901px]:hidden"
+          className="ml-auto inline-flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-xl border border-sky-100/35 bg-sky-100/10 text-slate-50 shadow-[0_6px_16px_rgba(2,6,23,0.22)] max-[900px]:inline-flex min-[901px]:hidden"
           onClick={() => setMenuOpen((prev) => !prev)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
           type="button"
         >
-          <span className="relative block h-4 w-[1.15rem]">
+          <span className="relative block h-4.5 w-[1.2rem]">
             <span
-              className={`absolute left-0 top-0 block h-0.5 w-[1.15rem] rounded-full bg-slate-50 transition-all ${menuOpen ? "translate-y-1.5 rotate-45" : ""}`}
+              className={`absolute left-0 top-0 block h-0.5 w-[1.2rem] rounded-full bg-slate-50 transition-all ${
+                menuOpen ? "translate-y-1.5 rotate-45" : ""
+              }`}
             />
             <span
-              className={`absolute left-0 top-1.5 block h-0.5 w-[1.15rem] rounded-full bg-slate-50 transition-opacity ${menuOpen ? "opacity-0" : "opacity-100"}`}
+              className={`absolute left-0 top-1.5 block h-0.5 w-[1.2rem] rounded-full bg-slate-50 transition-opacity ${
+                menuOpen ? "opacity-0" : "opacity-100"
+              }`}
             />
             <span
-              className={`absolute left-0 top-3 block h-0.5 w-[1.15rem] rounded-full bg-slate-50 transition-all ${menuOpen ? "-translate-y-1.5 -rotate-45" : ""}`}
+              className={`absolute left-0 top-3 block h-0.5 w-[1.2rem] rounded-full bg-slate-50 transition-all ${
+                menuOpen ? "-translate-y-1.5 -rotate-45" : ""
+              }`}
             />
           </span>
         </button>
 
         <nav
-          className={`items-center gap-2 text-sm font-semibold min-[901px]:flex ${
+          className={`items-center gap-2.5 text-[0.92rem] font-semibold min-[901px]:flex ${
             menuOpen
-              ? "max-[900px]:fixed max-[900px]:top-[4.35rem] max-[900px]:left-2.5 max-[900px]:right-2.5 max-[900px]:z-999 max-[900px]:grid max-[900px]:gap-1.5 max-[900px]:rounded-xl max-[900px]:border max-[900px]:border-slate-400/35 max-[900px]:bg-slate-900/98 max-[900px]:p-2 max-[900px]:shadow-[0_10px_18px_rgba(15,23,42,0.3)]"
+              ? "max-[900px]:fixed max-[900px]:top-[5.1rem] max-[900px]:left-2.5 max-[900px]:right-2.5 max-[900px]:z-50 max-[900px]:grid max-[900px]:gap-1.5 max-[900px]:rounded-2xl max-[900px]:border max-[900px]:border-sky-100/25 max-[900px]:bg-slate-900/97 max-[900px]:p-2.5 max-[900px]:shadow-[0_12px_24px_rgba(2,6,23,0.35)] max-[900px]:backdrop-blur"
               : "max-[900px]:hidden"
           }`}
         >
@@ -85,7 +100,7 @@ export default function Navbar() {
               key={link.label}
               href={link.href}
               onClick={closeMenu}
-              className="block rounded-full px-3 py-1.5 transition hover:-translate-y-px hover:bg-slate-400/22 max-[900px]:rounded-md max-[900px]:bg-slate-400/12 max-[900px]:px-3 max-[900px]:py-2 max-[900px]:text-left"
+              className="block rounded-full border border-transparent px-3.5 py-1.6 text-slate-100/95 transition hover:-translate-y-px hover:border-sky-200/30 hover:bg-sky-300/16 hover:text-white max-[900px]:rounded-xl max-[900px]:border-slate-300/12 max-[900px]:bg-slate-300/9 max-[900px]:px-3.5 max-[900px]:py-2 max-[900px]:text-left"
             >
               {link.label}
             </Link>
@@ -95,6 +110,3 @@ export default function Navbar() {
     </header>
   );
 }
-
-
-
