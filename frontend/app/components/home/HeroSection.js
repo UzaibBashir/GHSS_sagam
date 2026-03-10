@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 const AUTO_SLIDE_MS = 4500;
@@ -81,6 +82,20 @@ export default function HeroSection({ institute }) {
           <p className="mt-2 text-[1.04rem] leading-relaxed text-slate-100/95 max-md:text-[0.95rem]">
             {slides[activeSlide].subtitle}
           </p>
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            <Link
+              href="/admission"
+              className="rounded-full bg-amber-400 px-4 py-2 text-sm font-extrabold tracking-wide text-slate-900 transition hover:-translate-y-px hover:bg-amber-300"
+            >
+              Apply For Admission
+            </Link>
+            <Link
+              href="/notifications"
+              className="rounded-full border border-white/35 bg-white/12 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
+              View Notifications
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -100,4 +115,3 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
-

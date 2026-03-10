@@ -6,12 +6,10 @@ import { useState } from "react";
 
 const links = [
   { label: "Home", href: "/" },
-  { label: "Notifications", href: "/#notifications" },
+  { label: "Notifications", href: "/notifications" },
   { label: "Academics", href: "/academics" },
-  { label: "Download", href: "/download" },
   { label: "Admission", href: "/admission" },
   { label: "About Us", href: "/about" },
-  { label: "Contact", href: "/contact" },
 ];
 
 export default function Navbar() {
@@ -57,7 +55,7 @@ export default function Navbar() {
               Govt Girls Higher Secondary School, Sagam
             </p>
             <p className="m-0 mt-0.5 truncate text-[0.82rem] font-medium tracking-[0.03em] text-sky-100/90 max-[900px]:text-[0.64rem] max-[900px]:leading-[1.1]">
-              من الظلمات الی النور
+              From Darkness to Light
             </p>
           </div>
         </div>
@@ -110,4 +108,3 @@ export default function Navbar() {
     </header>
   );
 }
-

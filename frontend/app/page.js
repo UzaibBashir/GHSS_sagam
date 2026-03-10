@@ -1,9 +1,8 @@
 "use client";
 
 import AboutPreviewSection from "./components/home/AboutPreviewSection";
-import AdmissionPreviewSection from "./components/home/AdmissionPreviewSection";
-import ContactPreviewSection from "./components/home/ContactPreviewSection";
 import HeroSection from "./components/home/HeroSection";
+import NoticeboardSection from "./components/home/NoticeboardSection";
 import NotificationsSection from "./components/home/NotificationsSection";
 import HomeFooter from "./components/layout/HomeFooter";
 import Navbar from "./components/layout/Navbar";
@@ -18,12 +17,11 @@ export default function Home() {
       <Navbar />
       <main className={PAGE_MAIN}>
         <HeroSection institute={institute} />
-        <NotificationsSection institute={institute} />
-        <AdmissionPreviewSection />
+        <NotificationsSection />
+        <NoticeboardSection />
         <AboutPreviewSection institute={institute} />
-        <ContactPreviewSection institute={institute} />
       </main>
-      <HomeFooter />
+      <HomeFooter institute={institute} />
     </div>
   );
 }
