@@ -39,7 +39,7 @@ export default function Navbar() {
           >
             <div className="relative h-full w-full overflow-hidden rounded-full border border-white/75 bg-white p-[3px]">
               <Image
-                src="/logo.svg"
+                src="/logo.jpg"
                 alt="Govt Girls Higher Secondary School Sagam logo"
                 fill
                 sizes="(max-width: 900px) 48px, 68px"
