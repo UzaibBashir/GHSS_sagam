@@ -53,7 +53,7 @@ export default function HeroSection({ institute }) {
           }`}
         >
           <Image
-            src={failedSlides[index] ? "/logo.jpeg" : slide.src}
+            src={failedSlides[index] ? "/logo.svg" : slide.src}
             alt={slide.title}
             fill
             priority={index === 0}
@@ -100,3 +100,4 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
+
