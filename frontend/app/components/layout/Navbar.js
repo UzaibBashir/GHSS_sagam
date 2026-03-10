@@ -36,17 +36,17 @@ export default function Navbar() {
       <div className="relative mx-auto flex min-h-24 w-[min(1120px,calc(100%-2rem))] items-center justify-between gap-4 py-[1.05rem] max-[900px]:min-h-[4.4rem] max-[900px]:py-[0.7rem] max-sm:w-[min(1120px,calc(100%-1rem))]">
         <div className="flex min-w-0 flex-1 items-center gap-4">
           <div
-            className="relative h-15 w-15 shrink-0 rounded-full bg-linear-to-br from-sky-300/55 via-white/55 to-cyan-200/55 p-[3px] shadow-[0_0_0_3px_rgba(255,255,255,0.16),0_10px_22px_rgba(14,116,144,0.36)] max-[900px]:h-10 max-[900px]:w-10"
+            className="relative h-17 w-17 shrink-0 rounded-full bg-linear-to-br from-sky-300/60 via-white/75 to-cyan-200/60 p-[3px] shadow-[0_0_0_3px_rgba(255,255,255,0.22),0_12px_24px_rgba(14,116,144,0.42)] max-[900px]:h-12 max-[900px]:w-12"
             aria-label="School logo"
           >
-            <div className="relative h-full w-full overflow-hidden rounded-full border border-white/65 bg-white">
+            <div className="relative h-full w-full overflow-hidden rounded-full border border-white/75 bg-white p-[3px]">
               <Image
                 src="/logo.jpeg"
                 alt="Govt Girls Higher Secondary School Sagam logo"
                 fill
-                sizes="(max-width: 900px) 40px, 60px"
+                sizes="(max-width: 900px) 48px, 68px"
                 quality={100}
-                className="object-cover"
+                className="object-contain"
                 priority
               />
             </div>
@@ -57,7 +57,7 @@ export default function Navbar() {
               Govt Girls Higher Secondary School, Sagam
             </p>
             <p className="m-0 mt-0.5 truncate text-[0.82rem] font-medium tracking-[0.03em] text-sky-100/90 max-[900px]:text-[0.64rem] max-[900px]:leading-[1.1]">
-              Empowering Young Minds
+              من الظلمات الی النور
             </p>
           </div>
         </div>
