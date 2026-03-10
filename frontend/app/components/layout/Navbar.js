@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -29,12 +30,19 @@ export default function Navbar() {
       />
       <div className="relative mx-auto flex min-h-22 w-[min(1100px,calc(100%-2rem))] items-center justify-between gap-4 py-[1.15rem] max-[900px]:min-h-[3.6rem] max-[900px]:py-[0.62rem] max-sm:w-[min(1100px,calc(100%-1rem))]">
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
-          <span
-            className="inline-flex h-11.5 w-11.5 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-amber-500 to-amber-300 shadow-[0_0_0_3px_rgba(255,255,255,0.16),0_8px_14px_rgba(245,158,11,0.35)] max-[900px]:h-8.5 max-[900px]:w-8.5"
-            aria-label="Temporary school logo"
+          <div
+            className="relative h-11.5 w-11.5 shrink-0 overflow-hidden rounded-full shadow-[0_0_0_3px_rgba(255,255,255,0.16),0_8px_14px_rgba(15,23,42,0.35)] max-[900px]:h-8.5 max-[900px]:w-8.5"
+            aria-label="School logo"
           >
-            <span className="text-sm font-extrabold tracking-wide text-gray-800">GG</span>
-          </span>
+            <Image
+              src="/logo.jpeg"
+              alt="Govt Girls Higher Secondary School Sagam logo"
+              fill
+              sizes="(max-width: 900px) 34px, 46px"
+              className="object-cover"
+              priority
+            />
+          </div>
           <div className="min-w-0">
             <p className="m-0 truncate text-[0.95rem] leading-tight font-extrabold max-[900px]:text-[0.78rem] max-[900px]:leading-[1.15]">
               Govt Girls Higher Secondary School, Sagam
@@ -87,3 +95,6 @@ export default function Navbar() {
     </header>
   );
 }
+
+
+
