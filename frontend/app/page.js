@@ -2,7 +2,6 @@
 
 import AboutPreviewSection from "./components/home/AboutPreviewSection";
 import HeroSection from "./components/home/HeroSection";
-import NoticeboardSection from "./components/home/NoticeboardSection";
 import NotificationsSection from "./components/home/NotificationsSection";
 import HomeFooter from "./components/layout/HomeFooter";
 import Navbar from "./components/layout/Navbar";
@@ -18,7 +17,6 @@ export default function Home() {
       <main className={PAGE_MAIN}>
         <HeroSection institute={institute} />
         <NotificationsSection />
-        <NoticeboardSection />
         <AboutPreviewSection institute={institute} />
       </main>
       <HomeFooter institute={institute} />

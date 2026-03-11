@@ -1,14 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import HomeFooter from "../components/layout/HomeFooter";
 import Navbar from "../components/layout/Navbar";
-import useInstituteData from "../hooks/useInstituteData";
 import { NOTIFICATION_ITEMS } from "../lib/siteContent";
 import { PAGE_MAIN } from "../lib/uiClasses";
 
 export default function NotificationsPage() {
-  const { institute } = useInstituteData();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [openId, setOpenId] = useState(NOTIFICATION_ITEMS[0]?.id || "");
 
@@ -103,7 +100,6 @@ export default function NotificationsPage() {
           </div>
         </section>
       </main>
-      <HomeFooter institute={institute} />
     </div>
   );
 }

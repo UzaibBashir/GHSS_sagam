@@ -207,43 +207,6 @@ export const ACADEMICS_CONTENT = {
   ],
 };
 
-export const NOTICEBOARD_ITEMS = [
-  {
-    id: "nb-001",
-    type: "text",
-    title: "Morning Assembly Theme",
-    time: "08:45 AM",
-    description: "Today's assembly theme: Discipline, Dignity, and Determination.",
-  },
-  {
-    id: "nb-002",
-    type: "link",
-    title: "Exam Seating Plan",
-    time: "09:15 AM",
-    description: "Seating plan for internal assessments has been updated.",
-    link: { label: "Open Seating Plan", href: "https://example.com/seating-plan.pdf" },
-  },
-  {
-    id: "nb-003",
-    type: "image",
-    title: "Today's Event Poster",
-    time: "10:00 AM",
-    description: "Inter-house cultural club orientation this afternoon.",
-    image: { src: "/logo.svg", alt: "Event poster" },
-  },
-  {
-    id: "nb-004",
-    type: "timetable",
-    title: "Special Timetable Update",
-    time: "11:30 AM",
-    description: "Revised periods for practical sessions today.",
-    timetable: [
-      { slot: "Period 3", value: "Chemistry Lab" },
-      { slot: "Period 4", value: "Mathematics" },
-      { slot: "Period 5", value: "Computer Science Lab" },
-    ],
-  },
-];
 
 export const ABOUT_PAGE_CONTENT = {
   principalDesk: {
