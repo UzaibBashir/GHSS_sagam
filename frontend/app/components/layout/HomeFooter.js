@@ -73,8 +73,8 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 export default function HomeFooter({ institute }) {
   const instituteName = institute?.name || "Government Girls Higher Secondary School, Sagam";
-  const email = institute?.contact?.email || "info@ghhssagam.edu";
-  const phone = institute?.contact?.phone || "+91-9876543210";
+  const email = "ghsssagam@gmail.com";
+  const phone = "+91 70066 70384";
   const address = institute?.contact?.address || "Main Road, Sagam, Jammu and Kashmir, India";
   const mapQuery = encodeURIComponent(address);
   const mapSrc = `https://maps.google.com/maps?q=${mapQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
@@ -82,11 +82,7 @@ export default function HomeFooter({ institute }) {
   const whatsappLink = `https://wa.me/${whatsappPhone}`;
   const year = new Date().getFullYear();
 
-  const socialLinks = [
-    { label: "Facebook", href: "https://facebook.com", icon: "facebook" },
-    { label: "Instagram", href: "https://instagram.com", icon: "instagram" },
-    { label: "YouTube", href: "https://youtube.com", icon: "youtube" },
-  ];
+  const socialLinks = [{ label: "Facebook", href: "https://facebook.com", icon: "facebook" }];
 
   return (
     <footer className="mt-12 border-t border-slate-300/20 bg-linear-to-r from-slate-950 via-slate-900 to-blue-950 text-slate-200">
@@ -164,8 +160,7 @@ export default function HomeFooter({ institute }) {
           <ul className="mt-4 space-y-3 text-sm text-slate-300">
             <li>
               <a href={`tel:${phone}`} className="mt-1 inline-flex items-center gap-2 font-medium text-slate-100 transition hover:text-white">
-                <Icon name="phone" />
-                {phone}
+                <Icon name="phone" /><span>Exam Incharge: {phone}</span>
               </a>
             </li>
             <li>
@@ -218,3 +213,7 @@ export default function HomeFooter({ institute }) {
     </footer>
   );
 }
+
+
+
+

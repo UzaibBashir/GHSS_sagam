@@ -38,6 +38,55 @@ export default function AdmissionSection({ institute }) {
         </ul>
       </article>
 
+      <article className="rounded-2xl border border-teal-200 bg-teal-50 p-6 shadow-[0_10px_24px_rgba(13,148,136,0.12)] max-md:p-4">
+        <h3 className="text-lg font-extrabold text-teal-900">Admission Helpdesk</h3>
+        <p className="mt-2 inline-flex items-center gap-2 text-sm text-teal-900">
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="m3 7 9 6 9-6" />
+          </svg>
+          <span className="font-semibold">Mail:</span>
+          <a className="font-bold underline" href="mailto:ghsssagam@gmail.com">
+            ghsssagam@gmail.com
+          </a>
+        </p>
+        <div className="mt-1 text-sm text-teal-900">
+          <p className="inline-flex items-center gap-2">
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.62a2 2 0 0 1-.45 2.11L8 9.99a16 16 0 0 0 6 6l1.54-1.23a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.62.62A2 2 0 0 1 22 16.92z" />
+            </svg>
+            <span className="font-semibold">Admission Incharge Contact:</span>
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 pl-6">
+            <a className="font-bold underline" href="tel:+919622735195">
+              +91 96227 35195
+            </a>
+            <span aria-hidden="true">|</span>
+            <a className="font-bold underline" href="tel:+917006763600">
+              +91 70067 63600
+            </a>
+          </div>
+        </div>
+      </article>
+
       <div className="grid gap-6 md:grid-cols-2">
         <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_24px_rgba(15,23,42,0.06)] max-md:p-4">
           <h3 className="text-lg font-extrabold text-slate-900">Eligibility Requirements</h3>
@@ -123,3 +172,4 @@ export default function AdmissionSection({ institute }) {
     </section>
   );
 }
+

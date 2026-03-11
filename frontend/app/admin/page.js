@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -11,12 +11,6 @@ import { PAGE_MAIN } from "../lib/uiClasses";
 
 const toErrorMessage = (error) => String(error?.message || error);
 
-const defaultControls = {
-  notifications_page_enabled: true,
-  academics_page_enabled: true,
-  admission_open: true,
-  admission_form_url: "https://forms.google.com",
-};
 
 const defaultAcademicContent = {
   noticeboard: [],
@@ -35,7 +29,6 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [notificationItems, setNotificationItems] = useState([]);
   const [contacts, setContacts] = useState([]);
-  const [controls, setControls] = useState(defaultControls);
   const [academicContent, setAcademicContent] = useState(defaultAcademicContent);
 
   const adminApi = useAdminApi(token);
@@ -47,7 +40,6 @@ export default function AdminPage() {
       const data = await adminApi.loadDashboard();
       setNotificationItems(data.notificationItems || []);
       setContacts(data.contacts || []);
-      setControls({ ...defaultControls, ...data.controls });
       setAcademicContent({ ...defaultAcademicContent, ...(data.academicContent || {}) });
       setConnected(true);
       setStatus("Secure portal ready.");
@@ -84,7 +76,6 @@ export default function AdminPage() {
     setConnected(false);
     setNotificationItems([]);
     setContacts([]);
-    setControls(defaultControls);
     setAcademicContent(defaultAcademicContent);
     localStorage.removeItem("admin_token");
     setStatus("Logged out.");
@@ -95,16 +86,6 @@ export default function AdminPage() {
       await adminApi.clearContacts();
       setContacts([]);
       setStatus("All enquiries cleared.");
-    } catch (error) {
-      setStatus(toErrorMessage(error));
-    }
-  };
-
-  const updateControlField = async (updates, successMessage) => {
-    try {
-      const data = await adminApi.updateControls(updates);
-      setControls({ ...defaultControls, ...data });
-      setStatus(successMessage);
     } catch (error) {
       setStatus(toErrorMessage(error));
     }
@@ -200,16 +181,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleSaveMaterials = async (materials) => {
-    try {
-      await adminApi.updateMaterials(materials);
-      setStatus("Study materials updated.");
-      await refreshDashboard();
-    } catch (error) {
-      setStatus(toErrorMessage(error));
-    }
-  };
-
   return (
     <main className={PAGE_MAIN}>
       <Link href="/" className="inline-block w-fit font-bold text-teal-700 hover:underline">
@@ -229,77 +200,6 @@ export default function AdminPage() {
 
       {connected ? (
         <>
-          <section className="grid gap-4 rounded-xl border border-slate-300 bg-white p-4 max-md:p-3.5">
-            <h2 className="text-xl font-extrabold text-slate-900">Portal Controls</h2>
-            <p className="m-0 text-slate-600">Control page access and admission workflow from one secure dashboard.</p>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800">
-                Notifications Page
-                <input
-                  type="checkbox"
-                  checked={controls.notifications_page_enabled}
-                  onChange={(event) =>
-                    updateControlField(
-                      { notifications_page_enabled: event.target.checked },
-                      "Notifications page setting updated."
-                    )
-                  }
-                />
-              </label>
-
-              <label className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800">
-                Academics Page
-                <input
-                  type="checkbox"
-                  checked={controls.academics_page_enabled}
-                  onChange={(event) =>
-                    updateControlField(
-                      { academics_page_enabled: event.target.checked },
-                      "Academics page setting updated."
-                    )
-                  }
-                />
-              </label>
-            </div>
-
-            <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <label className="flex items-center justify-between text-sm font-semibold text-slate-800">
-                Admission Open
-                <input
-                  type="checkbox"
-                  checked={controls.admission_open}
-                  onChange={(event) =>
-                    updateControlField({ admission_open: event.target.checked }, "Admission availability updated.")
-                  }
-                />
-              </label>
-
-              <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-700" htmlFor="admission-form-url">
-                  Admission Google Form Link
-                </label>
-                <input
-                  id="admission-form-url"
-                  value={controls.admission_form_url}
-                  onChange={(event) => setControls((prev) => ({ ...prev, admission_form_url: event.target.value }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5"
-                  placeholder="https://forms.google.com/..."
-                />
-                <button
-                  onClick={() =>
-                    updateControlField(
-                      { admission_form_url: controls.admission_form_url },
-                      "Admission form link updated."
-                    )
-                  }
-                  className="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white"
-                >
-                  Save Form Link
-                </button>
-              </div>
-            </div>
-          </section>
 
           <NotificationsManager
             items={notificationItems}
@@ -316,7 +216,6 @@ export default function AdminPage() {
             onAddTimetable={handleAddTimetable}
             onSaveTimetable={handleSaveTimetable}
             onRemoveTimetable={handleRemoveTimetable}
-            onSaveMaterials={handleSaveMaterials}
           />
 
           <EnquiriesManager contacts={contacts} onClearContacts={handleClearContacts} />
@@ -325,3 +224,4 @@ export default function AdminPage() {
     </main>
   );
 }
+

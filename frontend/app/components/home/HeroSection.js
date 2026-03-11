@@ -10,21 +10,31 @@ export default function HeroSection({ institute }) {
   const slides = useMemo(
     () => [
       {
-        src: "/school-slide-1.jpg",
+        src: "/slideshow/slide1.jpeg",
         title: institute?.name || "Government Girls Higher Secondary School, Sagam",
         subtitle: "A vibrant campus where students learn, grow, and lead.",
       },
       {
-        src: "/school-slide-2.jpg",
+        src: "/slideshow/slide2.jpeg",
         title: "Admissions Open 2026",
         subtitle: "Join a supportive academic environment focused on excellence and values.",
       },
       {
-        src: "/school-slide-3.jpg",
+        src: "/slideshow/slide3.jpeg",
         title: institute?.tagline || "Learn Today, Lead Tomorrow",
         subtitle:
           institute?.description ||
           "Empowering young minds through quality education, discipline, and opportunity.",
+      },
+      {
+        src: "/slideshow/slide4.jpeg",
+        title: "Strong Academics, Bright Futures",
+        subtitle: "From classroom learning to co-curricular growth, every student gets opportunities to shine.",
+      },
+      {
+        src: "/slideshow/slide5.jpeg",
+        title: "A Safe And Supportive Campus",
+        subtitle: "A disciplined and encouraging environment where every learner is respected and inspired.",
       },
     ],
     [institute]
@@ -68,30 +78,27 @@ export default function HeroSection({ institute }) {
         </div>
       ))}
 
-      <div className="absolute inset-0 bg-linear-to-tr from-slate-950/75 via-slate-900/45 to-sky-900/45" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(125,211,252,0.3),rgba(125,211,252,0))]" />
-
-      <div className="relative flex h-full items-end p-8 max-md:p-5">
-        <div className="max-w-[48rem] rounded-2xl border border-white/20 bg-slate-950/45 p-5 text-white shadow-[0_10px_30px_rgba(2,6,23,0.25)] backdrop-blur-sm max-sm:p-4">
-          <p className="inline-flex rounded-full border border-amber-200/65 bg-amber-300/90 px-3.5 py-1 text-[0.78rem] font-bold tracking-[0.12em] text-slate-900 uppercase">
+      <div className="relative flex h-full items-end p-8 max-md:p-4 max-sm:p-3">
+        <div className="h-auto w-auto max-w-none overflow-hidden rounded-2xl border border-white/20 bg-slate-950/45 px-1 py-1 pb-0 text-white shadow-[0_10px_30px_rgba(2,6,23,0.25)] sm:w-full sm:max-w-[24rem] md:h-auto md:px-2.5 md:py-2 md:pb-1.5">
+          <p className="inline-flex rounded-full border border-amber-200/65 bg-amber-300/90 px-2 py-0.5 text-[0.48rem] font-bold tracking-[0.04em] sm:text-[0.62rem] sm:tracking-[0.08em] text-slate-900 uppercase">
             Admissions Open 2026
           </p>
-          <h1 className="mt-3 text-3xl leading-tight font-extrabold max-md:text-2xl">
+          <h1 className="mt-0.5 text-[0.56rem] leading-tight font-extrabold sm:mt-1 sm:text-lg md:text-base">
             {slides[activeSlide].title}
           </h1>
-          <p className="mt-2 text-[1.04rem] leading-relaxed text-slate-100/95 max-md:text-[0.95rem]">
+          <p className="mt-0.5 text-[0.5rem] leading-tight text-slate-100/95 sm:mt-1 sm:text-xs md:text-[0.72rem]">
             {slides[activeSlide].subtitle}
           </p>
-          <div className="mt-4 flex flex-wrap gap-2.5">
+          <div className="mt-0.5 flex flex-wrap gap-1">
             <Link
               href="/admission"
-              className="rounded-full bg-amber-400 px-4 py-2 text-sm font-extrabold tracking-wide text-slate-900 transition hover:-translate-y-px hover:bg-amber-300"
+              className="rounded-full bg-amber-400 px-1.5 py-[1px] text-[0.5rem] font-bold tracking-normal text-slate-900 transition hover:-translate-y-px hover:bg-amber-300 sm:px-2.5 sm:py-1 sm:text-[0.7rem] md:px-2 md:text-[0.62rem]"
             >
               Apply For Admission
             </Link>
             <Link
               href="/notifications"
-              className="rounded-full border border-white/35 bg-white/12 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+              className="rounded-full border border-white/35 bg-white/12 px-1.5 py-[1px] text-[0.5rem] font-semibold text-white transition hover:bg-white/20 sm:px-2.5 sm:py-1 sm:text-[0.7rem] md:px-2 md:text-[0.62rem]"
             >
               View Notifications
             </Link>
@@ -115,3 +122,18 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

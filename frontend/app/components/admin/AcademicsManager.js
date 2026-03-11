@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { CARD, DANGER_BUTTON, INPUT, PRIMARY_BUTTON } from "../../lib/uiClasses";
 
 const EMPTY_NOTICE = {
@@ -116,10 +116,16 @@ function TimetableEditor({ item, onSave, onRemove }) {
       </td>
       <td className="border border-slate-200 px-2 py-1">
         <div className="flex gap-1">
-          <button className="rounded bg-teal-700 px-2 py-1 text-xs font-bold text-white" onClick={() => onSave(item.id, draft)}>
+          <button
+            className="rounded bg-teal-700 px-2 py-1 text-xs font-bold text-white"
+            onClick={() => onSave(item.id, draft)}
+          >
             Save
           </button>
-          <button className="rounded bg-red-700 px-2 py-1 text-xs font-bold text-white" onClick={() => onRemove(item.id)}>
+          <button
+            className="rounded bg-red-700 px-2 py-1 text-xs font-bold text-white"
+            onClick={() => onRemove(item.id)}
+          >
             Delete
           </button>
         </div>
@@ -136,26 +142,14 @@ export default function AcademicsManager({
   onAddTimetable,
   onSaveTimetable,
   onRemoveTimetable,
-  onSaveMaterials,
 }) {
   const [noticeForm, setNoticeForm] = useState(EMPTY_NOTICE);
   const [timetableForm, setTimetableForm] = useState(EMPTY_TIMETABLE);
-  const [materialsError, setMaterialsError] = useState("");
-
-  const materialsText = useMemo(
-    () => JSON.stringify(academicContent?.materials || [], null, 2),
-    [academicContent?.materials]
-  );
-  const [materialsDraft, setMaterialsDraft] = useState(materialsText);
-
-  useEffect(() => {
-    setMaterialsDraft(materialsText);
-  }, [materialsText]);
 
   return (
     <section className={CARD}>
       <h2>Academics Management</h2>
-      <p className="m-0 text-sm text-slate-600">Manage noticeboard, timetable and study material structure for academics page.</p>
+      <p className="m-0 text-sm text-slate-600">Manage noticeboard and timetable content for academics page.</p>
 
       <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
         <h3 className="m-0 text-base font-bold text-slate-900">Noticeboard: Add Item</h3>
@@ -210,12 +204,7 @@ export default function AcademicsManager({
 
         <div className="grid gap-2">
           {(academicContent?.noticeboard || []).map((item) => (
-            <NoticeboardEditor
-              key={item.id}
-              item={item}
-              onSave={onSaveNoticeboard}
-              onRemove={onRemoveNoticeboard}
-            />
+            <NoticeboardEditor key={item.id} item={item} onSave={onSaveNoticeboard} onRemove={onRemoveNoticeboard} />
           ))}
         </div>
       </article>
@@ -283,34 +272,6 @@ export default function AcademicsManager({
             </tbody>
           </table>
         </div>
-      </article>
-
-      <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <h3 className="m-0 text-base font-bold text-slate-900">Study Materials JSON</h3>
-        <p className="m-0 text-xs text-slate-600">
-          Edit class/stream/subject Google Drive structure in JSON format.
-        </p>
-        <textarea
-          rows={14}
-          className={INPUT}
-          value={materialsDraft}
-          onChange={(event) => setMaterialsDraft(event.target.value)}
-        />
-        <button
-          className={PRIMARY_BUTTON}
-          onClick={() => {
-            try {
-              const parsed = JSON.parse(materialsDraft);
-              setMaterialsError("");
-              onSaveMaterials(parsed);
-            } catch (error) {
-              setMaterialsError("Invalid JSON format. Please fix it before saving.");
-            }
-          }}
-        >
-          Save Study Materials
-        </button>
-        {materialsError ? <p className="m-0 text-sm font-semibold text-red-700">{materialsError}</p> : null}
       </article>
     </section>
   );
