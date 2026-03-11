@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # GHHS Web App
 
 Production-ready school web application with separate frontend and backend codebases.
@@ -140,3 +141,6 @@ cd backend
 2. Add structured audit logs for admin actions.
 3. Add CSRF protection and stricter rate-limiting middleware.
 4. Add CI pipeline for lint/build/tests before deployment.
+=======
+# GHHS_webpage
+>>>>>>> 13680cc9df1022a5b76d4ab63c3e991426038077
