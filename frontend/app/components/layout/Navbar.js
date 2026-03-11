@@ -55,7 +55,7 @@ export default function Navbar() {
               Govt Girls Higher Secondary School, Sagam
             </p>
             <p className="m-0 mt-0.5 truncate text-[0.82rem] font-medium tracking-[0.03em] text-sky-100/90 max-[900px]:text-[0.64rem] max-[900px]:leading-[1.1]">
-              From Darkness to Light
+              من الظلمات الی النور
             </p>
           </div>
         </div>
