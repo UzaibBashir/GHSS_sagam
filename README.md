@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # GHHS Web App
 
 Production-ready school web application with separate frontend and backend codebases.
