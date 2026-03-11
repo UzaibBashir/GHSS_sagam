@@ -1,30 +1,32 @@
-"use client";
+﻿"use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import Navbar from "../components/layout/Navbar";
 import useInstituteData from "../hooks/useInstituteData";
-import { NOTIFICATION_ITEMS } from "../lib/siteContent";
 import { PAGE_MAIN } from "../lib/uiClasses";
 
 export default function NotificationsPage() {
   const { institute } = useInstituteData();
+  const notificationItems = useMemo(() => institute?.notification_items || [], [institute]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [openId, setOpenId] = useState(NOTIFICATION_ITEMS[0]?.id || "");
+  const [openId, setOpenId] = useState("");
+  const activeOpenId = openId || notificationItems[0]?.id || "";
 
   const controls = institute?.site_controls;
   const notificationsEnabled = controls?.notifications_page_enabled ?? true;
 
   const categories = useMemo(
-    () => ["All", ...new Set(NOTIFICATION_ITEMS.map((item) => item.category))],
-    []
+    () => ["All", ...new Set(notificationItems.map((item) => item.category))],
+    [notificationItems]
   );
 
   const filteredItems = useMemo(() => {
     if (selectedCategory === "All") {
-      return NOTIFICATION_ITEMS;
+      return notificationItems;
     }
-    return NOTIFICATION_ITEMS.filter((item) => item.category === selectedCategory);
-  }, [selectedCategory]);
+    return notificationItems.filter((item) => item.category === selectedCategory);
+  }, [notificationItems, selectedCategory]);
 
   return (
     <div className="min-h-screen">
@@ -65,7 +67,7 @@ export default function NotificationsPage() {
 
             <div className="grid gap-3">
               {filteredItems.map((item) => {
-                const isOpen = openId === item.id;
+                const isOpen = activeOpenId === item.id;
 
                 return (
                   <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/80">
@@ -90,19 +92,25 @@ export default function NotificationsPage() {
                     {isOpen ? (
                       <div className="border-t border-slate-200 px-4 py-3">
                         <p className="text-sm leading-relaxed text-slate-700">{item.details}</p>
-                        {item.links?.length ? (
+                        {item.image_url ? (
+                          <Image
+                            src={item.image_url}
+                            alt={item.title}
+                            width={1000}
+                            height={560}
+                            className="mt-3 h-auto w-full rounded-lg border border-slate-200 object-cover"
+                          />
+                        ) : null}
+                        {item.link_url && item.link_label ? (
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {item.links.map((link) => (
-                              <a
-                                key={link.label}
-                                href={link.href}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-900 transition hover:bg-sky-100"
-                              >
-                                {link.label}
-                              </a>
-                            ))}
+                            <a
+                              href={item.link_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-900 transition hover:bg-sky-100"
+                            >
+                              {item.link_label}
+                            </a>
                           </div>
                         ) : null}
                       </div>
@@ -110,6 +118,12 @@ export default function NotificationsPage() {
                   </article>
                 );
               })}
+
+              {!filteredItems.length ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  No notifications found for selected category.
+                </div>
+              ) : null}
             </div>
           </section>
         )}

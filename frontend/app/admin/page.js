@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import AcademicsManager from "../components/admin/AcademicsManager";
 import AdminLoginCard from "../components/admin/AdminLoginCard";
 import EnquiriesManager from "../components/admin/EnquiriesManager";
 import NotificationsManager from "../components/admin/NotificationsManager";
@@ -17,6 +18,12 @@ const defaultControls = {
   admission_form_url: "https://forms.google.com",
 };
 
+const defaultAcademicContent = {
+  noticeboard: [],
+  timetable: [],
+  materials: [],
+};
+
 export default function AdminPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -26,10 +33,10 @@ export default function AdminPage() {
   });
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState("");
-  const [notices, setNotices] = useState([]);
+  const [notificationItems, setNotificationItems] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [controls, setControls] = useState(defaultControls);
-  const [newNotice, setNewNotice] = useState("");
+  const [academicContent, setAcademicContent] = useState(defaultAcademicContent);
 
   const adminApi = useAdminApi(token);
 
@@ -38,9 +45,10 @@ export default function AdminPage() {
 
     try {
       const data = await adminApi.loadDashboard();
-      setNotices(data.notices);
-      setContacts(data.contacts);
+      setNotificationItems(data.notificationItems || []);
+      setContacts(data.contacts || []);
       setControls({ ...defaultControls, ...data.controls });
+      setAcademicContent({ ...defaultAcademicContent, ...(data.academicContent || {}) });
       setConnected(true);
       setStatus("Secure portal ready.");
     } catch (error) {
@@ -74,37 +82,12 @@ export default function AdminPage() {
   const logout = () => {
     setToken("");
     setConnected(false);
-    setNotices([]);
+    setNotificationItems([]);
     setContacts([]);
     setControls(defaultControls);
+    setAcademicContent(defaultAcademicContent);
     localStorage.removeItem("admin_token");
     setStatus("Logged out.");
-  };
-
-  const handleAddNotice = async () => {
-    try {
-      const text = newNotice.trim();
-      if (!text) {
-        setStatus("Please type a notice first.");
-        return;
-      }
-      await adminApi.addNotice(text);
-      setNewNotice("");
-      setStatus("Notice added.");
-      await refreshDashboard();
-    } catch (error) {
-      setStatus(toErrorMessage(error));
-    }
-  };
-
-  const handleRemoveNotice = async (noticeIndex) => {
-    try {
-      await adminApi.removeNotice(noticeIndex);
-      setStatus("Notice removed.");
-      await refreshDashboard();
-    } catch (error) {
-      setStatus(toErrorMessage(error));
-    }
   };
 
   const handleClearContacts = async () => {
@@ -122,6 +105,106 @@ export default function AdminPage() {
       const data = await adminApi.updateControls(updates);
       setControls({ ...defaultControls, ...data });
       setStatus(successMessage);
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleAddNotification = async (payload) => {
+    try {
+      await adminApi.addNotificationItem(payload);
+      setStatus("Notification added.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleSaveNotification = async (id, payload) => {
+    try {
+      await adminApi.updateNotificationItem(id, payload);
+      setStatus("Notification updated.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleRemoveNotification = async (id) => {
+    try {
+      await adminApi.removeNotificationItem(id);
+      setStatus("Notification deleted.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleAddNoticeboard = async (payload) => {
+    try {
+      await adminApi.addNoticeboardItem(payload);
+      setStatus("Noticeboard item added.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleSaveNoticeboard = async (id, payload) => {
+    try {
+      await adminApi.updateNoticeboardItem(id, payload);
+      setStatus("Noticeboard item updated.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleRemoveNoticeboard = async (id) => {
+    try {
+      await adminApi.removeNoticeboardItem(id);
+      setStatus("Noticeboard item deleted.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleAddTimetable = async (payload) => {
+    try {
+      await adminApi.addTimetableItem(payload);
+      setStatus("Timetable row added.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleSaveTimetable = async (id, payload) => {
+    try {
+      await adminApi.updateTimetableItem(id, payload);
+      setStatus("Timetable row updated.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleRemoveTimetable = async (id) => {
+    try {
+      await adminApi.removeTimetableItem(id);
+      setStatus("Timetable row deleted.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleSaveMaterials = async (materials) => {
+    try {
+      await adminApi.updateMaterials(materials);
+      setStatus("Study materials updated.");
+      await refreshDashboard();
     } catch (error) {
       setStatus(toErrorMessage(error));
     }
@@ -219,11 +302,21 @@ export default function AdminPage() {
           </section>
 
           <NotificationsManager
-            notices={notices}
-            newNotice={newNotice}
-            onNoticeChange={setNewNotice}
-            onAddNotice={handleAddNotice}
-            onRemoveNotice={handleRemoveNotice}
+            items={notificationItems}
+            onAdd={handleAddNotification}
+            onSave={handleSaveNotification}
+            onRemove={handleRemoveNotification}
+          />
+
+          <AcademicsManager
+            academicContent={academicContent}
+            onAddNoticeboard={handleAddNoticeboard}
+            onSaveNoticeboard={handleSaveNoticeboard}
+            onRemoveNoticeboard={handleRemoveNoticeboard}
+            onAddTimetable={handleAddTimetable}
+            onSaveTimetable={handleSaveTimetable}
+            onRemoveTimetable={handleRemoveTimetable}
+            onSaveMaterials={handleSaveMaterials}
           />
 
           <EnquiriesManager contacts={contacts} onClearContacts={handleClearContacts} />

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback } from "react";
 import { API_BASE } from "../lib/api";
@@ -9,52 +9,41 @@ export default function useAdminApi(token) {
     [token]
   );
 
+  const parseResponse = async (res, fallbackMessage) => {
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.detail || fallbackMessage);
+    }
+    return data;
+  };
+
   const login = async (username, password) => {
     const res = await fetch(`${API_BASE}/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.detail || "Login failed");
-    return data;
+    return parseResponse(res, "Login failed");
   };
 
   const loadDashboard = async () => {
-    const [noticeRes, contactsRes, controlsRes] = await Promise.all([
-      fetch(`${API_BASE}/admin/notices`, { headers: withAuth() }),
+    const [contactsRes, controlsRes, notificationRes, academicsRes] = await Promise.all([
       fetch(`${API_BASE}/admin/contacts`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/controls`, { headers: withAuth() }),
+      fetch(`${API_BASE}/admin/notification-items`, { headers: withAuth() }),
+      fetch(`${API_BASE}/admin/academics/content`, { headers: withAuth() }),
     ]);
 
-    if (!noticeRes.ok || !contactsRes.ok || !controlsRes.ok) {
+    if (!contactsRes.ok || !controlsRes.ok || !notificationRes.ok || !academicsRes.ok) {
       throw new Error("Session expired. Please login again.");
     }
 
-    const notices = await noticeRes.json();
     const contacts = await contactsRes.json();
     const controls = await controlsRes.json();
-    return { notices, contacts, controls };
-  };
+    const notificationItems = await notificationRes.json();
+    const academicContent = await academicsRes.json();
 
-  const addNotice = async (text) => {
-    const res = await fetch(`${API_BASE}/admin/notices`, {
-      method: "POST",
-      headers: withAuth({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ text }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.detail || "Could not add notice.");
-  };
-
-  const removeNotice = async (noticeIndex) => {
-    const res = await fetch(`${API_BASE}/admin/notices/${noticeIndex}`, {
-      method: "DELETE",
-      headers: withAuth(),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.detail || "Could not remove notice.");
+    return { contacts, controls, notificationItems, academicContent };
   };
 
   const clearContacts = async () => {
@@ -62,8 +51,7 @@ export default function useAdminApi(token) {
       method: "DELETE",
       headers: withAuth(),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.detail || "Could not clear enquiries.");
+    return parseResponse(res, "Could not clear enquiries.");
   };
 
   const updateControls = async (payload) => {
@@ -72,17 +60,110 @@ export default function useAdminApi(token) {
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.detail || "Could not update controls.");
-    return data;
+    return parseResponse(res, "Could not update controls.");
+  };
+
+  const addNotificationItem = async (payload) => {
+    const res = await fetch(`${API_BASE}/admin/notification-items`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not add notification.");
+  };
+
+  const updateNotificationItem = async (id, payload) => {
+    const res = await fetch(`${API_BASE}/admin/notification-items/${id}`, {
+      method: "PUT",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update notification.");
+  };
+
+  const removeNotificationItem = async (id) => {
+    const res = await fetch(`${API_BASE}/admin/notification-items/${id}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete notification.");
+  };
+
+  const addNoticeboardItem = async (payload) => {
+    const res = await fetch(`${API_BASE}/admin/academics/noticeboard`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not add noticeboard item.");
+  };
+
+  const updateNoticeboardItem = async (id, payload) => {
+    const res = await fetch(`${API_BASE}/admin/academics/noticeboard/${id}`, {
+      method: "PUT",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update noticeboard item.");
+  };
+
+  const removeNoticeboardItem = async (id) => {
+    const res = await fetch(`${API_BASE}/admin/academics/noticeboard/${id}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete noticeboard item.");
+  };
+
+  const addTimetableItem = async (payload) => {
+    const res = await fetch(`${API_BASE}/admin/academics/timetable`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not add timetable item.");
+  };
+
+  const updateTimetableItem = async (id, payload) => {
+    const res = await fetch(`${API_BASE}/admin/academics/timetable/${id}`, {
+      method: "PUT",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update timetable item.");
+  };
+
+  const removeTimetableItem = async (id) => {
+    const res = await fetch(`${API_BASE}/admin/academics/timetable/${id}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete timetable item.");
+  };
+
+  const updateMaterials = async (materials) => {
+    const res = await fetch(`${API_BASE}/admin/academics/materials`, {
+      method: "PUT",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ materials }),
+    });
+    return parseResponse(res, "Could not update study materials.");
   };
 
   return {
     login,
     loadDashboard,
-    addNotice,
-    removeNotice,
     clearContacts,
     updateControls,
+    addNotificationItem,
+    updateNotificationItem,
+    removeNotificationItem,
+    addNoticeboardItem,
+    updateNoticeboardItem,
+    removeNoticeboardItem,
+    addTimetableItem,
+    updateTimetableItem,
+    removeTimetableItem,
+    updateMaterials,
   };
 }

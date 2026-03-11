@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import AboutPreviewSection from "./components/home/AboutPreviewSection";
 import HeroSection from "./components/home/HeroSection";
@@ -16,7 +16,7 @@ export default function Home() {
       <Navbar />
       <main className={PAGE_MAIN}>
         <HeroSection institute={institute} />
-        <NotificationsSection />
+        <NotificationsSection institute={institute} />
         <AboutPreviewSection institute={institute} />
       </main>
       <HomeFooter institute={institute} />
