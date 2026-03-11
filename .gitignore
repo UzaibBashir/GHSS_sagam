@@ -1,0 +1,29 @@
+# Root ignore rules
+
+# Python backend
+backend/Include/
+backend/Lib/
+backend/Scripts/
+backend/pyvenv.cfg
+backend/__pycache__/
+backend/*.pyc
+
+# Node frontend
+frontend/node_modules/
+frontend/.next/
+
+# Environment files
+.env
+.env.*
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+# Keep env templates tracked
+!.env.example
+!backend/.env.example
+!frontend/.env.example

@@ -2,26 +2,57 @@ import hmac
 import os
 import secrets
 import time
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-app = FastAPI(title="Institute API", version="2.0.0")
 
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+def parse_csv_env(env_name: str, default: str) -> List[str]:
+    value = os.getenv(env_name, default)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "change-me-123")
+TOKEN_TTL_SECONDS = int(os.getenv("ADMIN_TOKEN_TTL_SECONDS", str(60 * 60 * 8)))
+FAILED_LOGIN_LIMIT = int(os.getenv("ADMIN_FAILED_LOGIN_LIMIT", "5"))
+LOCKOUT_SECONDS = int(os.getenv("ADMIN_LOCKOUT_SECONDS", str(60 * 5)))
+CORS_ORIGINS = parse_csv_env("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+ALLOWED_HOSTS = parse_csv_env("ALLOWED_HOSTS", "localhost,127.0.0.1")
+
+if ENVIRONMENT == "production" and ADMIN_PASSWORD == "change-me-123":
+    raise RuntimeError("Set a strong ADMIN_PASSWORD before running in production.")
+
+app = FastAPI(title="Institute API", version="2.2.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if ALLOWED_HOSTS and "*" not in ALLOWED_HOSTS:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    if ENVIRONMENT == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 
 
 class AcademicItem(BaseModel):
@@ -60,6 +91,12 @@ class StaffItem(BaseModel):
     role: str
 
 
+class SiteControls(BaseModel):
+    notifications_page_enabled: bool
+    academics_page_enabled: bool
+    admission_open: bool
+
+
 class InstituteResponse(BaseModel):
     name: str
     tagline: str
@@ -67,6 +104,7 @@ class InstituteResponse(BaseModel):
     about_us: str
     institute_details: List[str]
     admission_form_url: str
+    site_controls: SiteControls
     academics: List[AcademicItem]
     faculties: List[FacultyItem]
     streams_subjects: List[StreamItem]
@@ -99,14 +137,18 @@ class DownloadCreate(BaseModel):
     url: str
 
 
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "change-me-123")
-TOKEN_TTL_SECONDS = 60 * 60 * 8
+class AdminControlUpdate(BaseModel):
+    notifications_page_enabled: Optional[bool] = None
+    academics_page_enabled: Optional[bool] = None
+    admission_open: Optional[bool] = None
+    admission_form_url: Optional[str] = None
+
 
 contacts: List[ContactRequest] = []
 admin_sessions: Dict[str, float] = {}
+login_failures: Dict[str, Dict[str, float]] = {}
 
-institute_data = {
+institute_data: Dict[str, Any] = {
     "name": "Government Girls Higher Secondary School, Sagam",
     "tagline": "Learn Today, Lead Tomorrow",
     "description": "A student-first institute with practical teaching and strong outcomes.",
@@ -117,6 +159,11 @@ institute_data = {
         "Consistent academic performance with strong student mentoring and career guidance.",
     ],
     "admission_form_url": "https://forms.google.com",
+    "site_controls": {
+        "notifications_page_enabled": True,
+        "academics_page_enabled": True,
+        "admission_open": True,
+    },
     "academics": [
         {"title": "Science Stream", "description": "Strong foundation in Physics, Chemistry, Mathematics, and Biology."},
         {"title": "Commerce Stream", "description": "Focused courses in Accountancy, Economics, and Business Studies."},
@@ -176,6 +223,24 @@ def verify_admin_token(authorization: str = Header(default="")) -> None:
         raise HTTPException(status_code=401, detail="Session expired. Please login again.")
 
 
+def validate_controls_shape() -> None:
+    controls = institute_data.get("site_controls")
+    if not isinstance(controls, dict):
+        institute_data["site_controls"] = {
+            "notifications_page_enabled": True,
+            "academics_page_enabled": True,
+            "admission_open": True,
+        }
+
+
+def get_login_bucket(username: str) -> Dict[str, float]:
+    bucket = login_failures.get(username)
+    if not bucket:
+        bucket = {"count": 0, "locked_until": 0.0}
+        login_failures[username] = bucket
+    return bucket
+
+
 @app.get("/")
 def home():
     return {"message": "Institute API is running"}
@@ -188,6 +253,7 @@ def health_check():
 
 @app.get("/institute", response_model=InstituteResponse)
 def get_institute():
+    validate_controls_shape()
     return institute_data
 
 
@@ -199,11 +265,29 @@ def submit_contact(payload: ContactRequest):
 
 @app.post("/admin/login")
 def admin_login(payload: LoginRequest):
-    if not hmac.compare_digest(payload.username, ADMIN_USERNAME) or not hmac.compare_digest(payload.password, ADMIN_PASSWORD):
+    username = payload.username.strip()
+    bucket = get_login_bucket(username)
+    now = time.time()
+
+    if now < bucket["locked_until"]:
+        raise HTTPException(status_code=429, detail="Account temporarily locked. Please try again later.")
+
+    is_valid_user = hmac.compare_digest(username, ADMIN_USERNAME)
+    is_valid_password = hmac.compare_digest(payload.password, ADMIN_PASSWORD)
+
+    if not is_valid_user or not is_valid_password:
+        bucket["count"] += 1
+        if bucket["count"] >= FAILED_LOGIN_LIMIT:
+            bucket["count"] = 0
+            bucket["locked_until"] = now + LOCKOUT_SECONDS
+            raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in 5 minutes.")
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
+    login_failures[username] = {"count": 0, "locked_until": 0.0}
+    admin_sessions.clear()
+
     token = secrets.token_urlsafe(32)
-    admin_sessions[token] = time.time() + TOKEN_TTL_SECONDS
+    admin_sessions[token] = now + TOKEN_TTL_SECONDS
     return {
         "success": True,
         "token": token,
@@ -278,3 +362,42 @@ def clear_admin_contacts(authorization: str = Header(default="")):
     contacts.clear()
     return {"success": True, "message": "All enquiries cleared."}
 
+
+@app.get("/admin/controls")
+def get_admin_controls(authorization: str = Header(default="")):
+    verify_admin_token(authorization)
+    validate_controls_shape()
+    controls = institute_data["site_controls"]
+    return {
+        "notifications_page_enabled": bool(controls.get("notifications_page_enabled", True)),
+        "academics_page_enabled": bool(controls.get("academics_page_enabled", True)),
+        "admission_open": bool(controls.get("admission_open", True)),
+        "admission_form_url": institute_data.get("admission_form_url", "https://forms.google.com"),
+    }
+
+
+@app.patch("/admin/controls")
+def update_admin_controls(payload: AdminControlUpdate, authorization: str = Header(default="")):
+    verify_admin_token(authorization)
+    validate_controls_shape()
+
+    controls = institute_data["site_controls"]
+
+    if payload.notifications_page_enabled is not None:
+        controls["notifications_page_enabled"] = bool(payload.notifications_page_enabled)
+
+    if payload.academics_page_enabled is not None:
+        controls["academics_page_enabled"] = bool(payload.academics_page_enabled)
+
+    if payload.admission_open is not None:
+        controls["admission_open"] = bool(payload.admission_open)
+
+    if payload.admission_form_url is not None:
+        form_url = payload.admission_form_url.strip()
+        if not form_url:
+            raise HTTPException(status_code=400, detail="Admission form URL cannot be empty")
+        if not (form_url.startswith("http://") or form_url.startswith("https://")):
+            raise HTTPException(status_code=400, detail="Admission form URL must start with http:// or https://")
+        institute_data["admission_form_url"] = form_url
+
+    return {"success": True, "message": "Controls updated.", **get_admin_controls(authorization)}

@@ -22,20 +22,20 @@ export default function useAdminApi(token) {
   };
 
   const loadDashboard = async () => {
-    const [noticeRes, contactsRes, downloadsRes] = await Promise.all([
+    const [noticeRes, contactsRes, controlsRes] = await Promise.all([
       fetch(`${API_BASE}/admin/notices`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/contacts`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/downloads`, { headers: withAuth() }),
+      fetch(`${API_BASE}/admin/controls`, { headers: withAuth() }),
     ]);
 
-    if (!noticeRes.ok || !contactsRes.ok || !downloadsRes.ok) {
+    if (!noticeRes.ok || !contactsRes.ok || !controlsRes.ok) {
       throw new Error("Session expired. Please login again.");
     }
 
     const notices = await noticeRes.json();
     const contacts = await contactsRes.json();
-    const downloads = await downloadsRes.json();
-    return { notices, contacts, downloads };
+    const controls = await controlsRes.json();
+    return { notices, contacts, controls };
   };
 
   const addNotice = async (text) => {
@@ -44,7 +44,8 @@ export default function useAdminApi(token) {
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify({ text }),
     });
-    if (!res.ok) throw new Error("Could not add notice.");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || "Could not add notice.");
   };
 
   const removeNotice = async (noticeIndex) => {
@@ -52,24 +53,8 @@ export default function useAdminApi(token) {
       method: "DELETE",
       headers: withAuth(),
     });
-    if (!res.ok) throw new Error("Could not remove notice.");
-  };
-
-  const addDownload = async (title, url) => {
-    const res = await fetch(`${API_BASE}/admin/downloads`, {
-      method: "POST",
-      headers: withAuth({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ title, url }),
-    });
-    if (!res.ok) throw new Error("Could not add download item.");
-  };
-
-  const removeDownload = async (downloadIndex) => {
-    const res = await fetch(`${API_BASE}/admin/downloads/${downloadIndex}`, {
-      method: "DELETE",
-      headers: withAuth(),
-    });
-    if (!res.ok) throw new Error("Could not remove download item.");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || "Could not remove notice.");
   };
 
   const clearContacts = async () => {
@@ -77,7 +62,19 @@ export default function useAdminApi(token) {
       method: "DELETE",
       headers: withAuth(),
     });
-    if (!res.ok) throw new Error("Could not clear enquiries.");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || "Could not clear enquiries.");
+  };
+
+  const updateControls = async (payload) => {
+    const res = await fetch(`${API_BASE}/admin/controls`, {
+      method: "PATCH",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || "Could not update controls.");
+    return data;
   };
 
   return {
@@ -85,9 +82,7 @@ export default function useAdminApi(token) {
     loadDashboard,
     addNotice,
     removeNotice,
-    addDownload,
-    removeDownload,
     clearContacts,
+    updateControls,
   };
 }
-

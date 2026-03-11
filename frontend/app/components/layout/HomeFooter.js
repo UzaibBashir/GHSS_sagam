@@ -4,7 +4,16 @@ import Image from "next/image";
 import Link from "next/link";
 
 function Icon({ name, className = "h-4 w-4" }) {
-  const common = { className, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" };
+  const common = {
+    className,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true",
+  };
 
   if (name === "phone") {
     return (
@@ -84,14 +93,25 @@ export default function HomeFooter({ institute }) {
       <div className="mx-auto grid w-[min(1120px,calc(100%-2rem))] gap-8 py-10 max-sm:w-[min(1120px,calc(100%-1rem))] lg:grid-cols-[1.15fr_0.9fr_1fr_1.2fr]">
         <section>
           <div className="flex items-center gap-3">
-            <div className="relative h-14 w-14 overflow-hidden rounded-full border border-white/70 bg-white p-1.5 shadow-[0_8px_18px_rgba(14,116,144,0.4)]">
-              <Image src="/logo.svg" alt={`${instituteName} logo`} fill sizes="56px" className="object-contain" />
+            <div className="relative h-16 w-16 shrink-0 rounded-full bg-white/90 p-1 shadow-[0_8px_18px_rgba(14,116,144,0.4)] ring-2 ring-white/70">
+              <div className="relative h-full w-full overflow-hidden rounded-full border border-slate-200 bg-white p-1">
+                <Image
+                  src="/logo.jpg"
+                  alt={`${instituteName} logo`}
+                  fill
+                  sizes="64px"
+                  quality={100}
+                  className="object-contain"
+                />
+              </div>
             </div>
             <h3 className="text-[1rem] leading-tight font-bold text-white">{instituteName}</h3>
           </div>
+
           <p className="mt-4 text-sm leading-relaxed text-slate-300">
             Building confident, responsible, and future-ready students through quality education and values.
           </p>
+
           <div className="mt-4 flex flex-wrap gap-2.5">
             {socialLinks.map((item) => (
               <a
@@ -111,10 +131,31 @@ export default function HomeFooter({ institute }) {
         <section>
           <h4 className="text-sm font-bold tracking-wide text-white uppercase">Quick Links</h4>
           <ul className="mt-4 space-y-2 text-sm text-slate-300">
-            <li><Link href="/" className="transition hover:text-white">Home</Link></li>
-            <li><Link href="/academics" className="transition hover:text-white">Academics</Link></li>
-            <li><Link href="/admission" className="transition hover:text-white">Admission</Link></li>`r`n            <li><Link href="/about" className="transition hover:text-white">About Us</Link></li>
-            <li><Link href="/admin" className="transition hover:text-white">Admin Login</Link></li>
+            <li>
+              <Link href="/" className="transition hover:text-white">
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link href="/academics" className="transition hover:text-white">
+                Academics
+              </Link>
+            </li>
+            <li>
+              <Link href="/admission" className="transition hover:text-white">
+                Admission
+              </Link>
+            </li>
+            <li>
+              <Link href="/about" className="transition hover:text-white">
+                About Us
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin" className="transition hover:text-white">
+                Admin Login
+              </Link>
+            </li>
           </ul>
         </section>
 
@@ -122,14 +163,12 @@ export default function HomeFooter({ institute }) {
           <h4 className="text-sm font-bold tracking-wide text-white uppercase">Contact</h4>
           <ul className="mt-4 space-y-3 text-sm text-slate-300">
             <li>
-              <span className="block text-slate-400">Cell No</span>
               <a href={`tel:${phone}`} className="mt-1 inline-flex items-center gap-2 font-medium text-slate-100 transition hover:text-white">
                 <Icon name="phone" />
                 {phone}
               </a>
             </li>
             <li>
-              <span className="block text-slate-400">Email</span>
               <a href={`mailto:${email}`} className="mt-1 inline-flex items-center gap-2 font-medium text-slate-100 transition hover:text-white">
                 <Icon name="email" />
                 {email}
