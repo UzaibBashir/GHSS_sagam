@@ -1,146 +1,72 @@
+# GHHS Web App (Next.js Full-Stack)
 
-# GHHS Web App
+This project is now a single **Next.js** application with both frontend and backend API in one codebase, ready for Vercel deployment.
 
-Production-ready school web application with separate frontend and backend codebases.
+## Stack
 
-## Architecture
+- Next.js App Router (frontend + API route handlers)
+- React
+- Tailwind CSS
 
-- `frontend/`: Next.js (React) web app
-- `backend/`: FastAPI REST API
+## API
 
-## Security Hardening Included
+All backend endpoints are served from `app/api/[[...path]]/route.js` under `/api/*`.
 
-- Admin authentication with token-based session
-- Admin login lockout after repeated failed attempts
-- Single active admin session (new login invalidates old tokens)
-- Admin-only control endpoints for:
-  - Notifications page enable/disable
-  - Academics page enable/disable
-  - Admission open/close
-  - Admission Google Form link update
-- Backend security headers
-- Frontend response security headers
-- Trusted hosts support in backend
-- Environment-based configuration for CORS and runtime security
+Examples:
 
-## Project Structure
+- `GET /api/health`
+- `GET /api/institute`
+- `POST /api/contact`
+- `POST /api/admin/login`
+- Admin secured routes under `/api/admin/*`
 
-- `backend/main.py`: FastAPI app and admin APIs
-- `backend/requirements.txt`: backend dependencies
-- `backend/.env.example`: backend environment template
-- `frontend/app`: Next.js app router pages/components
-- `frontend/.env.example`: frontend environment template
-- `frontend/next.config.mjs`: frontend security headers
+## Security hardening included
 
-## Local Development
+- Admin token auth with expiry
+- Login lockout after repeated failures
+- Single active admin session (new login invalidates old session)
+- Host allowlist validation via `ALLOWED_HOSTS`
+- Secure response headers via `middleware.js`
+- Production guard for weak admin secrets
 
-### 1) Backend setup
+## Environment variables
 
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-copy .env.example .env
-```
+Copy `.env.example` to `.env.local` and set secure values:
 
-Then set strong values in `backend/.env`:
-
+- `ENVIRONMENT`
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD`
-- `CORS_ALLOW_ORIGINS`
+- `ADMIN_SESSION_SECRET` (32+ chars)
+- `ADMIN_TOKEN_TTL_SECONDS`
+- `ADMIN_FAILED_LOGIN_LIMIT`
+- `ADMIN_LOCKOUT_SECONDS`
 - `ALLOWED_HOSTS`
+- `NEXT_PUBLIC_API_URL` (keep `/api` unless intentionally externalized)
 
-Run backend:
-
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
-```
-
-### 2) Frontend setup
+## Local development
 
 ```powershell
-cd frontend
 npm install
-copy .env.example .env.local
 npm run dev
 ```
 
-Set `NEXT_PUBLIC_API_URL` in `frontend/.env.local` to your backend URL.
+Open `http://localhost:3000`.
 
-## Production Deployment
-
-### Backend (FastAPI)
-
-1. Set environment variables using secure secrets management.
-2. Set:
-   - `ENVIRONMENT=production`
-   - strong `ADMIN_PASSWORD`
-   - strict `CORS_ALLOW_ORIGINS` (no wildcard)
-   - strict `ALLOWED_HOSTS` (your domain names)
-3. Run behind reverse proxy (Nginx/Caddy) with HTTPS.
-4. Disable debug logging and expose only required ports.
-
-Example production command:
+## Final deployment checks
 
 ```powershell
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2
-```
-
-### Frontend (Next.js)
-
-1. Build and start:
-
-```powershell
-cd frontend
-npm ci
-npm run build
-npm run start
-```
-
-2. Serve behind HTTPS reverse proxy.
-3. Ensure `NEXT_PUBLIC_API_URL` points to deployed backend API.
-
-## Admin Portal Controls
-
-Admin can manage:
-
-1. Notifications page visibility
-2. Academics page visibility
-3. Admission state (open/closed)
-4. Admission Google Form link
-
-## Verification Commands
-
-### Frontend
-
-```powershell
-cd frontend
 npm run lint
 npm run build
 ```
 
-### Backend
+## Deploy to Vercel
 
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m py_compile main.py
-```
+1. Import this repo into Vercel.
+2. Framework preset: **Next.js**.
+3. Root directory: repository root.
+4. Add the environment variables above in Vercel Project Settings.
+5. Deploy.
 
-## Security Notes
+## Note about legacy locked folders
 
-- No software is guaranteed unhackable; this project is hardened for practical deployment but still requires monitoring and updates.
-- Rotate admin credentials periodically.
-- Always run with HTTPS in production.
-- Keep dependencies updated.
-- Add database-backed auth/session storage for multi-instance deployments.
-
-## Next Recommended Improvements
-
-1. Replace in-memory admin sessions with Redis/database-backed sessions.
-2. Add structured audit logs for admin actions.
-3. Add CSRF protection and stricter rate-limiting middleware.
-4. Add CI pipeline for lint/build/tests before deployment.
-=======
-# GHHS_webpage
->>>>>>> 13680cc9df1022a5b76d4ab63c3e991426038077
+If `backend/` or `frontend/` folders remain locally due a running process lock, they are excluded by `.gitignore` and not used by the app. You can remove them after stopping related Python/Node processes.
