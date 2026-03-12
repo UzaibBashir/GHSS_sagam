@@ -19,8 +19,9 @@ import {
   parseJsonBody,
 } from "../_lib/utils";
 
-function getPath(params) {
-  return Array.isArray(params?.path) ? params.path : [];
+async function getPath(params) {
+  const resolvedParams = await params;
+  return Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
 }
 
 function unauthorizedIfNeeded(request, store) {
@@ -62,7 +63,7 @@ function safeAdminError(err) {
 }
 
 export async function GET(request, context) {
-  const path = getPath(context?.params);
+  const path = await getPath(context?.params);
   const store = getStore();
 
   if (path.length === 0) {
@@ -132,7 +133,7 @@ export async function GET(request, context) {
 }
 
 export async function POST(request, context) {
-  const path = getPath(context?.params);
+  const path = await getPath(context?.params);
   const store = getStore();
 
   if (path[0] === "contact" && path.length === 1) {
@@ -282,7 +283,7 @@ export async function POST(request, context) {
 }
 
 export async function PATCH(request, context) {
-  const path = getPath(context?.params);
+  const path = await getPath(context?.params);
   const store = getStore();
 
   if (!(path[0] === "admin" && path[1] === "controls" && path.length === 2)) {
@@ -331,7 +332,7 @@ export async function PATCH(request, context) {
 }
 
 export async function PUT(request, context) {
-  const path = getPath(context?.params);
+  const path = await getPath(context?.params);
   const store = getStore();
 
   if (path[0] !== "admin") {
@@ -425,7 +426,7 @@ export async function PUT(request, context) {
 }
 
 export async function DELETE(request, context) {
-  const path = getPath(context?.params);
+  const path = await getPath(context?.params);
   const store = getStore();
 
   if (path[0] !== "admin") {
@@ -493,3 +494,5 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
