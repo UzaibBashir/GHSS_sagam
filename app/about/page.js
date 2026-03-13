@@ -4,6 +4,8 @@ import AboutContactSection from "../components/about/AboutContactSection";
 import CallToActionBanner from "../components/common/CallToActionBanner";
 import PageHero from "../components/common/PageHero";
 import ContactSection from "../components/home/ContactSection";
+import HomeHighlightsSection from "../components/home/HomeHighlightsSection";
+import TestimonialsSection from "../components/home/TestimonialsSection";
 import HomeFooter from "../components/layout/HomeFooter";
 import Navbar from "../components/layout/Navbar";
 import useInstituteData from "../hooks/useInstituteData";
@@ -70,6 +72,8 @@ export default function AboutPage() {
             </ul>
           </div>
         </section>
+
+        <HomeHighlightsSection />
 
         <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
           <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
@@ -160,6 +164,8 @@ export default function AboutPage() {
             ))}
           </ul>
         </section>
+
+        <TestimonialsSection />
 
         <CallToActionBanner
           title="Visit the school, explore streams, and speak with the front desk"

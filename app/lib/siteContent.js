@@ -51,10 +51,10 @@ export const HOME_PROGRAMS = [
 ];
 
 export const HOME_AWARDS = [
-  "Steady academic performance in higher secondary board examinations.",
-  "Student participation in cultural, literary, and school-level awareness programmes.",
-  "Recognition for discipline, girls' education support, and inclusive learning efforts.",
-  "Continued contribution to higher secondary education in the Sagam area.",
+  "Student achievements in board results, science fairs, and community competitions.",
+  "Awards for academic excellence, attendance, and leadership across Medical, Non-Medical, and Arts streams.",
+  "Milestones in scholarships secured and higher education admissions for graduating students.",
+  "Recognition for disciplined campus culture and sustained academic performance.",
 ];
 
 export const HOME_TESTIMONIALS = [
@@ -263,9 +263,9 @@ export const ABOUT_PAGE_CONTENT = {
     "Library and Academic Support: Mrs. S. Raina",
   ],
   achievements: [
-    "Steady contribution to girls' higher secondary education in Sagam",
-    "Consistent student participation in academic and cultural activities",
-    "Supportive institutional environment focused on discipline and progress",
+    "Student awards in academics, cultural activities, and community participation.",
+    "Milestones in scholarship achievements and higher education placements.",
+    "Consistent board examination performance and stream-level excellence.",
   ],
 };
 
@@ -334,3 +334,4 @@ export const ACADEMIC_MATERIALS = {
     },
   ],
 };
+

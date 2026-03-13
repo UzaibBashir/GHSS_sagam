@@ -177,7 +177,6 @@ export default function HomeFooter({ institute }) {
       <div className="relative border-t border-white/10">
         <div className="mx-auto flex w-[min(1180px,calc(100%-2rem))] flex-wrap items-center justify-between gap-3 py-4 text-xs text-slate-400 max-sm:w-[min(1180px,calc(100%-1rem))]">
           <p className="m-0">(c) {year} {instituteName}. All rights reserved.</p>
-          <p className="m-0">Designed to serve students, families, and the wider Sagam community.</p>
         </div>
       </div>
     </footer>
