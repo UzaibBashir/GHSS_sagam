@@ -2,12 +2,33 @@ import { NextResponse } from "next/server";
 
 const defaultAllowedHosts = ["localhost", "127.0.0.1", ".vercel.app"];
 
+function normalizeHost(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .split(",")[0]
+    .split("/")[0]
+    .split(":")[0];
+}
+
 function parseAllowedHosts() {
-  const value = process.env.ALLOWED_HOSTS || defaultAllowedHosts.join(",");
-  return value
+  const envHosts = (process.env.ALLOWED_HOSTS || "")
     .split(",")
-    .map((item) => item.trim().toLowerCase())
+    .map((item) => normalizeHost(item))
     .filter(Boolean);
+
+  const deploymentHosts = [
+    normalizeHost(process.env.VERCEL_URL),
+    normalizeHost(process.env.VERCEL_BRANCH_URL),
+    normalizeHost(process.env.VERCEL_PROJECT_PRODUCTION_URL),
+  ].filter(Boolean);
+
+  return [...new Set([...defaultAllowedHosts, ...envHosts, ...deploymentHosts])];
 }
 
 function hostAllowed(hostname, allowlist) {
@@ -38,7 +59,7 @@ export function proxy(request) {
   }
 
   const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
-  const hostName = hostHeader.split(":")[0].toLowerCase();
+  const hostName = normalizeHost(hostHeader);
   const allowedHosts = parseAllowedHosts();
 
   if (hostName && !hostAllowed(hostName, allowedHosts)) {
