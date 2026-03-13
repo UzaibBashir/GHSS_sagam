@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Bright Future Institute",
-  description: "Official website of Bright Future Institute",
+  title: "GHSS",
+  description: "Official website of GHSS",
 };
 
 export default function RootLayout({ children }) {
