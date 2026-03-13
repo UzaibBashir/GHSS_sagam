@@ -45,7 +45,7 @@ export default function AboutPage() {
           <div>
             <p className="section-kicker">Institutional Overview</p>
             <h2 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">Why families trust {instituteName}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
+            <p className="mt-3 text-sm leading-7 text-slate-600 break-words text-left w-full">
               The institute combines academic discipline, caring mentorship, and a supportive environment that helps
               girls prepare for board examinations, scholarships, and future studies with confidence.
             </p>
@@ -73,15 +73,14 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <HomeHighlightsSection />
 
         <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-          <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+          <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 min-w-0">
             <p className="section-kicker">Principal Desk</p>
             <h2 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">
               Leadership rooted in care, discipline, and aspiration
             </h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">{ABOUT_PAGE_CONTENT.principalDesk.message}</p>
+            <p className="mt-3 text-sm leading-7 text-slate-600 marquee-text"><span>{ABOUT_PAGE_CONTENT.principalDesk.message}</span></p>
             <ul className="mt-5 grid gap-3">
               {ABOUT_PAGE_CONTENT.principalDesk.priorities.map((item) => (
                 <li key={item} className="rounded-[1.2rem] border border-slate-200/70 bg-white/82 px-4 py-3 text-sm text-slate-700">
@@ -91,7 +90,7 @@ export default function AboutPage() {
             </ul>
           </article>
 
-          <article className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.14)] max-md:p-4">
+          <article className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.14)] max-md:p-4 min-w-0">
             <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-amber-300 uppercase">Institute Snapshot</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {details.map((item) => (
@@ -103,8 +102,10 @@ export default function AboutPage() {
           </article>
         </section>
 
+        <HomeHighlightsSection />
+
         <div className="grid gap-6 md:grid-cols-2">
-          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 min-w-0">
             <h2 className="font-display text-2xl font-semibold text-slate-950">Administration</h2>
             <ul className="mt-4 grid gap-3">
               {ABOUT_PAGE_CONTENT.administration.map((item) => (
@@ -115,7 +116,7 @@ export default function AboutPage() {
             </ul>
           </section>
 
-          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 min-w-0">
             <h2 className="font-display text-2xl font-semibold text-slate-950">Facilities</h2>
             <ul className="mt-4 grid gap-3">
               {facilities.map((item) => (
@@ -128,7 +129,7 @@ export default function AboutPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 min-w-0">
             <h2 className="font-display text-2xl font-semibold text-slate-950">Faculty</h2>
             <div className="mt-4 grid gap-3">
               {faculty.map((item) => (
@@ -141,7 +142,7 @@ export default function AboutPage() {
             </div>
           </section>
 
-          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 min-w-0">
             <h2 className="font-display text-2xl font-semibold text-slate-950">Staff Support</h2>
             <div className="mt-4 grid gap-3">
               {staff.map((item) => (
@@ -154,7 +155,7 @@ export default function AboutPage() {
           </section>
         </div>
 
-        <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+        <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 min-w-0">
           <h2 className="font-display text-2xl font-semibold text-slate-950">Achievements</h2>
           <ul className="mt-4 grid gap-3 md:grid-cols-3">
             {ABOUT_PAGE_CONTENT.achievements.map((item) => (
@@ -181,3 +182,8 @@ export default function AboutPage() {
     </div>
   );
 }
+
+
+
+
+

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+
+
 :root {
   --page-bg: #f6f2ea;
   --surface: rgba(255, 255, 255, 0.76);
@@ -17,12 +19,14 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   position: relative;
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at top left, rgba(212, 166, 70, 0.2), transparent 28%),
     radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 24%),
@@ -113,3 +117,28 @@ select {
   border-radius: 999px;
   background: linear-gradient(135deg, #d4a646, #b9821e);
 }
+
+
+
+
+
+.marquee-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.marquee-text > span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee-scroll 18s linear infinite;
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+
+
+
