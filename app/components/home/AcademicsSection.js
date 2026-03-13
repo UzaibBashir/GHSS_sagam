@@ -1,16 +1,26 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 
-export default function AcademicsSection({ institute }) {
+function EmptyState({ message }) {
+  return (
+    <div className="rounded-[1.3rem] border border-dashed border-slate-300/80 bg-white/72 px-4 py-4 text-sm text-slate-500">
+      {message}
+    </div>
+  );
+}
+
+export default function AcademicsSection({ institute, studentContext = null }) {
   const content = useMemo(() => institute?.academic_content || {}, [institute]);
   const materials = useMemo(() => content.materials || [], [content]);
   const noticeboard = useMemo(() => content.noticeboard || [], [content]);
   const timetableRows = useMemo(() => content.timetable || [], [content]);
+  const lockedClass = studentContext?.className || "";
+  const lockedStream = studentContext?.stream || "";
 
   const classOptions = useMemo(() => materials.map((item) => item.class_name), [materials]);
-  const [selectedClass, setSelectedClass] = useState("");
-  const activeClass = classOptions.includes(selectedClass) ? selectedClass : classOptions[0] || "";
+  const [selectedClass, setSelectedClass] = useState(lockedClass);
+  const activeClass = lockedClass || (classOptions.includes(selectedClass) ? selectedClass : classOptions[0] || "");
 
   const selectedClassData = useMemo(
     () => materials.find((item) => item.class_name === activeClass) || materials[0],
@@ -22,8 +32,9 @@ export default function AcademicsSection({ institute }) {
     [selectedClassData]
   );
 
-  const [selectedStream, setSelectedStream] = useState("");
-  const activeStream = streamOptions.includes(selectedStream) ? selectedStream : streamOptions[0] || "";
+  const [selectedStream, setSelectedStream] = useState(lockedStream);
+  const activeStream =
+    lockedStream || (streamOptions.includes(selectedStream) ? selectedStream : streamOptions[0] || "");
 
   const selectedStreamData = useMemo(
     () => selectedClassData?.streams.find((stream) => stream.stream === activeStream),
@@ -35,133 +46,175 @@ export default function AcademicsSection({ institute }) {
     [timetableRows, activeClass, activeStream]
   );
 
+  const streamSummary = {
+    Medical: "Focused preparation in Biology, Chemistry, and science-based higher studies.",
+    "Non-Medical": "A strong mathematics and physical sciences pathway for technical and analytical futures.",
+    Arts: "A humanities-centered route building awareness, expression, and academic maturity.",
+  };
+
   return (
     <section id="academics" className="grid gap-6">
-      <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_24px_rgba(15,23,42,0.06)] max-md:p-4">
-        <h2 className="text-2xl font-extrabold text-slate-900 max-md:text-xl">Academic Filters</h2>
-        <p className="mt-2 text-slate-700">Select class and stream to view noticeboard context, timetable, and study materials.</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm font-semibold text-slate-700" htmlFor="class-filter">
-            Class
-            <select
-              id="class-filter"
-              value={activeClass}
-              onChange={(event) => {
-                setSelectedClass(event.target.value);
-                setSelectedStream("");
-              }}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-            >
-              {classOptions.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
+      <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+        <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+          <div>
+            <p className="section-kicker">Academic Filters</p>
+            <h2 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">
+              Explore class-wise and stream-wise academic support
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              {studentContext
+                ? "Your academic dashboard is opened according to the class and stream selected at login."
+                : "Select a class and stream to view the matching noticeboard, timetable, and learning materials prepared for students."}
+            </p>
+          </div>
 
-          <label className="grid gap-1 text-sm font-semibold text-slate-700" htmlFor="stream-filter">
-            Stream
-            <select
-              id="stream-filter"
-              value={activeStream}
-              onChange={(event) => setSelectedStream(event.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-            >
-              {streamOptions.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-semibold text-slate-700" htmlFor="class-filter">
+              Class
+              <select
+                id="class-filter"
+                value={activeClass}
+                disabled={Boolean(lockedClass)}
+                onChange={(event) => {
+                  setSelectedClass(event.target.value);
+                  setSelectedStream("");
+                }}
+                className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+              >
+                {classOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-semibold text-slate-700" htmlFor="stream-filter">
+              Stream
+              <select
+                id="stream-filter"
+                value={activeStream}
+                disabled={Boolean(lockedStream)}
+                onChange={(event) => setSelectedStream(event.target.value)}
+                className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+              >
+                {streamOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <article className="rounded-[1.5rem] border border-slate-200/80 bg-white/82 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
+            <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-teal-700 uppercase">Active Class</p>
+            <p className="mt-2 text-lg font-bold text-slate-900">{activeClass || "Not Available"}</p>
+          </article>
+          <article className="rounded-[1.5rem] border border-slate-200/80 bg-slate-950 p-4 text-white shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
+            <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-amber-300 uppercase">Selected Stream</p>
+            <p className="mt-2 text-lg font-bold">{activeStream || "Not Available"}</p>
+          </article>
+          <article className="rounded-[1.5rem] border border-slate-200/80 bg-white/82 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
+            <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-teal-700 uppercase">Stream Focus</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">{streamSummary[activeStream] || "Academic details will appear here once available."}</p>
+          </article>
         </div>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_24px_rgba(15,23,42,0.06)] max-md:p-4">
-        <h3 className="text-xl font-extrabold text-slate-900 max-md:text-lg">Noticeboard</h3>
-        <p className="mt-2 text-sm text-slate-700">Today&apos;s academic updates and reminders.</p>
-        <ul className="mt-4 grid gap-2">
-          {noticeboard.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800"
-            >
-              <p className="m-0 text-xs font-bold text-slate-500">{item.time}</p>
-              <p className="m-0 mt-1 font-semibold text-slate-900">{item.headline}</p>
-              <p className="m-0 mt-1">{item.description}</p>
-            </li>
-          ))}
-          {!noticeboard.length ? (
-            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-              No noticeboard entries available.
-            </li>
-          ) : null}
-        </ul>
-      </article>
+      <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+        <article className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.14)] max-md:p-4">
+          <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-amber-300 uppercase">Noticeboard</p>
+          <h3 className="font-display mt-3 text-2xl font-semibold">Today&apos;s academic reminders</h3>
+          <div className="mt-5 grid gap-3">
+            {noticeboard.length ? (
+              noticeboard.map((item) => (
+                <article key={item.id} className="rounded-[1.3rem] border border-white/12 bg-white/8 p-4">
+                  <p className="text-xs font-bold tracking-[0.14em] text-amber-200 uppercase">{item.time}</p>
+                  <p className="mt-2 text-base font-bold text-white">{item.headline}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-200">{item.description}</p>
+                </article>
+              ))
+            ) : (
+              <EmptyState message="No noticeboard entries available." />
+            )}
+          </div>
+        </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_24px_rgba(15,23,42,0.06)] max-md:p-4">
-        <h3 className="text-xl font-extrabold text-slate-900 max-md:text-lg">Timetable</h3>
-        <p className="mt-2 text-sm text-slate-700">
-          Daily class schedule for {activeClass || "-"} {activeStream ? `(${activeStream})` : ""}.
-        </p>
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="bg-slate-100 text-slate-800">
-                <th className="border border-slate-200 px-3 py-2">Period</th>
-                <th className="border border-slate-200 px-3 py-2">Time</th>
-                <th className="border border-slate-200 px-3 py-2">Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTimetable.map((row) => (
-                <tr key={row.id}>
-                  <td className="border border-slate-200 px-3 py-2">{row.period}</td>
-                  <td className="border border-slate-200 px-3 py-2">{row.time}</td>
-                  <td className="border border-slate-200 px-3 py-2">{row.detail}</td>
+        <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+          <p className="section-kicker">Timetable</p>
+          <h3 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">Daily schedule</h3>
+          <p className="mt-3 text-sm leading-7 text-slate-600">
+            Daily class schedule for {activeClass || "-"} {activeStream ? `(${activeStream})` : ""}.
+          </p>
+          <div className="mt-5 overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-white/86 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
+            <table className="min-w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="bg-slate-950 text-white">
+                  <th className="px-4 py-3">Period</th>
+                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3">Details</th>
                 </tr>
-              ))}
-              {!filteredTimetable.length ? (
-                <tr>
-                  <td className="border border-slate-200 px-3 py-2 text-slate-500" colSpan={3}>
-                    No timetable rows available for selected class and stream.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </article>
-
-      <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_24px_rgba(15,23,42,0.06)] max-md:p-4">
-        <h3 className="text-xl font-extrabold text-slate-900 max-md:text-lg">Study Material</h3>
-        <p className="mt-2 text-sm text-slate-700">Showing material for selected class and stream only.</p>
-
-        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <h4 className="text-base font-extrabold text-slate-900">{activeClass || "Class"}</h4>
-          <p className="mt-1 text-sm font-semibold text-slate-700">{activeStream}</p>
-          <ul className="mt-3 grid gap-2 text-sm text-slate-700">
-            {(selectedStreamData?.subjects || []).map((subject) => (
-              <li key={subject.name + subject.drive} className="rounded-md border border-slate-200 bg-white px-3 py-2">
-                <p className="m-0 font-semibold text-slate-900">{subject.name}</p>
-                <a
-                  href={subject.drive}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-semibold text-sky-800 underline underline-offset-2"
-                >
-                  Open Google Drive Folder
-                </a>
-              </li>
-            ))}
-            {!selectedStreamData?.subjects?.length ? (
-              <li className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-500">
-                No study material links available.
-              </li>
+              </thead>
+              <tbody>
+                {filteredTimetable.map((row, index) => (
+                  <tr key={row.id} className={index % 2 === 0 ? "bg-white" : "bg-slate-50/80"}>
+                    <td className="border-t border-slate-200/80 px-4 py-3 font-semibold text-slate-900">{row.period}</td>
+                    <td className="border-t border-slate-200/80 px-4 py-3 text-slate-700">{row.time}</td>
+                    <td className="border-t border-slate-200/80 px-4 py-3 text-slate-700">{row.detail}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!filteredTimetable.length ? (
+              <div className="p-4">
+                <EmptyState message="No timetable rows available for the selected class and stream." />
+              </div>
             ) : null}
-          </ul>
+          </div>
+        </article>
+      </div>
+
+      <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="section-kicker">Study Material</p>
+            <h3 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">Learning resources by stream</h3>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              Showing material for the selected class and stream to keep students focused on the right academic resources.
+            </p>
+          </div>
+          <div className="rounded-full bg-slate-950 px-4 py-2 text-xs font-bold tracking-[0.14em] text-white uppercase">
+            {activeClass || "Class"} | {activeStream || "Stream"}
+          </div>
         </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {(selectedStreamData?.subjects || []).map((subject) => (
+            <article
+              key={subject.name + subject.drive}
+              className="rounded-[1.4rem] border border-slate-200/80 bg-white/86 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.05)]"
+            >
+              <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-teal-700 uppercase">Subject Resource</p>
+              <h4 className="mt-3 text-lg font-bold text-slate-900">{subject.name}</h4>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Access classroom folders, notes, and learning support prepared for this subject.</p>
+              <a
+                href={subject.drive}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex rounded-full bg-linear-to-r from-amber-400 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-950 shadow-[0_14px_24px_rgba(212,166,70,0.22)] transition hover:-translate-y-0.5"
+              >
+                Open Drive Folder
+              </a>
+            </article>
+          ))}
+        </div>
+
+        {!selectedStreamData?.subjects?.length ? (
+          <EmptyState message="No study material links available for the selected class and stream." />
+        ) : null}
       </article>
     </section>
   );

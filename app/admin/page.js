@@ -6,11 +6,11 @@ import AcademicsManager from "../components/admin/AcademicsManager";
 import AdminLoginCard from "../components/admin/AdminLoginCard";
 import EnquiriesManager from "../components/admin/EnquiriesManager";
 import NotificationsManager from "../components/admin/NotificationsManager";
+import StudentsManager from "../components/admin/StudentsManager";
 import useAdminApi from "../hooks/useAdminApi";
 import { PAGE_MAIN } from "../lib/uiClasses";
 
 const toErrorMessage = (error) => String(error?.message || error);
-
 
 const defaultAcademicContent = {
   noticeboard: [],
@@ -29,6 +29,7 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [notificationItems, setNotificationItems] = useState([]);
   const [contacts, setContacts] = useState([]);
+  const [students, setStudents] = useState([]);
   const [academicContent, setAcademicContent] = useState(defaultAcademicContent);
 
   const adminApi = useAdminApi(token);
@@ -40,6 +41,7 @@ export default function AdminPage() {
       const data = await adminApi.loadDashboard();
       setNotificationItems(data.notificationItems || []);
       setContacts(data.contacts || []);
+      setStudents(data.students || []);
       setAcademicContent({ ...defaultAcademicContent, ...(data.academicContent || {}) });
       setConnected(true);
       setStatus("Secure portal ready.");
@@ -76,6 +78,7 @@ export default function AdminPage() {
     setConnected(false);
     setNotificationItems([]);
     setContacts([]);
+    setStudents([]);
     setAcademicContent(defaultAcademicContent);
     localStorage.removeItem("admin_token");
     setStatus("Logged out.");
@@ -86,6 +89,36 @@ export default function AdminPage() {
       await adminApi.clearContacts();
       setContacts([]);
       setStatus("All enquiries cleared.");
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleAddStudent = async (payload) => {
+    try {
+      await adminApi.addStudent(payload);
+      setStatus("Student login added.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleSaveStudent = async (rollNumber, payload) => {
+    try {
+      await adminApi.updateStudent(rollNumber, payload);
+      setStatus("Student login updated.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleRemoveStudent = async (rollNumber) => {
+    try {
+      await adminApi.removeStudent(rollNumber);
+      setStatus("Student login removed.");
+      await refreshDashboard();
     } catch (error) {
       setStatus(toErrorMessage(error));
     }
@@ -183,7 +216,7 @@ export default function AdminPage() {
 
   return (
     <main className={PAGE_MAIN}>
-      <Link href="/" className="inline-block w-fit font-bold text-teal-700 hover:underline">
+      <Link href="/" className="inline-block w-fit text-sm font-bold text-teal-700 hover:underline">
         Back to Website
       </Link>
 
@@ -199,7 +232,13 @@ export default function AdminPage() {
       />
 
       {connected ? (
-        <>
+        <div className="grid gap-6 max-sm:gap-4">
+          <StudentsManager
+            students={students}
+            onAdd={handleAddStudent}
+            onSave={handleSaveStudent}
+            onRemove={handleRemoveStudent}
+          />
 
           <NotificationsManager
             items={notificationItems}
@@ -219,9 +258,8 @@ export default function AdminPage() {
           />
 
           <EnquiriesManager contacts={contacts} onClearContacts={handleClearContacts} />
-        </>
+        </div>
       ) : null}
     </main>
   );
 }
-

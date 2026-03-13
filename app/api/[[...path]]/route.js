@@ -6,6 +6,7 @@ import {
   getOrCreateLoginBucket,
   makeLoginBucketKey,
   verifyAdminCredentials,
+  verifyStudentCredentials,
   verifyToken,
 } from "../_lib/auth";
 import { getStore } from "../_lib/store";
@@ -24,8 +25,8 @@ async function getPath(params) {
   return Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
 }
 
-function unauthorizedIfNeeded(request, store) {
-  const result = verifyToken(store, request.headers.get("authorization") || "");
+function unauthorizedIfNeeded(request, store, requiredRole = null) {
+  const result = verifyToken(store, request.headers.get("authorization") || "", requiredRole);
   if (!result.ok) {
     return error(result.detail, result.status);
   }
@@ -39,6 +40,13 @@ function getControls(store) {
     academics_page_enabled: Boolean(controls.academics_page_enabled),
     admission_open: Boolean(controls.admission_open),
     admission_form_url: store.instituteData.admission_form_url || "https://forms.google.com",
+  };
+}
+
+function getPublicInstituteData(store) {
+  return {
+    ...store.instituteData,
+    academic_content: undefined,
   };
 }
 
@@ -62,6 +70,25 @@ function safeAdminError(err) {
   return null;
 }
 
+function normalizeStudentPayload(payload) {
+  return {
+    rollNumber: assertNonEmpty("Roll number", payload.rollNumber),
+    password: assertNonEmpty("Password", payload.password),
+    name: assertNonEmpty("Student name", payload.name),
+    className: assertNonEmpty("Class", payload.className),
+    stream: assertNonEmpty("Stream", payload.stream),
+  };
+}
+
+function ensureUniqueRollNumber(students, rollNumber, currentRollNumber = "") {
+  const duplicate = students.find(
+    (item) => item.rollNumber === rollNumber && item.rollNumber !== currentRollNumber
+  );
+  if (duplicate) {
+    throw new Error("A student with this roll number already exists.");
+  }
+}
+
 export async function GET(request, context) {
   const path = await getPath(context?.params);
   const store = getStore();
@@ -75,7 +102,42 @@ export async function GET(request, context) {
   }
 
   if (path[0] === "institute" && path.length === 1) {
-    return json(store.instituteData);
+    return json(getPublicInstituteData(store));
+  }
+
+  if (path[0] === "student") {
+    const authError = unauthorizedIfNeeded(request, store, "student");
+    if (authError) {
+      return authError;
+    }
+
+    const verified = verifyToken(store, request.headers.get("authorization") || "", "student");
+
+    if (path[1] === "session" && path.length === 2) {
+      return json({
+        authenticated: true,
+        student: {
+          rollNumber: verified.session.rollNumber,
+          name: verified.session.name,
+          className: verified.session.className,
+          stream: verified.session.stream,
+        },
+      });
+    }
+
+    if (path[1] === "academics" && path[2] === "content" && path.length === 3) {
+      return json({
+        student: {
+          rollNumber: verified.session.rollNumber,
+          name: verified.session.name,
+          className: verified.session.className,
+          stream: verified.session.stream,
+        },
+        academic_content: store.instituteData.academic_content,
+      });
+    }
+
+    return error("Not found", 404);
   }
 
   if (path[0] !== "admin") {
@@ -88,7 +150,7 @@ export async function GET(request, context) {
     return safeAdminError(err);
   }
 
-  const authError = unauthorizedIfNeeded(request, store);
+  const authError = unauthorizedIfNeeded(request, store, "admin");
   if (authError) {
     return authError;
   }
@@ -107,6 +169,10 @@ export async function GET(request, context) {
 
   if (path[1] === "controls" && path.length === 2) {
     return json(getControls(store));
+  }
+
+  if (path[1] === "students" && path.length === 2) {
+    return json(store.students);
   }
 
   if (path[1] === "notification-items" && path.length === 2) {
@@ -153,6 +219,30 @@ export async function POST(request, context) {
     }
   }
 
+  if (path[0] === "student" && path[1] === "login" && path.length === 2) {
+    try {
+      const payload = await parseJsonBody(request);
+      const rollNumber = String(payload.rollNumber || "").trim();
+      const password = String(payload.password || "");
+      const className = String(payload.className || "").trim();
+      const stream = String(payload.stream || "").trim();
+      const student = verifyStudentCredentials(store, rollNumber, password);
+
+      if (!student) {
+        return error("Invalid roll number or password", 401);
+      }
+
+      if (student.className !== className || student.stream !== stream) {
+        return error("Selected class or stream does not match the student record", 401);
+      }
+
+      const session = createSession({ role: "student", ...student });
+      return json({ success: true, token: session.token, expires_in: session.expiresIn, student });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Login failed", 400);
+    }
+  }
+
   if (path[0] === "admin" && path[1] === "login" && path.length === 2) {
     try {
       ensureSecureConfig();
@@ -184,7 +274,7 @@ export async function POST(request, context) {
 
       store.loginFailures[bucketKey] = { count: 0, lockedUntil: 0 };
       clearSessions(store);
-      const session = createSession(store);
+      const session = createSession({ role: "admin" });
       return json({ success: true, token: session.token, expires_in: session.expiresIn });
     } catch (err) {
       return error(err instanceof Error ? err.message : "Login failed", 400);
@@ -201,13 +291,20 @@ export async function POST(request, context) {
     return safeAdminError(err);
   }
 
-  const authError = unauthorizedIfNeeded(request, store);
+  const authError = unauthorizedIfNeeded(request, store, "admin");
   if (authError) {
     return authError;
   }
 
   try {
     const payload = await parseJsonBody(request);
+
+    if (path[1] === "students" && path.length === 2) {
+      const student = normalizeStudentPayload(payload);
+      ensureUniqueRollNumber(store.students, student.rollNumber);
+      store.students.unshift(student);
+      return json({ success: true, student });
+    }
 
     if (path[1] === "notices" && path.length === 2) {
       const text = assertNonEmpty("Notice", payload.text);
@@ -296,7 +393,7 @@ export async function PATCH(request, context) {
     return safeAdminError(err);
   }
 
-  const authError = unauthorizedIfNeeded(request, store);
+  const authError = unauthorizedIfNeeded(request, store, "admin");
   if (authError) {
     return authError;
   }
@@ -345,13 +442,24 @@ export async function PUT(request, context) {
     return safeAdminError(err);
   }
 
-  const authError = unauthorizedIfNeeded(request, store);
+  const authError = unauthorizedIfNeeded(request, store, "admin");
   if (authError) {
     return authError;
   }
 
   try {
     const payload = await parseJsonBody(request);
+
+    if (path[1] === "students" && path.length === 3) {
+      const student = normalizeStudentPayload(payload);
+      const index = store.students.findIndex((item) => item.rollNumber === path[2]);
+      if (index === -1) {
+        return error("Student not found", 404);
+      }
+      ensureUniqueRollNumber(store.students, student.rollNumber, path[2]);
+      store.students[index] = student;
+      return json({ success: true, student });
+    }
 
     if (path[1] === "notification-items" && path.length === 3) {
       const items = store.instituteData.notification_items;
@@ -380,8 +488,7 @@ export async function PUT(request, context) {
       const current = items[index];
 
       if (payload.headline !== undefined) current.headline = assertNonEmpty("Headline", payload.headline);
-      if (payload.description !== undefined)
-        current.description = assertNonEmpty("Description", payload.description);
+      if (payload.description !== undefined) current.description = assertNonEmpty("Description", payload.description);
       if (payload.time !== undefined) current.time = assertNonEmpty("Time", payload.time);
       if (payload.image_url !== undefined) current.image_url = assertOptionalHttpUrl("Image URL", payload.image_url);
       if (payload.link_label !== undefined) current.link_label = String(payload.link_label || "").trim();
@@ -439,12 +546,21 @@ export async function DELETE(request, context) {
     return safeAdminError(err);
   }
 
-  const authError = unauthorizedIfNeeded(request, store);
+  const authError = unauthorizedIfNeeded(request, store, "admin");
   if (authError) {
     return authError;
   }
 
   try {
+    if (path[1] === "students" && path.length === 3) {
+      const index = store.students.findIndex((item) => item.rollNumber === path[2]);
+      if (index === -1) {
+        return error("Student not found", 404);
+      }
+      store.students.splice(index, 1);
+      return json({ success: true, message: "Student removed." });
+    }
+
     if (path[1] === "notices" && path.length === 3) {
       const index = parseIndex(path[2], "Notice");
       if (index >= store.instituteData.notices.length) {
@@ -494,5 +610,3 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
-
-

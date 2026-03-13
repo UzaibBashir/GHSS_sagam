@@ -1,1 +1,115 @@
 @import "tailwindcss";
+
+:root {
+  --page-bg: #f6f2ea;
+  --surface: rgba(255, 255, 255, 0.76);
+  --surface-strong: rgba(255, 255, 255, 0.9);
+  --stroke: rgba(148, 163, 184, 0.22);
+  --ink-soft: #5f6471;
+  --brand-navy: #102542;
+  --brand-teal: #0f766e;
+  --brand-gold: #d4a646;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  position: relative;
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(212, 166, 70, 0.2), transparent 28%),
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 24%),
+    linear-gradient(180deg, #f8f4ec 0%, #f4f6fb 46%, #eef4f7 100%);
+}
+
+body::before,
+body::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
+body::before {
+  background-image:
+    linear-gradient(rgba(16, 37, 66, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 37, 66, 0.04) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.32), transparent 78%);
+}
+
+body::after {
+  background:
+    radial-gradient(circle at 15% 22%, rgba(255, 255, 255, 0.72), transparent 19%),
+    radial-gradient(circle at 85% 12%, rgba(255, 255, 255, 0.6), transparent 18%);
+}
+
+::selection {
+  background: rgba(15, 118, 110, 0.2);
+  color: #0f172a;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.45);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.92), rgba(16, 37, 66, 0.88));
+}
+
+img {
+  max-width: 100%;
+}
+
+input,
+textarea,
+button,
+select {
+  font: inherit;
+}
+
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+.glass-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68));
+  backdrop-filter: blur(18px);
+}
+
+.section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 166, 70, 0.35);
+  background: rgba(255, 248, 230, 0.84);
+  padding: 0.45rem 0.85rem;
+  color: #7c5a14;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.section-kicker::before {
+  content: "";
+  height: 0.45rem;
+  width: 0.45rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #d4a646, #b9821e);
+}

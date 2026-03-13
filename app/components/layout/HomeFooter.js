@@ -41,29 +41,11 @@ function Icon({ name, className = "h-4 w-4" }) {
     );
   }
 
-  if (name === "facebook") {
+  if (name === "arrow") {
     return (
       <svg {...common}>
-        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-      </svg>
-    );
-  }
-
-  if (name === "instagram") {
-    return (
-      <svg {...common}>
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-        <path d="M16 11.37a4 4 0 1 1-7.75 1.26 4 4 0 0 1 7.75-1.26z" />
-        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-      </svg>
-    );
-  }
-
-  if (name === "youtube") {
-    return (
-      <svg {...common}>
-        <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
-        <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" />
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
       </svg>
     );
   }
@@ -73,147 +55,131 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 export default function HomeFooter({ institute }) {
   const instituteName = institute?.name || "Government Girls Higher Secondary School, Sagam";
-  const email = "ghsssagam@gmail.com";
-  const phone = "+91 70066 70384";
-  const address = institute?.contact?.address || "Main Road, Sagam, Jammu and Kashmir, India";
+  const email = institute?.contact?.email || "ghhssagam@school.edu.in";
+  const phone = institute?.contact?.phone || "+91-7000000000";
+  const address = institute?.contact?.address || "Government Girls Higher Secondary School, Sagam, Jammu and Kashmir, India";
   const mapQuery = encodeURIComponent(address);
   const mapSrc = `https://maps.google.com/maps?q=${mapQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-  const whatsappPhone = phone.replace(/\D/g, "");
-  const whatsappLink = `https://wa.me/${whatsappPhone}`;
   const year = new Date().getFullYear();
 
-  const socialLinks = [{ label: "Facebook", href: "https://facebook.com", icon: "facebook" }];
+  const quickLinks = [
+    { label: "Home", href: "/" },
+    { label: "Academics", href: "/academics" },
+    { label: "Admission", href: "/admission" },
+    { label: "Notifications", href: "/notifications" },
+    { label: "About Us", href: "/about" },
+  ];
+
+  const streamLinks = [
+    { label: "Medical Stream", href: "/academics" },
+    { label: "Non-Medical Stream", href: "/academics" },
+    { label: "Arts Stream", href: "/academics" },
+  ];
 
   return (
-    <footer className="mt-12 border-t border-slate-300/20 bg-linear-to-r from-slate-950 via-slate-900 to-blue-950 text-slate-200">
-      <div className="mx-auto grid w-[min(1120px,calc(100%-2rem))] gap-8 py-10 max-sm:w-[min(1120px,calc(100%-1rem))] lg:grid-cols-[1.15fr_0.9fr_1fr_1.2fr]">
-        <section>
-          <div className="flex items-center gap-3">
-            <div className="relative h-16 w-16 shrink-0 rounded-full bg-white/90 p-1 shadow-[0_8px_18px_rgba(14,116,144,0.4)] ring-2 ring-white/70">
-              <div className="relative h-full w-full overflow-hidden rounded-full border border-slate-200 bg-white p-1">
-                <Image
-                  src="/logo.jpg"
-                  alt={`${instituteName} logo`}
-                  fill
-                  sizes="64px"
-                  quality={100}
-                  className="object-contain"
-                />
-              </div>
+    <footer className="relative mt-14 overflow-hidden border-t border-slate-900/10 bg-slate-950 text-slate-200">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,166,70,0.18),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(20,184,166,0.14),transparent_24%)]" />
+
+      <div className="relative mx-auto grid w-[min(1180px,calc(100%-2rem))] gap-6 py-12 max-sm:w-[min(1180px,calc(100%-1rem))] lg:grid-cols-[1.2fr_0.8fr_0.9fr_1.1fr]">
+        <section className="rounded-[2rem] border border-white/12 bg-white/6 p-6 shadow-[0_20px_40px_rgba(2,6,23,0.25)] backdrop-blur">
+          <div className="flex items-center gap-4">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[1.2rem] border border-white/20 bg-white p-2 shadow-[0_16px_28px_rgba(212,166,70,0.16)]">
+              <Image
+                src="/logo.jpg"
+                alt={`${instituteName} logo`}
+                fill
+                sizes="64px"
+                quality={100}
+                className="object-contain p-1"
+              />
             </div>
-            <h3 className="text-[1rem] leading-tight font-bold text-white">{instituteName}</h3>
+            <div>
+              <p className="section-kicker">Girls&apos; Education</p>
+              <h3 className="font-display mt-3 text-2xl leading-tight font-semibold text-white">{instituteName}</h3>
+            </div>
           </div>
 
-          <p className="mt-4 text-sm leading-relaxed text-slate-300">
-            Building confident, responsible, and future-ready students through quality education and values.
+          <p className="mt-5 text-sm leading-7 text-slate-300">
+            A forward-looking public institution nurturing confident young women through meaningful learning,
+            academic care, and a disciplined environment built for higher secondary success.
           </p>
 
-          <div className="mt-4 flex flex-wrap gap-2.5">
-            {socialLinks.map((item) => (
-              <a
+          <div className="mt-5 flex flex-wrap gap-2">
+            {streamLinks.map((item) => (
+              <Link
                 key={item.label}
                 href={item.href}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/30 bg-slate-200/10 px-3 py-1.5 text-xs font-semibold text-slate-100 transition hover:border-sky-200/40 hover:bg-sky-300/20"
+                className="rounded-full border border-white/14 bg-white/8 px-3 py-1.5 text-xs font-semibold text-slate-100 transition hover:border-amber-300/40 hover:bg-amber-300/12"
               >
-                <Icon name={item.icon} className="h-3.5 w-3.5" />
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
         </section>
 
-        <section>
-          <h4 className="text-sm font-bold tracking-wide text-white uppercase">Quick Links</h4>
-          <ul className="mt-4 space-y-2 text-sm text-slate-300">
-            <li>
-              <Link href="/" className="transition hover:text-white">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link href="/academics" className="transition hover:text-white">
-                Academics
-              </Link>
-            </li>
-            <li>
-              <Link href="/admission" className="transition hover:text-white">
-                Admission
-              </Link>
-            </li>
-            <li>
-              <Link href="/about" className="transition hover:text-white">
-                About Us
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin" className="transition hover:text-white">
-                Admin Login
-              </Link>
-            </li>
+        <section className="rounded-[2rem] border border-white/12 bg-white/6 p-6 backdrop-blur">
+          <h4 className="text-sm font-extrabold tracking-[0.16em] text-amber-200 uppercase">Explore</h4>
+          <ul className="mt-5 space-y-3 text-sm text-slate-300">
+            {quickLinks.map((item) => (
+              <li key={item.label}>
+                <Link href={item.href} className="inline-flex items-center gap-2 transition hover:text-white">
+                  <Icon name="arrow" className="h-3.5 w-3.5" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            ))}
           </ul>
         </section>
 
-        <section>
-          <h4 className="text-sm font-bold tracking-wide text-white uppercase">Contact</h4>
-          <ul className="mt-4 space-y-3 text-sm text-slate-300">
+        <section className="rounded-[2rem] border border-white/12 bg-white/6 p-6 backdrop-blur">
+          <h4 className="text-sm font-extrabold tracking-[0.16em] text-amber-200 uppercase">Connect</h4>
+          <ul className="mt-5 space-y-4 text-sm text-slate-300">
             <li>
-              <a href={`tel:${phone}`} className="mt-1 inline-flex items-center gap-2 font-medium text-slate-100 transition hover:text-white">
-                <Icon name="phone" /><span>Exam Incharge: {phone}</span>
+              <a href={`tel:${phone}`} className="inline-flex items-start gap-3 transition hover:text-white">
+                <span className="mt-0.5 rounded-full bg-white/10 p-2 text-amber-200">
+                  <Icon name="phone" />
+                </span>
+                <span>{phone}</span>
               </a>
             </li>
             <li>
-              <a href={`mailto:${email}`} className="mt-1 inline-flex items-center gap-2 font-medium text-slate-100 transition hover:text-white">
-                <Icon name="email" />
-                {email}
+              <a href={`mailto:${email}`} className="inline-flex items-start gap-3 transition hover:text-white">
+                <span className="mt-0.5 rounded-full bg-white/10 p-2 text-amber-200">
+                  <Icon name="email" />
+                </span>
+                <span>{email}</span>
               </a>
             </li>
-            <li>
-              <span className="block text-slate-400">Address</span>
-              <p className="m-0 mt-1 inline-flex items-start gap-2 font-medium text-slate-100">
+            <li className="inline-flex items-start gap-3">
+              <span className="mt-0.5 rounded-full bg-white/10 p-2 text-amber-200">
                 <Icon name="address" />
-                <span>{address}</span>
-              </p>
-            </li>
-            <li>
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center rounded-full border border-emerald-200/40 bg-emerald-400/20 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-300/30"
-              >
-                Chat on WhatsApp
-              </a>
+              </span>
+              <span>{address}</span>
             </li>
           </ul>
         </section>
 
-        <section>
-          <h4 className="text-sm font-bold tracking-wide text-white uppercase">Find Us</h4>
-          <div className="mt-4 overflow-hidden rounded-xl border border-slate-300/25 bg-slate-800/70 shadow-[0_12px_22px_rgba(2,6,23,0.25)]">
+        <section className="rounded-[2rem] border border-white/12 bg-white/6 p-4 backdrop-blur">
+          <h4 className="px-2 text-sm font-extrabold tracking-[0.16em] text-amber-200 uppercase">Campus Location</h4>
+          <div className="mt-4 overflow-hidden rounded-[1.4rem] border border-white/12 bg-slate-900/70 shadow-[0_16px_30px_rgba(2,6,23,0.24)]">
             <iframe
               title="School location map"
               src={mapSrc}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="h-44 w-full border-0"
+              className="h-56 w-full border-0"
               allowFullScreen
             />
           </div>
         </section>
       </div>
 
-      <div className="border-t border-slate-300/15">
-        <div className="mx-auto flex w-[min(1120px,calc(100%-2rem))] flex-wrap items-center justify-between gap-3 py-4 text-xs text-slate-400 max-sm:w-[min(1120px,calc(100%-1rem))]">
+      <div className="relative border-t border-white/10">
+        <div className="mx-auto flex w-[min(1180px,calc(100%-2rem))] flex-wrap items-center justify-between gap-3 py-4 text-xs text-slate-400 max-sm:w-[min(1180px,calc(100%-1rem))]">
           <p className="m-0">(c) {year} {instituteName}. All rights reserved.</p>
-          <p className="m-0">Designed for students, parents, and community.</p>
+          <p className="m-0">Designed to serve students, families, and the wider Sagam community.</p>
         </div>
       </div>
     </footer>
   );
 }
-
-
-
-

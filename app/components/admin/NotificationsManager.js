@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { AUTO_FIT_GRID, CARD, DANGER_BUTTON, INPUT, PRIMARY_BUTTON } from "../../lib/uiClasses";
 
 const EMPTY_FORM = {
@@ -72,11 +72,11 @@ function NotificationEditor({ item, onSave, onRemove }) {
         placeholder="Link label (optional)"
       />
 
-      <div className="flex flex-wrap gap-2">
-        <button className={PRIMARY_BUTTON} onClick={() => onSave(item.id, draft)}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <button className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onSave(item.id, draft)}>
           Save Changes
         </button>
-        <button className={DANGER_BUTTON} onClick={() => onRemove(item.id)}>
+        <button className={`${DANGER_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onRemove(item.id)}>
           Delete
         </button>
       </div>
@@ -94,12 +94,12 @@ export default function NotificationsManager({ items, onAdd, onSave, onRemove })
 
   return (
     <section className={CARD}>
-      <h2>Notifications (Full Details)</h2>
+      <h2 className="text-2xl max-sm:text-xl">Notifications (Full Details)</h2>
       <p className="m-0 text-sm text-slate-600">
         Add, update, and delete notification title, category, description, image, and link.
       </p>
 
-      <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 max-sm:p-2.5">
         <h3 className="m-0 text-base font-bold text-slate-900">Add New Notification</h3>
         <div className="grid gap-2 sm:grid-cols-2">
           <input
@@ -155,7 +155,7 @@ export default function NotificationsManager({ items, onAdd, onSave, onRemove })
           className={INPUT}
           placeholder="Link label (optional)"
         />
-        <button onClick={handleCreate} className={PRIMARY_BUTTON}>
+        <button onClick={handleCreate} className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}>
           Add Notification
         </button>
       </article>

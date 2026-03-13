@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback } from "react";
 import { API_BASE } from "../lib/api";
@@ -27,14 +27,15 @@ export default function useAdminApi(token) {
   };
 
   const loadDashboard = async () => {
-    const [contactsRes, controlsRes, notificationRes, academicsRes] = await Promise.all([
+    const [contactsRes, controlsRes, notificationRes, academicsRes, studentsRes] = await Promise.all([
       fetch(`${API_BASE}/admin/contacts`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/controls`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/notification-items`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/academics/content`, { headers: withAuth() }),
+      fetch(`${API_BASE}/admin/students`, { headers: withAuth() }),
     ]);
 
-    if (!contactsRes.ok || !controlsRes.ok || !notificationRes.ok || !academicsRes.ok) {
+    if (!contactsRes.ok || !controlsRes.ok || !notificationRes.ok || !academicsRes.ok || !studentsRes.ok) {
       throw new Error("Session expired. Please login again.");
     }
 
@@ -42,8 +43,9 @@ export default function useAdminApi(token) {
     const controls = await controlsRes.json();
     const notificationItems = await notificationRes.json();
     const academicContent = await academicsRes.json();
+    const students = await studentsRes.json();
 
-    return { contacts, controls, notificationItems, academicContent };
+    return { contacts, controls, notificationItems, academicContent, students };
   };
 
   const clearContacts = async () => {
@@ -52,6 +54,32 @@ export default function useAdminApi(token) {
       headers: withAuth(),
     });
     return parseResponse(res, "Could not clear enquiries.");
+  };
+
+  const addStudent = async (payload) => {
+    const res = await fetch(`${API_BASE}/admin/students`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not add student.");
+  };
+
+  const updateStudent = async (rollNumber, payload) => {
+    const res = await fetch(`${API_BASE}/admin/students/${encodeURIComponent(rollNumber)}`, {
+      method: "PUT",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update student.");
+  };
+
+  const removeStudent = async (rollNumber) => {
+    const res = await fetch(`${API_BASE}/admin/students/${encodeURIComponent(rollNumber)}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete student.");
   };
 
   const updateControls = async (payload) => {
@@ -154,6 +182,9 @@ export default function useAdminApi(token) {
     login,
     loadDashboard,
     clearContacts,
+    addStudent,
+    updateStudent,
+    removeStudent,
     updateControls,
     addNotificationItem,
     updateNotificationItem,

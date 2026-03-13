@@ -13,6 +13,7 @@ export const config = {
   adminUsername: process.env.ADMIN_USERNAME || "admin",
   adminPassword: process.env.ADMIN_PASSWORD || "change-me-123",
   tokenTtlSeconds: Number(process.env.ADMIN_TOKEN_TTL_SECONDS || 60 * 60 * 8),
+  studentTokenTtlSeconds: Number(process.env.STUDENT_TOKEN_TTL_SECONDS || 60 * 60 * 4),
   failedLoginLimit: Number(process.env.ADMIN_FAILED_LOGIN_LIMIT || 5),
   lockoutSeconds: Number(process.env.ADMIN_LOCKOUT_SECONDS || 60 * 5),
   sessionSecret: process.env.ADMIN_SESSION_SECRET || "",
@@ -77,18 +78,27 @@ export function clearSessions() {
   // Stateless tokens are valid across serverless instances, so there is no in-memory session map to clear.
 }
 
-export function createSession() {
+export function createSession(subject = {}) {
   const now = Math.floor(Date.now() / 1000);
-  const expiresIn = config.tokenTtlSeconds;
+  const role = subject.role || "admin";
+  const expiresIn = role === "student" ? config.studentTokenTtlSeconds : config.tokenTtlSeconds;
   const payload = Buffer.from(
-    JSON.stringify({ exp: now + expiresIn, nonce: randomBytes(12).toString("base64url") })
+    JSON.stringify({
+      exp: now + expiresIn,
+      nonce: randomBytes(12).toString("base64url"),
+      role,
+      rollNumber: subject.rollNumber || "",
+      name: subject.name || "",
+      stream: subject.stream || "",
+      className: subject.className || "",
+    })
   ).toString("base64url");
   const signature = signTokenPayload(payload);
 
   return { token: `${payload}.${signature}`, expiresIn };
 }
 
-export function verifyToken(_store, authorizationHeader) {
+export function verifyToken(_store, authorizationHeader, requiredRole = null) {
   if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
     return { ok: false, status: 401, detail: "Missing or invalid token" };
   }
@@ -112,13 +122,35 @@ export function verifyToken(_store, authorizationHeader) {
     if (!decoded?.exp || now > decoded.exp) {
       return { ok: false, status: 401, detail: "Session expired. Please login again." };
     }
+
+    if (requiredRole && decoded.role !== requiredRole) {
+      return { ok: false, status: 403, detail: "You are not authorized to access this resource." };
+    }
+
+    return { ok: true, token, session: decoded };
   } catch {
     return { ok: false, status: 401, detail: "Session expired. Please login again." };
   }
-
-  return { ok: true, token };
 }
 
 export function verifyAdminCredentials(username, password) {
   return secureEquals(username, config.adminUsername) && secureEquals(password, config.adminPassword);
+}
+
+export function verifyStudentCredentials(store, rollNumber, password) {
+  const student = (store.students || []).find((item) => secureEquals(item.rollNumber, rollNumber));
+  if (!student) {
+    return null;
+  }
+
+  if (!secureEquals(student.password, password)) {
+    return null;
+  }
+
+  return {
+    rollNumber: student.rollNumber,
+    name: student.name,
+    className: student.className,
+    stream: student.stream,
+  };
 }

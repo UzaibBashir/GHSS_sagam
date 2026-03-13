@@ -22,7 +22,7 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
 
   return (
-    <article className="grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+    <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 max-sm:p-2.5">
       <input
         className={INPUT}
         value={draft.headline}
@@ -62,11 +62,11 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
         onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
         placeholder="Link Label"
       />
-      <div className="flex flex-wrap gap-2">
-        <button className={PRIMARY_BUTTON} onClick={() => onSave(item.id, draft)}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <button className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onSave(item.id, draft)}>
           Save
         </button>
-        <button className={DANGER_BUTTON} onClick={() => onRemove(item.id)}>
+        <button className={`${DANGER_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onRemove(item.id)}>
           Delete
         </button>
       </div>
@@ -78,7 +78,54 @@ function TimetableEditor({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
 
   return (
-    <tr>
+    <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)] md:hidden">
+      <input
+        className={INPUT}
+        value={draft.period}
+        onChange={(event) => setDraft((prev) => ({ ...prev, period: event.target.value }))}
+        placeholder="Period"
+      />
+      <input
+        className={INPUT}
+        value={draft.time}
+        onChange={(event) => setDraft((prev) => ({ ...prev, time: event.target.value }))}
+        placeholder="Time"
+      />
+      <input
+        className={INPUT}
+        value={draft.detail}
+        onChange={(event) => setDraft((prev) => ({ ...prev, detail: event.target.value }))}
+        placeholder="Detail"
+      />
+      <input
+        className={INPUT}
+        value={draft.class_name}
+        onChange={(event) => setDraft((prev) => ({ ...prev, class_name: event.target.value }))}
+        placeholder="Class"
+      />
+      <input
+        className={INPUT}
+        value={draft.stream}
+        onChange={(event) => setDraft((prev) => ({ ...prev, stream: event.target.value }))}
+        placeholder="Stream"
+      />
+      <div className="flex flex-col gap-2">
+        <button className={`${PRIMARY_BUTTON} w-full justify-center`} onClick={() => onSave(item.id, draft)}>
+          Save
+        </button>
+        <button className={`${DANGER_BUTTON} w-full justify-center`} onClick={() => onRemove(item.id)}>
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TimetableEditorDesktop({ item, onSave, onRemove }) {
+  const [draft, setDraft] = useState(item);
+
+  return (
+    <tr className="hidden md:table-row">
       <td className="border border-slate-200 px-2 py-1">
         <input
           className="w-full rounded border border-slate-300 px-2 py-1"
@@ -115,7 +162,7 @@ function TimetableEditor({ item, onSave, onRemove }) {
         />
       </td>
       <td className="border border-slate-200 px-2 py-1">
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           <button
             className="rounded bg-teal-700 px-2 py-1 text-xs font-bold text-white"
             onClick={() => onSave(item.id, draft)}
@@ -148,10 +195,10 @@ export default function AcademicsManager({
 
   return (
     <section className={CARD}>
-      <h2>Academics Management</h2>
+      <h2 className="text-2xl max-sm:text-xl">Academics Management</h2>
       <p className="m-0 text-sm text-slate-600">Manage noticeboard and timetable content for academics page.</p>
 
-      <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 max-sm:p-2.5">
         <h3 className="m-0 text-base font-bold text-slate-900">Noticeboard: Add Item</h3>
         <input
           className={INPUT}
@@ -193,7 +240,7 @@ export default function AcademicsManager({
           placeholder="Link Label"
         />
         <button
-          className={PRIMARY_BUTTON}
+          className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}
           onClick={() => {
             onAddNoticeboard(noticeForm);
             setNoticeForm(EMPTY_NOTICE);
@@ -209,7 +256,7 @@ export default function AcademicsManager({
         </div>
       </article>
 
-      <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <article className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 max-sm:p-2.5">
         <h3 className="m-0 text-base font-bold text-slate-900">Timetable: Add Row</h3>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           <input
@@ -244,7 +291,7 @@ export default function AcademicsManager({
           />
         </div>
         <button
-          className={PRIMARY_BUTTON}
+          className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}
           onClick={() => {
             onAddTimetable(timetableForm);
             setTimetableForm(EMPTY_TIMETABLE);
@@ -253,7 +300,13 @@ export default function AcademicsManager({
           Add Timetable Row
         </button>
 
-        <div className="overflow-x-auto">
+        <div className="grid gap-2 md:hidden">
+          {(academicContent?.timetable || []).map((item) => (
+            <TimetableEditor key={item.id} item={item} onSave={onSaveTimetable} onRemove={onRemoveTimetable} />
+          ))}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="min-w-full border-collapse text-left text-sm">
             <thead>
               <tr className="bg-slate-100 text-slate-800">
@@ -267,7 +320,7 @@ export default function AcademicsManager({
             </thead>
             <tbody>
               {(academicContent?.timetable || []).map((item) => (
-                <TimetableEditor key={item.id} item={item} onSave={onSaveTimetable} onRemove={onRemoveTimetable} />
+                <TimetableEditorDesktop key={item.id} item={item} onSave={onSaveTimetable} onRemove={onRemoveTimetable} />
               ))}
             </tbody>
           </table>
