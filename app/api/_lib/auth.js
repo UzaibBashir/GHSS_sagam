@@ -1,4 +1,4 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 function parseCsv(value, fallback) {
   const source = value || fallback;
@@ -26,6 +26,14 @@ function secureEquals(a, b) {
     return false;
   }
   return timingSafeEqual(left, right);
+}
+
+function getSigningSecret() {
+  return config.sessionSecret || `dev-secret-${config.adminPassword}`;
+}
+
+function signTokenPayload(payload) {
+  return createHmac("sha256", getSigningSecret()).update(payload).digest("base64url");
 }
 
 export function ensureSecureConfig() {
@@ -65,31 +73,46 @@ export function getOrCreateLoginBucket(store, key) {
   return bucket;
 }
 
-export function clearSessions(store) {
-  store.adminSessions = {};
+export function clearSessions() {
+  // Stateless tokens are valid across serverless instances, so there is no in-memory session map to clear.
 }
 
-export function createSession(store) {
-  const token = randomBytes(32).toString("base64url");
+export function createSession() {
   const now = Math.floor(Date.now() / 1000);
-  store.adminSessions[token] = now + config.tokenTtlSeconds;
-  return { token, expiresIn: config.tokenTtlSeconds };
+  const expiresIn = config.tokenTtlSeconds;
+  const payload = Buffer.from(
+    JSON.stringify({ exp: now + expiresIn, nonce: randomBytes(12).toString("base64url") })
+  ).toString("base64url");
+  const signature = signTokenPayload(payload);
+
+  return { token: `${payload}.${signature}`, expiresIn };
 }
 
-export function verifyToken(store, authorizationHeader) {
+export function verifyToken(_store, authorizationHeader) {
   if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
     return { ok: false, status: 401, detail: "Missing or invalid token" };
   }
 
   const token = authorizationHeader.slice(7).trim();
-  const expiresAt = store.adminSessions[token];
-  if (!expiresAt) {
+  const [payload, signature] = token.split(".");
+
+  if (!payload || !signature) {
     return { ok: false, status: 401, detail: "Session expired. Please login again." };
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  if (now > expiresAt) {
-    delete store.adminSessions[token];
+  const expectedSignature = signTokenPayload(payload);
+  if (!secureEquals(signature, expectedSignature)) {
+    return { ok: false, status: 401, detail: "Session expired. Please login again." };
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    const now = Math.floor(Date.now() / 1000);
+
+    if (!decoded?.exp || now > decoded.exp) {
+      return { ok: false, status: 401, detail: "Session expired. Please login again." };
+    }
+  } catch {
     return { ok: false, status: 401, detail: "Session expired. Please login again." };
   }
 
