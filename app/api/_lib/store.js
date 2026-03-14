@@ -10,7 +10,7 @@ const DEFAULT_INSTITUTE_DATA = {
     "Supports higher secondary learning with Medical, Non-Medical, and Arts streams.",
     "Focused on board preparation, character formation, and future academic growth.",
   ],
-  admission_form_url: "https://forms.google.com",
+  admission_form_url: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
   site_controls: {
     notifications_page_enabled: true,
     academics_page_enabled: true,
@@ -32,28 +32,34 @@ const DEFAULT_INSTITUTE_DATA = {
   ],
   faculties: [
     {
-      name: "Dr. R. Mehta",
-      department: "Physics",
-      qualification: "PhD (Physics)",
-      photo: "https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=600&q=80",
+      name: "Peer Nisar Ahmad",
+      department: "Faculty",
+      qualification: "M.A., B.Ed.",
+      photo: "/faculty/Peer_Nisar_Ahmad.jpeg",
     },
     {
-      name: "Ms. S. Iyer",
-      department: "Mathematics",
-      qualification: "M.Sc, B.Ed",
-      photo: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80",
+      name: "Sajad Ahmad Dar",
+      department: "Faculty",
+      qualification: "M.A. (Economics), B.Ed.",
+      photo: "/faculty/Sajad_Ahmad_Dar.jpeg",
     },
     {
-      name: "Ms. N. Jan",
-      department: "Biology",
-      qualification: "M.Sc (Biology), B.Ed",
-      photo: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80",
+      name: "Mudassir Gulzar",
+      department: "Faculty",
+      qualification: "B.Ed., M.A., M.Phil.",
+      photo: "/faculty/Mudassir_Gulzar.jpeg",
     },
     {
-      name: "Mr. F. Ahmad",
-      department: "Humanities",
-      qualification: "M.A, B.Ed",
-      photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80",
+      name: "Aijaz Ahmad Rather",
+      department: "Faculty",
+      qualification: "M.Sc., B.Ed.",
+      photo: "/faculty/Aijaz_Ahmad_Rather.jpeg",
+    },
+    {
+      name: "Raies Ahmad Wani",
+      department: "Faculty",
+      qualification: "M.Sc. (EVS), M.A., M.Ed., NET, SET.",
+      photo: "/faculty/Raies_Ahmad_Wani.jpeg",
     },
   ],
   streams_subjects: [
@@ -71,7 +77,7 @@ const DEFAULT_INSTITUTE_DATA = {
     },
   ],
   staff: [
-    { name: "Mrs. K. Sharma", role: "Principal" },
+    { name: "Farooq Hussain Itoo", role: "Principal" },
     { name: "Mr. D. Verma", role: "Vice Principal" },
     { name: "Ms. L. Dsouza", role: "Counselor" },
     { name: "Mr. N. Patil", role: "Lab Assistant" },
@@ -102,7 +108,7 @@ const DEFAULT_INSTITUTE_DATA = {
         "Students seeking admission to Medical, Non-Medical, and Arts streams should complete the admission process within the announced dates.",
       image_url: "",
       link_label: "Open Admission Form",
-      link_url: "https://forms.google.com",
+      link_url: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
     },
     {
       id: "n-002",
@@ -217,6 +223,13 @@ const DEFAULT_INSTITUTE_DATA = {
 };
 
 const DEFAULT_STUDENTS = [
+  {
+    rollNumber: "230363",
+    password: "uzaib",
+    name: "Uzaib",
+    className: "Class XII",
+    stream: "Medical",
+  },
   {
     rollNumber: "GGHSS-XI-M-101",
     password: "medical101",
@@ -334,3 +347,8 @@ export function getStore() {
   resetRateLimitShape(store);
   return store;
 }
+
+
+
+
+

@@ -31,6 +31,39 @@ export const HOME_HIGHLIGHTS = {
   ],
 };
 
+export const FACULTY_FALLBACK = [
+  {
+    name: "Peer Nisar Ahmad",
+    department: "Faculty",
+    qualification: "M.A., B.Ed.",
+    photo: "/faculty/Peer_Nisar_Ahmad.jpeg",
+  },
+  {
+    name: "Sajad Ahmad Dar",
+    department: "Faculty",
+    qualification: "M.A. (Economics), B.Ed.",
+    photo: "/faculty/Sajad_Ahmad_Dar.jpeg",
+  },
+  {
+    name: "Mudassir Gulzar",
+    department: "Faculty",
+    qualification: "B.Ed., M.A., M.Phil.",
+    photo: "/faculty/Mudassir_Gulzar.jpeg",
+  },
+  {
+    name: "Aijaz Ahmad Rather",
+    department: "Faculty",
+    qualification: "M.Sc., B.Ed.",
+    photo: "/faculty/Aijaz_Ahmad_Rather.jpeg",
+  },
+  {
+    name: "Raies Ahmad Wani",
+    department: "Faculty",
+    qualification: "M.Sc. (EVS), M.A., M.Ed., NET, SET.",
+    photo: "/faculty/Raies_Ahmad_Wani.jpeg",
+  },
+];
+
 export const HOME_PROGRAMS = [
   {
     title: "Medical Stream",
@@ -88,7 +121,7 @@ export const HOME_RESOURCES = [
   {
     title: "Admission Updates",
     description: "Latest information for admissions, stream selection, and student entry requirements.",
-    href: "https://forms.google.com",
+    href: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
     label: "Open Admission",
   },
   {
@@ -124,7 +157,7 @@ export const NOTIFICATION_ITEMS = [
     summary: "Admission process is open for eligible students in the new academic session.",
     details:
       "Students seeking admission to Medical, Non-Medical, and Arts streams should complete the admission process within the announced dates.",
-    links: [{ label: "Open Admission Form", href: "https://forms.google.com" }],
+    links: [{ label: "Open Admission Form", href: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor" }],
   },
   {
     id: "n-002",
@@ -179,14 +212,14 @@ export const ADMISSION_CONTENT = {
     "Domicile or identity proof",
     "Recent passport-size photographs",
   ],
-  formUrl: "https://forms.google.com",
+  formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
 };
 
 export const ACADEMICS_CONTENT = {
   principal: {
-    name: "Mrs. K. Sharma",
+    name: "Farooq Hussain Itoo",
     message:
-      "At Government Girls Higher Secondary School, Sagam, we work to ensure that every girl receives quality education, confidence, and guidance for a bright future.",
+      "Welcome to the official website of Government Girls Higher Secondary School, Sagam. Our school is a place where creativity, ideas, and talents are encouraged to shine. We strive to nurture confident, responsible, and capable students who will contribute positively to society.",
   },
   teachers: [
     { name: "Dr. R. Mehta", department: "Physics", subject: "Non-Medical" },
@@ -219,7 +252,7 @@ export const ACADEMICS_CONTENT = {
   ],
   documents: [
     { label: "Academic Calendar", href: "https://example.com/academic-calendar.pdf" },
-    { label: "Admission Form", href: "https://forms.google.com" },
+    { label: "Admission Form", href: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor" },
     { label: "Scholarship Information", href: "https://example.com/scholarships" },
   ],
   events: [
@@ -249,15 +282,15 @@ export const ABOUT_PAGE_CONTENT = {
   principalDesk: {
     title: "Principal's Desk",
     message:
-      "Welcome to Government Girls Higher Secondary School, Sagam. Our institution is dedicated to girls' education, academic discipline, and the all-round development of every student preparing for higher secondary success.",
+      "Welcome to the official website of Government Girls Higher Secondary School, Sagam. Our school is a place where creativity, ideas, and talents are encouraged to shine. We strive to nurture confident, responsible, and capable students who will contribute positively to society.",
     priorities: [
-      "Strong academic guidance for Medical, Non-Medical, and Arts streams",
-      "Discipline, values, and confidence-building for young women",
-      "Support for scholarships, board preparation, and future studies",
+      "Encouraging students to explore their talents and build confidence",
+      "Striving for excellence in academics, values, and community life",
+      "Strengthening a vibrant learning community with teachers and students",
     ],
   },
   administration: [
-    "Principal: Mrs. K. Sharma",
+    "Principal: Farooq Hussain Itoo",
     "Vice Principal: Mr. D. Verma",
     "Counseling Support: Ms. L. Dsouza",
     "Library and Academic Support: Mrs. S. Raina",
@@ -334,4 +367,8 @@ export const ACADEMIC_MATERIALS = {
     },
   ],
 };
+
+
+
+
 

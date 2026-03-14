@@ -147,7 +147,7 @@ export default function AdmissionSection({ institute }) {
               rel="noreferrer"
               className="mt-5 inline-flex rounded-full bg-linear-to-r from-amber-400 to-yellow-500 px-5 py-3 text-sm font-extrabold text-slate-950 shadow-[0_16px_28px_rgba(212,166,70,0.26)] transition hover:-translate-y-0.5"
             >
-              Open Google Admission Form
+              Apply Now
             </a>
           </div>
 

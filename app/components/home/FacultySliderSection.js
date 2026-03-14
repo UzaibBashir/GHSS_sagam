@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
+import { FACULTY_FALLBACK } from "../../lib/siteContent";
 
 function initialsFor(name) {
   return String(name || "")
@@ -14,7 +15,7 @@ function initialsFor(name) {
 }
 
 export default function FacultySliderSection({ institute }) {
-  const faculties = institute?.faculties || [];
+  const faculties = institute?.faculties?.length ? institute.faculties : FACULTY_FALLBACK;
   const trackRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -121,6 +122,8 @@ export default function FacultySliderSection({ institute }) {
     </section>
   );
 }
+
+
 
 
 

@@ -40,7 +40,7 @@ function getControls(store) {
     notifications_page_enabled: Boolean(controls.notifications_page_enabled),
     academics_page_enabled: Boolean(controls.academics_page_enabled),
     admission_open: Boolean(controls.admission_open),
-    admission_form_url: store.instituteData.admission_form_url || "https://forms.google.com",
+    admission_form_url: store.instituteData.admission_form_url || "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
   };
 }
 

@@ -68,6 +68,7 @@ export default function HomeFooter({ institute }) {
     { label: "Admission", href: "/admission" },
     { label: "Notifications", href: "/notifications" },
     { label: "About Us", href: "/about" },
+    { label: "Admin Login", href: "/admin" },
   ];
 
   const streamLinks = [
@@ -182,3 +183,4 @@ export default function HomeFooter({ institute }) {
     </footer>
   );
 }
+

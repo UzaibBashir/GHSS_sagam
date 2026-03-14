@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function AboutContactSection({ institute }) {
   const contact = institute?.contact || {};
-  const formUrl = institute?.admission_form_url || "https://forms.google.com";
+  const formUrl = institute?.admission_form_url || "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor";
 
   const contactItems = [
     {

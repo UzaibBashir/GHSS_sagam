@@ -13,11 +13,12 @@ const STORAGE_KEY = "ghhs_student_token";
 const CLASS_OPTIONS = ["Class XI", "Class XII"];
 const STREAM_OPTIONS = ["Medical", "Non-Medical", "Arts"];
 
-async function fetchStudentSession(token) {
+async function fetchStudentSession(token, signal) {
   const response = await fetch(`${API_BASE}/student/session`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    signal,
   });
 
   const data = await response.json();
@@ -28,11 +29,12 @@ async function fetchStudentSession(token) {
   return data.student;
 }
 
-async function fetchAcademicContent(token) {
+async function fetchAcademicContent(token, signal) {
   const response = await fetch(`${API_BASE}/student/academics/content`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    signal,
   });
 
   const data = await response.json();
@@ -58,27 +60,43 @@ export default function AcademicsPage() {
   const [academicData, setAcademicData] = useState(null);
 
   useEffect(() => {
+    let isActive = true;
     const token = window.sessionStorage.getItem(STORAGE_KEY);
+
+    // Always unblock the UI quickly so the login form can appear.
+    setIsCheckingSession(false);
+
     if (!token) {
-      setIsCheckingSession(false);
       return;
     }
 
-    Promise.all([fetchStudentSession(token), fetchAcademicContent(token)])
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+    Promise.all([fetchStudentSession(token, controller.signal), fetchAcademicContent(token, controller.signal)])
       .then(([studentData, contentData]) => {
+        if (!isActive) return;
         setStudent(studentData);
         setAcademicData(contentData.academic_content || null);
         setClassName(studentData.className || CLASS_OPTIONS[0]);
         setStream(studentData.stream || STREAM_OPTIONS[0]);
         setStatus("");
       })
-      .catch((error) => {
+      .catch(() => {
+        if (!isActive) return;
         window.sessionStorage.removeItem(STORAGE_KEY);
         setStudent(null);
         setAcademicData(null);
-        setStatus(error.message);
       })
-      .finally(() => setIsCheckingSession(false));
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
+
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   const handleLogin = async (event) => {
@@ -251,5 +269,3 @@ export default function AcademicsPage() {
     </div>
   );
 }
-
-
