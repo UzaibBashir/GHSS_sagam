@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import {
   clearSessions,
   config,
@@ -639,3 +640,4 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+

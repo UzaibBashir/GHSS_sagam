@@ -16,7 +16,13 @@ export default function AdminLoginCard({
       <p className={MUTED_TEXT}>Secure login for school administration.</p>
 
       {!connected ? (
-        <div className="grid gap-3 max-w-xl">
+        <form
+          className="grid gap-3 max-w-xl"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onLogin();
+          }}
+        >
           <input
             placeholder="Admin ID"
             value={username}
@@ -30,10 +36,10 @@ export default function AdminLoginCard({
             onChange={(e) => onPasswordChange(e.target.value)}
             className={INPUT}
           />
-          <button onClick={onLogin} className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}>
+          <button type="submit" className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}>
             Login
           </button>
-        </div>
+        </form>
       ) : (
         <button className={`${DANGER_BUTTON} w-full justify-center sm:w-fit`} onClick={onLogout}>
           Logout

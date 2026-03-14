@@ -44,7 +44,7 @@ function hostAllowed(hostname, allowlist) {
   });
 }
 
-export function middleware(request) {
+export function proxy(request) {
   const response = NextResponse.next();
 
   const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
@@ -68,3 +68,4 @@ export function middleware(request) {
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
+

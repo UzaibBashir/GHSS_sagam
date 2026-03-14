@@ -61,6 +61,7 @@ export default function AdminPage() {
   }, [token, refreshDashboard]);
 
   const login = async () => {
+    setStatus("Logging in...");
     try {
       const data = await adminApi.login(username, password);
       setToken(data.token);
@@ -69,7 +70,7 @@ export default function AdminPage() {
       setStatus("Login successful.");
     } catch (error) {
       setConnected(false);
-      setStatus(toErrorMessage(error));
+      setStatus(`Login failed: ${toErrorMessage(error)}`);
     }
   };
 
