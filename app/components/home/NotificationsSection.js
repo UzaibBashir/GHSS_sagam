@@ -22,8 +22,8 @@ export default function NotificationsSection({ institute }) {
       className="rounded-[1.6rem] border border-slate-200/70 bg-white/85 p-6 shadow-[0_14px_32px_rgba(15,23,42,0.06)] max-md:p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="section-kicker">Notifications</p>
+        <div className="min-w-0">
+        <p className="section-kicker">Notifications</p>
           <h2 className="font-display mt-3 text-2xl font-semibold text-slate-950 max-md:text-xl">
             Latest school notices
           </h2>
@@ -46,7 +46,7 @@ export default function NotificationsSection({ institute }) {
             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-700 shadow-[0_6px_14px_rgba(15,23,42,0.04)]"
           >
             <div className="min-w-0">
-              <p className="m-0 text-xs font-semibold tracking-[0.12em] text-teal-700 uppercase">
+        <p className="m-0 text-xs font-semibold tracking-[0.12em] text-teal-700 uppercase">
                 {item.category || "Notice"}
               </p>
               <p className="m-0 mt-1 truncate text-sm font-semibold text-slate-900">
@@ -67,3 +67,6 @@ export default function NotificationsSection({ institute }) {
     </section>
   );
 }
+
+
+

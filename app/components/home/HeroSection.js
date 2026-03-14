@@ -79,7 +79,7 @@ export default function HeroSection({ institute }) {
       ))}
 
       <div className="relative flex h-full items-end p-8 max-md:p-4 max-sm:p-3">
-        <div className="h-auto w-auto max-w-none overflow-hidden rounded-2xl border border-white/20 bg-slate-950/45 px-1 py-1 pb-0 text-white shadow-[0_10px_30px_rgba(2,6,23,0.25)] sm:w-full sm:max-w-[24rem] md:h-auto md:px-2.5 md:py-2 md:pb-1.5">
+        <div className="h-auto w-full max-w-full overflow-hidden rounded-2xl border border-white/20 bg-slate-950/45 px-1 py-1 pb-0 text-white shadow-[0_10px_30px_rgba(2,6,23,0.25)] sm:max-w-[24rem] md:h-auto md:px-2.5 md:py-2 md:pb-1.5">
           <p className="inline-flex rounded-full border border-amber-200/65 bg-amber-300/90 px-2 py-0.5 text-[0.48rem] font-bold tracking-[0.04em] sm:text-[0.62rem] sm:tracking-[0.08em] text-slate-900 uppercase">
             Admissions Open 2026
           </p>
@@ -122,6 +122,7 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
+
 
 
 

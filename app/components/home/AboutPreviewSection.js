@@ -9,7 +9,7 @@ export default function AboutPreviewSection({ institute }) {
   return (
     <section className="grid gap-6 rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f7fbff_42%,#edf6ff_100%)] p-6 shadow-[0_10px_24px_rgba(15,23,42,0.06)] max-md:p-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-3xl">
+        <div className="min-w-0 max-w-3xl">
           <p className="text-xs font-black tracking-[0.28em] text-sky-700 uppercase">
             About The Institute
           </p>
@@ -70,3 +70,4 @@ export default function AboutPreviewSection({ institute }) {
     </section>
   );
 }
+

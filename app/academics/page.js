@@ -153,71 +153,71 @@ export default function AcademicsPage() {
             Checking academic session...
           </section>
         ) : !student ? (
-          <section id="student-login" className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <article className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.14)] max-md:p-4 max-sm:rounded-[1.4rem]">
-              <p className="text-[0.7rem] font-extrabold tracking-[0.16em] text-amber-300 uppercase">Student Login</p>
-              <h2 className="font-display mt-4 text-3xl font-semibold max-md:text-2xl max-sm:text-[1.4rem]">
+          <section id="student-login">
+            <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 max-sm:rounded-[1.4rem]">
+              <p className="text-[0.7rem] font-extrabold tracking-[0.16em] text-amber-700 uppercase">Student Login</p>
+              <h2 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl max-sm:text-[1.4rem]">
                 Academic materials are available after student sign-in
               </h2>
-              <p className="mt-3 text-sm leading-7 text-slate-200 max-sm:text-[0.85rem] max-sm:leading-6">
+              <p className="mt-3 text-sm leading-7 text-slate-600 max-sm:text-[0.85rem] max-sm:leading-6">
                 Enter the assigned roll number, choose your class and stream, and then provide the password issued by the school.
               </p>
-              <div className="mt-6 rounded-[1.4rem] border border-white/12 bg-white/8 p-4 text-sm text-slate-200 max-sm:p-3">
-                <p className="font-bold text-white">Access note</p>
+              <div className="mt-4 rounded-[1.2rem] border border-amber-200/70 bg-amber-50/80 p-4 text-sm text-amber-900 max-sm:p-3">
+                <p className="font-bold">Access note</p>
                 <p className="mt-2 leading-6 max-sm:text-[0.85rem]">
                   If a student has not yet received login details, please contact the school office or use the About page contact section for assistance.
                 </p>
               </div>
-            </article>
 
-            <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 max-sm:rounded-[1.4rem]">
-              <p className="section-kicker">Login Form</p>
-              <h3 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl max-sm:text-[1.35rem]">Sign in to continue</h3>
-              <form className="mt-6 grid gap-3" onSubmit={handleLogin}>
-                <input
-                  value={rollNumber}
-                  onChange={(event) => setRollNumber(event.target.value)}
-                  placeholder="Roll Number"
-                  className={INPUT}
-                  required
-                />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <select
-                    value={className}
-                    onChange={(event) => setClassName(event.target.value)}
+              <div className="mt-6">
+                <p className="section-kicker">Login Form</p>
+                <h3 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl max-sm:text-[1.35rem]">Sign in to continue</h3>
+                <form className="mt-6 grid gap-3" onSubmit={handleLogin}>
+                  <input
+                    value={rollNumber}
+                    onChange={(event) => setRollNumber(event.target.value)}
+                    placeholder="Roll Number"
                     className={INPUT}
-                  >
-                    {CLASS_OPTIONS.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={stream}
-                    onChange={(event) => setStream(event.target.value)}
+                    required
+                  />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <select
+                      value={className}
+                      onChange={(event) => setClassName(event.target.value)}
+                      className={INPUT}
+                    >
+                      {CLASS_OPTIONS.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={stream}
+                      onChange={(event) => setStream(event.target.value)}
+                      className={INPUT}
+                    >
+                      {STREAM_OPTIONS.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Password"
                     className={INPUT}
-                  >
-                    {STREAM_OPTIONS.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Password"
-                  className={INPUT}
-                  required
-                />
-                <button type="submit" className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}>
-                  Login To Academics
-                </button>
-              </form>
-              {status ? <p className="mt-4 text-sm text-slate-600">{status}</p> : null}
+                    required
+                  />
+                  <button type="submit" className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}>
+                    Login To Academics
+                  </button>
+                </form>
+                {status ? <p className="mt-4 text-sm text-slate-600">{status}</p> : null}
+              </div>
             </article>
           </section>
         ) : (
@@ -251,3 +251,5 @@ export default function AcademicsPage() {
     </div>
   );
 }
+
+

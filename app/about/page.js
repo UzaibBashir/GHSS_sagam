@@ -80,7 +80,7 @@ export default function AboutPage() {
             <h2 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">
               Leadership rooted in care, discipline, and aspiration
             </h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600 marquee-text"><span>{ABOUT_PAGE_CONTENT.principalDesk.message}</span></p>
+            <p className="mt-3 text-sm leading-7 text-slate-600 overflow-hidden whitespace-nowrap"><span className="marquee-track">{ABOUT_PAGE_CONTENT.principalDesk.message}</span></p>
             <ul className="mt-5 grid gap-3">
               {ABOUT_PAGE_CONTENT.principalDesk.priorities.map((item) => (
                 <li key={item} className="rounded-[1.2rem] border border-slate-200/70 bg-white/82 px-4 py-3 text-sm text-slate-700">
@@ -182,6 +182,7 @@ export default function AboutPage() {
     </div>
   );
 }
+
 
 
 

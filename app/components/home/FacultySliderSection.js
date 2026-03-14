@@ -37,7 +37,7 @@ export default function FacultySliderSection({ institute }) {
   return (
     <section className="grid gap-5 overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#f8fbff_0%,#eef7ff_50%,#fef6ec_100%)] p-6 shadow-[0_12px_30px_rgba(15,23,42,0.08)] max-md:p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-black tracking-[0.28em] text-sky-700 uppercase">
             Meet Our Faculty
           </p>
@@ -67,7 +67,7 @@ export default function FacultySliderSection({ institute }) {
 
       <div
         ref={trackRef}
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {faculties.map((faculty, index) => (
           <article
@@ -121,3 +121,6 @@ export default function FacultySliderSection({ institute }) {
     </section>
   );
 }
+
+
+

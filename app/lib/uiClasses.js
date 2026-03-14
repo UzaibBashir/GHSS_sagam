@@ -1,5 +1,5 @@
 export const PAGE_MAIN =
-  "mx-auto grid w-[min(1180px,calc(100%-2rem))] gap-8 py-8 pb-14 max-md:gap-6 max-md:py-5 max-md:pb-9 max-sm:w-[min(1180px,calc(100%-1rem))]";
+  "mx-auto grid min-w-0 w-[min(1180px,calc(100%-2rem))] overflow-x-hidden gap-8 py-8 pb-14 max-md:gap-6 max-md:py-5 max-md:pb-9 max-sm:w-[min(1180px,calc(100%-1rem))]";
 
 export const CARD =
   "glass-panel grid gap-4 rounded-[1.75rem] border border-white/65 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/45 max-md:rounded-[1.35rem] max-md:p-4";
@@ -20,3 +20,4 @@ export const CTA_LINK =
 
 export const DANGER_BUTTON =
   "inline-flex w-fit items-center justify-center rounded-full bg-linear-to-r from-red-700 to-rose-700 px-5 py-3 font-bold text-white shadow-[0_14px_24px_rgba(185,28,28,0.24)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_rgba(185,28,28,0.3)]";
+
