@@ -18,6 +18,10 @@ export const config = {
   lockoutSeconds: Number(process.env.ADMIN_LOCKOUT_SECONDS || 60 * 5),
   sessionSecret: process.env.ADMIN_SESSION_SECRET || "",
   allowedHosts: parseCsv(process.env.ALLOWED_HOSTS, "localhost,127.0.0.1,.vercel.app"),
+  rateLimitWindowSeconds: Number(process.env.RATE_LIMIT_WINDOW_SECONDS || 60),
+  adminRateLimit: Number(process.env.ADMIN_RATE_LIMIT || 8),
+  studentRateLimit: Number(process.env.STUDENT_RATE_LIMIT || 10),
+  contactRateLimit: Number(process.env.CONTACT_RATE_LIMIT || 5),
 };
 
 function secureEquals(a, b) {

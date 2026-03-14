@@ -1,11 +1,11 @@
 import { randomBytes } from "node:crypto";
 
-export function json(data, status = 200) {
-  return Response.json(data, { status });
+export function json(data, status = 200, headers = undefined) {
+  return Response.json(data, { status, headers });
 }
 
-export function error(detail, status = 400) {
-  return json({ detail }, status);
+export function error(detail, status = 400, headers = undefined) {
+  return json({ detail }, status, headers);
 }
 
 export function createId(prefix) {

@@ -1,4 +1,19 @@
 /** @type {import("next").NextConfig} */
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "img-src 'self' data: blob: https://images.unsplash.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "script-src 'self' 'unsafe-inline'",
+  "connect-src 'self'",
+  "frame-src https://maps.google.com https://www.google.com",
+  "form-action 'self'",
+  "object-src 'none'",
+  "worker-src 'self' blob:",
+].join("; ");
+
 const securityHeaders = [
   {
     key: "X-Content-Type-Options",
@@ -23,6 +38,10 @@ const securityHeaders = [
   {
     key: "Cross-Origin-Resource-Policy",
     value: "same-origin",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: contentSecurityPolicy,
   },
 ];
 

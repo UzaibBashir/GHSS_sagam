@@ -244,6 +244,7 @@ const DEFAULT_STATE = {
   contacts: [],
   adminSessions: {},
   loginFailures: {},
+  rateLimits: {},
   students: structuredClone(DEFAULT_STUDENTS),
   instituteData: structuredClone(DEFAULT_INSTITUTE_DATA),
 };
@@ -281,6 +282,45 @@ function resetStudentShape(store) {
   }
 }
 
+function resetRateLimitShape(store) {
+  if (!store.rateLimits || typeof store.rateLimits !== "object") {
+    store.rateLimits = {};
+  }
+}
+
+function getRateLimitBucket(store, key, windowSeconds) {
+  const now = Date.now();
+  const existing = store.rateLimits[key];
+
+  if (existing && now <= existing.resetAt) {
+    return existing;
+  }
+
+  const bucket = {
+    count: 0,
+    resetAt: now + windowSeconds * 1000,
+  };
+
+  store.rateLimits[key] = bucket;
+  return bucket;
+}
+
+export function checkRateLimit(store, key, limit, windowSeconds) {
+  if (!limit || limit <= 0) {
+    return { ok: true, remaining: 0, retryAfter: 0 };
+  }
+
+  const bucket = getRateLimitBucket(store, key, windowSeconds);
+  bucket.count += 1;
+
+  if (bucket.count > limit) {
+    const retryAfter = Math.max(1, Math.ceil((bucket.resetAt - Date.now()) / 1000));
+    return { ok: false, remaining: 0, retryAfter };
+  }
+
+  return { ok: true, remaining: Math.max(0, limit - bucket.count), retryAfter: 0 };
+}
+
 export function getStore() {
   const globalStoreKey = "__ghhs_store_v1__";
   if (!globalThis[globalStoreKey]) {
@@ -291,5 +331,6 @@ export function getStore() {
   resetControlsShape(store);
   resetContentShape(store);
   resetStudentShape(store);
+  resetRateLimitShape(store);
   return store;
 }

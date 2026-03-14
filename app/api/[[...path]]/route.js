@@ -3,13 +3,14 @@ import {
   config,
   createSession,
   ensureSecureConfig,
+  getClientIp,
   getOrCreateLoginBucket,
   makeLoginBucketKey,
   verifyAdminCredentials,
   verifyStudentCredentials,
   verifyToken,
 } from "../_lib/auth";
-import { getStore } from "../_lib/store";
+import { checkRateLimit, getStore } from "../_lib/store";
 import {
   assertNonEmpty,
   assertOptionalHttpUrl,
@@ -87,6 +88,19 @@ function ensureUniqueRollNumber(students, rollNumber, currentRollNumber = "") {
   if (duplicate) {
     throw new Error("A student with this roll number already exists.");
   }
+}
+
+function rateLimitOrReject(store, request, keyPrefix, limit) {
+  const key = `${keyPrefix}:${getClientIp(request)}`;
+  const result = checkRateLimit(store, key, limit, config.rateLimitWindowSeconds);
+
+  if (!result.ok) {
+    return error("Too many requests. Please try again shortly.", 429, {
+      "Retry-After": String(result.retryAfter),
+    });
+  }
+
+  return null;
 }
 
 export async function GET(request, context) {
@@ -203,6 +217,11 @@ export async function POST(request, context) {
   const store = getStore();
 
   if (path[0] === "contact" && path.length === 1) {
+    const rateError = rateLimitOrReject(store, request, "contact", config.contactRateLimit);
+    if (rateError) {
+      return rateError;
+    }
+
     try {
       const payload = await parseJsonBody(request);
       const contact = {
@@ -220,6 +239,11 @@ export async function POST(request, context) {
   }
 
   if (path[0] === "student" && path[1] === "login" && path.length === 2) {
+    const rateError = rateLimitOrReject(store, request, "student-login", config.studentRateLimit);
+    if (rateError) {
+      return rateError;
+    }
+
     try {
       const payload = await parseJsonBody(request);
       const rollNumber = String(payload.rollNumber || "").trim();
@@ -248,6 +272,11 @@ export async function POST(request, context) {
       ensureSecureConfig();
     } catch (err) {
       return safeAdminError(err);
+    }
+
+    const rateError = rateLimitOrReject(store, request, "admin-login", config.adminRateLimit);
+    if (rateError) {
+      return rateError;
     }
 
     try {

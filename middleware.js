@@ -44,19 +44,8 @@ function hostAllowed(hostname, allowlist) {
   });
 }
 
-export function proxy(request) {
+export function middleware(request) {
   const response = NextResponse.next();
-
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
-
-  if ((process.env.ENVIRONMENT || process.env.NODE_ENV) === "production") {
-    response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  }
 
   const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
   const hostName = normalizeHost(hostHeader);
@@ -64,6 +53,13 @@ export function proxy(request) {
 
   if (hostName && !hostAllowed(hostName, allowedHosts)) {
     return new NextResponse("Invalid host header", { status: 400 });
+  }
+
+  const environment = (process.env.ENVIRONMENT || process.env.NODE_ENV || "").toLowerCase();
+  const isProduction = environment === "production" || process.env.VERCEL_ENV === "production";
+
+  if (isProduction) {
+    response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   }
 
   return response;

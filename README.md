@@ -24,9 +24,10 @@ Examples:
 
 - Admin token auth with expiry
 - Login lockout after repeated failures
-- Single active admin session (new login invalidates old session)
-- Host allowlist validation via `ALLOWED_HOSTS`
-- Secure response headers via `middleware.js`
+- Per-IP rate limits for contact and login endpoints
+- Host allowlist validation via `middleware.js`
+- Security headers + CSP via `next.config.mjs`
+- HSTS in production via middleware
 - Production guard for weak admin secrets
 
 ## Environment variables
@@ -40,6 +41,11 @@ Copy `.env.example` to `.env.local` and set secure values:
 - `ADMIN_TOKEN_TTL_SECONDS`
 - `ADMIN_FAILED_LOGIN_LIMIT`
 - `ADMIN_LOCKOUT_SECONDS`
+- `STUDENT_TOKEN_TTL_SECONDS`
+- `RATE_LIMIT_WINDOW_SECONDS`
+- `ADMIN_RATE_LIMIT`
+- `STUDENT_RATE_LIMIT`
+- `CONTACT_RATE_LIMIT`
 - `ALLOWED_HOSTS`
 - `NEXT_PUBLIC_API_URL` (keep `/api` unless intentionally externalized)
 
@@ -66,6 +72,10 @@ npm run build
 3. Root directory: repository root.
 4. Add the environment variables above in Vercel Project Settings.
 5. Deploy.
+
+## Note about in-memory data
+
+Admin edits and student logins are stored in memory. For long-term persistence, connect a database or external storage.
 
 ## Note about legacy locked folders
 
