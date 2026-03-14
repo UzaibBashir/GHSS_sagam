@@ -55,16 +55,12 @@ export default function AcademicsPage() {
   const [className, setClassName] = useState(CLASS_OPTIONS[0]);
   const [stream, setStream] = useState(STREAM_OPTIONS[0]);
   const [status, setStatus] = useState("");
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [student, setStudent] = useState(null);
   const [academicData, setAcademicData] = useState(null);
 
   useEffect(() => {
     let isActive = true;
     const token = window.sessionStorage.getItem(STORAGE_KEY);
-
-    // Always unblock the UI quickly so the login form can appear.
-    setIsCheckingSession(false);
 
     if (!token) {
       return;
@@ -165,10 +161,6 @@ export default function AcademicsPage() {
           <section className="rounded-[2rem] border border-amber-300/70 bg-amber-50/90 p-6 text-amber-900 shadow-[0_18px_36px_rgba(217,119,6,0.12)]">
             <h1 className="text-xl font-extrabold">Academics Page Disabled</h1>
             <p className="mt-2 text-sm">This page is currently disabled by the administrator.</p>
-          </section>
-        ) : isCheckingSession ? (
-          <section className="glass-panel rounded-[2rem] border border-white/75 p-6 text-sm text-slate-600 shadow-[0_20px_50px_rgba(15,23,42,0.07)]">
-            Checking academic session...
           </section>
         ) : !student ? (
           <section id="student-login">
