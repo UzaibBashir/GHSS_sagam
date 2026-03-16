@@ -5,6 +5,8 @@ const EMPTY_NOTICE = {
   headline: "",
   description: "",
   time: "",
+  class_name: "",
+  stream: "",
   image_url: "",
   link_label: "",
   link_url: "",
@@ -42,6 +44,20 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
         onChange={(event) => setDraft((prev) => ({ ...prev, time: event.target.value }))}
         placeholder="Time"
       />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <input
+          className={INPUT}
+          value={draft.class_name}
+          onChange={(event) => setDraft((prev) => ({ ...prev, class_name: event.target.value }))}
+          placeholder="Class"
+        />
+        <input
+          className={INPUT}
+          value={draft.stream}
+          onChange={(event) => setDraft((prev) => ({ ...prev, stream: event.target.value }))}
+          placeholder="Stream"
+        />
+      </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <input
           className={INPUT}
@@ -222,6 +238,20 @@ export default function AcademicsManager({
         <div className="grid gap-2 sm:grid-cols-2">
           <input
             className={INPUT}
+            value={noticeForm.class_name}
+            onChange={(event) => setNoticeForm((prev) => ({ ...prev, class_name: event.target.value }))}
+            placeholder="Class"
+          />
+          <input
+            className={INPUT}
+            value={noticeForm.stream}
+            onChange={(event) => setNoticeForm((prev) => ({ ...prev, stream: event.target.value }))}
+            placeholder="Stream"
+          />
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <input
+            className={INPUT}
             value={noticeForm.image_url}
             onChange={(event) => setNoticeForm((prev) => ({ ...prev, image_url: event.target.value }))}
             placeholder="Image URL"
@@ -329,3 +359,13 @@ export default function AcademicsManager({
     </section>
   );
 }
+
+
+
+
+
+
+
+
+
+

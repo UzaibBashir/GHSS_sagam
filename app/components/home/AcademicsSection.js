@@ -36,6 +36,11 @@ export default function AcademicsSection({ institute, studentContext = null }) {
   const activeStream =
     lockedStream || (streamOptions.includes(selectedStream) ? selectedStream : streamOptions[0] || "");
 
+  const filteredNoticeboard = useMemo(
+    () => noticeboard.filter((item) => item.class_name === activeClass && item.stream === activeStream),
+    [noticeboard, activeClass, activeStream]
+  );
+
   const selectedStreamData = useMemo(
     () => selectedClassData?.streams.find((stream) => stream.stream === activeStream),
     [selectedClassData, activeStream]
@@ -129,8 +134,8 @@ export default function AcademicsSection({ institute, studentContext = null }) {
           <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-amber-300 uppercase">Noticeboard</p>
           <h3 className="font-display mt-3 text-2xl font-semibold">Today&apos;s academic reminders</h3>
           <div className="mt-5 grid gap-3">
-            {noticeboard.length ? (
-              noticeboard.map((item) => (
+            {filteredNoticeboard.length ? (
+              filteredNoticeboard.map((item) => (
                 <article key={item.id} className="rounded-[1.3rem] border border-white/12 bg-white/8 p-4">
                   <p className="text-xs font-bold tracking-[0.14em] text-amber-200 uppercase">{item.time}</p>
                   <p className="mt-2 text-base font-bold text-white">{item.headline}</p>
@@ -219,3 +224,5 @@ export default function AcademicsSection({ institute, studentContext = null }) {
     </section>
   );
 }
+
+

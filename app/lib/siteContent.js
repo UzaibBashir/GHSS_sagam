@@ -62,6 +62,18 @@ export const FACULTY_FALLBACK = [
     qualification: "M.Sc. (EVS), M.A., M.Ed., NET, SET.",
     photo: "/faculty/Raies_Ahmad_Wani.jpeg",
   },
+  {
+    name: "Ashak Hussain Bhat",
+    department: "Faculty",
+    qualification: "MA, MPhil, BEd, NET, SET",
+    photo: "/faculty/Ashak_Hussain_Khan.jpeg",
+  },
+  {
+    name: "Muzafar Rashid Khan",
+    department: "Faculty",
+    qualification: "MSc Zoology, MA Political Science, BEd",
+    photo: "/faculty/Muzafar_Rashid_Khan.jpeg",
+  },
 ];
 
 export const HOME_PROGRAMS = [
@@ -367,6 +379,9 @@ export const ACADEMIC_MATERIALS = {
     },
   ],
 };
+
+
+
 
 
 

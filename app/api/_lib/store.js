@@ -61,6 +61,18 @@ const DEFAULT_INSTITUTE_DATA = {
       qualification: "M.Sc. (EVS), M.A., M.Ed., NET, SET.",
       photo: "/faculty/Raies_Ahmad_Wani.jpeg",
     },
+    {
+      name: "Ashak Hussain Bhat",
+      department: "Faculty",
+      qualification: "MA, MPhil, BEd, NET, SET",
+      photo: "/faculty/Ashak_Hussain_Khan.jpeg",
+    },
+    {
+      name: "Muzafar Rashid Khan",
+      department: "Faculty",
+      qualification: "MSc Zoology, MA Political Science, BEd",
+      photo: "/faculty/Muzafar_Rashid_Khan.jpeg",
+    },
   ],
   streams_subjects: [
     {
@@ -131,6 +143,8 @@ const DEFAULT_INSTITUTE_DATA = {
         description:
           "Students and parents can contact the school for support regarding admissions, stream placement, and scholarship documentation.",
         time: "09:00 AM",
+        class_name: "Class XI",
+        stream: "Medical",
         image_url: "",
         link_label: "Support Details",
         link_url: "https://example.com/scholarships",
@@ -289,6 +303,31 @@ function resetContentShape(store) {
   }
 }
 
+function resetFacultyShape(store) {
+  const defaults = DEFAULT_INSTITUTE_DATA.faculties || [];
+
+  if (!Array.isArray(store.instituteData.faculties)) {
+    store.instituteData.faculties = structuredClone(defaults);
+    return;
+  }
+
+  for (const item of defaults) {
+    const index = store.instituteData.faculties.findIndex(
+      (faculty) =>
+        (faculty.name && faculty.name === item.name) ||
+        (faculty.photo && item.photo && faculty.photo === item.photo)
+    );
+
+    if (index === -1) {
+      store.instituteData.faculties.push(structuredClone(item));
+    } else {
+      store.instituteData.faculties[index] = {
+        ...store.instituteData.faculties[index],
+        ...structuredClone(item),
+      };
+    }
+  }
+}
 function resetStudentShape(store) {
   if (!Array.isArray(store.students) || !store.students.length) {
     store.students = structuredClone(DEFAULT_STUDENTS);
@@ -343,10 +382,20 @@ export function getStore() {
   const store = globalThis[globalStoreKey];
   resetControlsShape(store);
   resetContentShape(store);
+  resetFacultyShape(store);
   resetStudentShape(store);
   resetRateLimitShape(store);
   return store;
 }
+
+
+
+
+
+
+
+
+
 
 
 

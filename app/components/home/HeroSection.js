@@ -36,6 +36,26 @@ export default function HeroSection({ institute }) {
         title: "A Safe And Supportive Campus",
         subtitle: "A disciplined and encouraging environment where every learner is respected and inspired.",
       },
+      {
+        src: "/slideshow/slide6.jpeg",
+        title: "Focused Classroom Learning",
+        subtitle: "Daily lessons that build confidence, clarity, and subject mastery.",
+      },
+      {
+        src: "/slideshow/slide7.jpeg",
+        title: "Learning Beyond The Classroom",
+        subtitle: "Co-curricular activities that nurture leadership, teamwork, and creativity.",
+      },
+      {
+        src: "/slideshow/slide8.jpeg",
+        title: "Guidance For Every Stream",
+        subtitle: "Academic support tailored for Medical, Non-Medical, and Arts students.",
+      },
+      {
+        src: "/slideshow/slide9.jpeg",
+        title: "Building Bright Futures",
+        subtitle: "A caring school community committed to student success and wellbeing.",
+      },
     ],
     [institute]
   );
@@ -122,6 +142,7 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
+
 
 
 

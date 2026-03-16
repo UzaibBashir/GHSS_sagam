@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ACADEMICS_CONTENT, ABOUT_PAGE_CONTENT } from "../../lib/siteContent";
 
 export default function PrincipalMessageFlash({ institute }) {
@@ -25,14 +26,20 @@ export default function PrincipalMessageFlash({ institute }) {
         <div className="rounded-full border border-amber-300/80 bg-amber-500 px-4 py-2 text-xs font-black tracking-[0.22em] text-white uppercase shadow-[0_8px_18px_rgba(217,119,6,0.25)] max-sm:px-3 max-sm:py-1.5 max-sm:text-[0.62rem] max-sm:tracking-[0.18em]">
           Principal&apos;s Message
         </div>
-        <div className="w-full">
-          <p className="text-lg font-black text-slate-900 max-md:text-base max-sm:text-[0.95rem]">{principalName}</p>
-          <p className="mt-2 text-sm leading-7 text-slate-700 max-md:leading-6 max-sm:text-[0.82rem] max-sm:leading-5">{principalMessage}</p>
+        <div className="flex w-full flex-wrap items-center gap-4 max-sm:gap-3">
+          <div className="relative h-16 w-16 overflow-hidden rounded-full border border-amber-300/70 bg-white shadow-[0_10px_22px_rgba(217,119,6,0.25)] max-sm:h-14 max-sm:w-14">
+            <Image src="/Principal.jpeg" alt={principalName} fill sizes="64px" className="object-cover" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-lg font-black text-slate-900 max-md:text-base max-sm:text-[0.95rem]">{principalName}</p>
+            <p className="mt-2 text-sm leading-7 text-slate-700 max-md:leading-6 max-sm:text-[0.82rem] max-sm:leading-5">{principalMessage}</p>
+          </div>
         </div>
       </div>
     </section>
   );
 }
+
 
 
 

@@ -141,6 +141,16 @@ export async function GET(request, context) {
     }
 
     if (path[1] === "academics" && path[2] === "content" && path.length === 3) {
+      const academicContent = store.instituteData.academic_content || {};
+      const className = verified.session.className;
+      const stream = verified.session.stream;
+      const filteredMaterials = (academicContent.materials || [])
+        .filter((item) => item.class_name === className)
+        .map((item) => ({
+          ...item,
+          streams: (item.streams || []).filter((streamItem) => streamItem.stream === stream),
+        }));
+
       return json({
         student: {
           rollNumber: verified.session.rollNumber,
@@ -148,7 +158,16 @@ export async function GET(request, context) {
           className: verified.session.className,
           stream: verified.session.stream,
         },
-        academic_content: store.instituteData.academic_content,
+        academic_content: {
+          ...academicContent,
+          noticeboard: (academicContent.noticeboard || []).filter(
+            (item) => item.class_name === className && item.stream === stream
+          ),
+          timetable: (academicContent.timetable || []).filter(
+            (item) => item.class_name === className && item.stream === stream
+          ),
+          materials: filteredMaterials,
+        },
       });
     }
 
@@ -376,6 +395,8 @@ export async function POST(request, context) {
         headline: assertNonEmpty("Headline", payload.headline),
         description: assertNonEmpty("Description", payload.description),
         time: assertNonEmpty("Time", payload.time),
+        class_name: assertNonEmpty("Class", payload.class_name),
+        stream: assertNonEmpty("Stream", payload.stream),
         image_url: assertOptionalHttpUrl("Image URL", payload.image_url),
         link_label: String(payload.link_label || "").trim(),
         link_url: assertOptionalHttpUrl("Link URL", payload.link_url),
@@ -520,6 +541,8 @@ export async function PUT(request, context) {
       if (payload.headline !== undefined) current.headline = assertNonEmpty("Headline", payload.headline);
       if (payload.description !== undefined) current.description = assertNonEmpty("Description", payload.description);
       if (payload.time !== undefined) current.time = assertNonEmpty("Time", payload.time);
+      if (payload.class_name !== undefined) current.class_name = assertNonEmpty("Class", payload.class_name);
+      if (payload.stream !== undefined) current.stream = assertNonEmpty("Stream", payload.stream);
       if (payload.image_url !== undefined) current.image_url = assertOptionalHttpUrl("Image URL", payload.image_url);
       if (payload.link_label !== undefined) current.link_label = String(payload.link_label || "").trim();
       if (payload.link_url !== undefined) current.link_url = assertOptionalHttpUrl("Link URL", payload.link_url);
@@ -640,4 +663,16 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
