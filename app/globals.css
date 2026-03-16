@@ -131,3 +131,21 @@ select {
 
 
 
+
+.admin-scrollbar::-webkit-scrollbar {
+  height: 10px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.6);
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.admin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.35) rgba(226, 232, 240, 0.6);
+}

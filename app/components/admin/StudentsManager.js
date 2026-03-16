@@ -171,7 +171,7 @@ export default function StudentsManager({ students, onAdd, onSave, onRemove }) {
       </article>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full border-collapse text-sm">
+        <table className="w-full min-w-[720px] table-fixed border-collapse text-xs sm:text-sm">
           <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2">Roll number</th>
@@ -192,3 +192,4 @@ export default function StudentsManager({ students, onAdd, onSave, onRemove }) {
     </section>
   );
 }
+

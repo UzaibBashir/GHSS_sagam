@@ -23,7 +23,7 @@ export default function EnquiriesManager({ contacts, onClearContacts }) {
         <div className={`${ADMIN_SUBCARD} mt-4 text-sm text-slate-600`}>No enquiries found.</div>
       ) : (
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full border-collapse text-sm">
+          <table className="w-full min-w-[720px] table-fixed border-collapse text-xs sm:text-sm">
             <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2">Name</th>
@@ -36,11 +36,11 @@ export default function EnquiriesManager({ contacts, onClearContacts }) {
             <tbody>
               {contacts.map((item, index) => (
                 <tr key={`${item.email}-${index}`} className="border-t border-slate-200">
-                  <td className="px-3 py-2 font-semibold text-slate-900">{item.full_name}</td>
+                  <td className="px-3 py-2 font-semibold text-slate-900 break-words">{item.full_name}</td>
                   <td className="px-3 py-2 break-all text-slate-700">{item.email}</td>
-                  <td className="px-3 py-2 text-slate-700">{item.phone}</td>
-                  <td className="px-3 py-2 text-slate-700">{item.program_interest}</td>
-                  <td className="px-3 py-2 text-slate-600">{item.message}</td>
+                  <td className="px-3 py-2 text-slate-700 break-words">{item.phone}</td>
+                  <td className="px-3 py-2 text-slate-700 break-words">{item.program_interest}</td>
+                  <td className="px-3 py-2 text-slate-600 break-words">{item.message}</td>
                 </tr>
               ))}
             </tbody>
@@ -50,3 +50,4 @@ export default function EnquiriesManager({ contacts, onClearContacts }) {
     </section>
   );
 }
+

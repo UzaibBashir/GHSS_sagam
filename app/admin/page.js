@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AcademicsManager from "../components/admin/AcademicsManager";
 import AdminLoginCard from "../components/admin/AdminLoginCard";
 import ControlsManager from "../components/admin/ControlsManager";
@@ -96,6 +96,7 @@ export default function AdminPage() {
   const [downloads, setDownloads] = useState([]);
   const [institute, setInstitute] = useState(defaultInstitute);
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
+  const navScrollRef = useRef(null);
 
   const adminApi = useAdminApi(token);
 
@@ -397,6 +398,13 @@ export default function AdminPage() {
     [contacts.length, downloads.length, notificationItems.length, notices.length, students.length]
   );
 
+  const scrollNav = (direction) => {
+    const node = navScrollRef.current;
+    if (!node) return;
+    const amount = direction === "left" ? -320 : 320;
+    node.scrollTo({ left: node.scrollLeft + amount, behavior: "smooth" });
+  };
+
   const activePane = useMemo(() => {
     switch (activeSection) {
       case "controls":
@@ -519,7 +527,7 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <div className="mt-6 grid gap-6">
+        <div className="mt-6 grid gap-6 min-w-0">
           <AdminLoginCard
             connected={connected}
             username={username}
@@ -550,26 +558,51 @@ export default function AdminPage() {
                 </div>
               </section>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Navigate</p>
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
-                  {SECTIONS.map((item) => (
+              <div className="sticky top-4 z-20 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur max-sm:top-2">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Navigate</p>
+                  <div className="flex gap-2">
                     <button
-                      key={item.id}
-                      onClick={() => setActiveSection(item.id)}
-                      className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                        activeSection === item.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
-                      }`}
+                      type="button"
+                      onClick={() => scrollNav("left")}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[0.7rem] font-semibold text-slate-600 hover:border-slate-400"
                     >
-                      {item.label}
+                      Prev
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => scrollNav("right")}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[0.7rem] font-semibold text-slate-600 hover:border-slate-400"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+                <div className="relative mt-3">
+                  <div
+                    ref={navScrollRef}
+                    className="admin-scrollbar max-w-full overflow-x-auto scroll-smooth pb-2 pr-2"
+                  >
+                    <div className="flex min-w-max gap-2 snap-x snap-mandatory">
+                      {SECTIONS.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveSection(item.id)}
+                          className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition snap-start ${
+                            activeSection === item.id
+                              ? "border-slate-900 bg-slate-900 text-white"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {activePane}
+              <div className="min-w-0 max-w-full overflow-hidden">{activePane}</div>
             </>
           ) : null}
         </div>
@@ -577,3 +610,12 @@ export default function AdminPage() {
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
