@@ -1,30 +1,50 @@
-import { AUTO_FIT_GRID, CARD, DANGER_BUTTON, MUTED_TEXT } from "../../lib/uiClasses";
+import {
+  ADMIN_BUTTON_DANGER,
+  ADMIN_SECTION,
+  ADMIN_SECTION_DESC,
+  ADMIN_SECTION_TITLE,
+  ADMIN_SUBCARD,
+} from "./adminStyles";
 
 export default function EnquiriesManager({ contacts, onClearContacts }) {
   return (
-    <section className={CARD}>
-      <div className="flex items-start justify-between gap-3 max-md:flex-col">
-        <h2 className="text-2xl max-sm:text-xl">Admission Enquiries ({contacts.length})</h2>
-        <button className={`${DANGER_BUTTON} w-full justify-center max-md:w-full sm:w-fit`} onClick={onClearContacts}>
-          Clear All
+    <section className={ADMIN_SECTION} id="enquiries">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className={ADMIN_SECTION_TITLE}>Admission Enquiries</h2>
+          <p className={ADMIN_SECTION_DESC}>Manage incoming contact form submissions from the website.</p>
+        </div>
+        <button className={ADMIN_BUTTON_DANGER} onClick={onClearContacts}>
+          Clear all enquiries
         </button>
       </div>
 
       {contacts.length === 0 ? (
-        <p className={MUTED_TEXT}>No enquiries found.</p>
+        <div className={`${ADMIN_SUBCARD} mt-4 text-sm text-slate-600`}>No enquiries found.</div>
       ) : (
-        <div className={AUTO_FIT_GRID}>
-          {contacts.map((item, index) => (
-            <article className={CARD} key={`${item.email}-${index}`}>
-              <h3 className="text-lg break-words">{item.full_name}</h3>
-              <p className="break-all text-sm text-slate-700">{item.email}</p>
-              <p className="text-sm text-slate-700">{item.phone}</p>
-              <p className="text-sm text-slate-700">
-                <strong>Program:</strong> {item.program_interest}
-              </p>
-              <p className="break-words text-sm leading-6 text-slate-700">{item.message}</p>
-            </article>
-          ))}
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full border-collapse text-sm">
+            <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-3 py-2">Name</th>
+                <th className="px-3 py-2">Email</th>
+                <th className="px-3 py-2">Phone</th>
+                <th className="px-3 py-2">Program</th>
+                <th className="px-3 py-2">Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contacts.map((item, index) => (
+                <tr key={`${item.email}-${index}`} className="border-t border-slate-200">
+                  <td className="px-3 py-2 font-semibold text-slate-900">{item.full_name}</td>
+                  <td className="px-3 py-2 break-all text-slate-700">{item.email}</td>
+                  <td className="px-3 py-2 text-slate-700">{item.phone}</td>
+                  <td className="px-3 py-2 text-slate-700">{item.program_interest}</td>
+                  <td className="px-3 py-2 text-slate-600">{item.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </section>

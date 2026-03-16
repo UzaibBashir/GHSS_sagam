@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { AUTO_FIT_GRID, CARD, DANGER_BUTTON, INPUT, PRIMARY_BUTTON } from "../../lib/uiClasses";
+import {
+  ADMIN_BUTTON,
+  ADMIN_BUTTON_DANGER,
+  ADMIN_INPUT,
+  ADMIN_LABEL,
+  ADMIN_SECTION,
+  ADMIN_SECTION_DESC,
+  ADMIN_SECTION_TITLE,
+  ADMIN_SUBCARD,
+  ADMIN_TEXTAREA,
+} from "./adminStyles";
 
 const EMPTY_FORM = {
   title: "",
@@ -16,67 +26,91 @@ function NotificationEditor({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
 
   return (
-    <article className={CARD}>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <input
-          value={draft.title}
-          onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
-          className={INPUT}
-          placeholder="Title"
-        />
-        <input
-          value={draft.category}
-          onChange={(event) => setDraft((prev) => ({ ...prev, category: event.target.value }))}
-          className={INPUT}
-          placeholder="Category"
-        />
+    <article className={ADMIN_SUBCARD}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={ADMIN_LABEL}>
+          Title
+          <input
+            value={draft.title}
+            onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
+            className={ADMIN_INPUT}
+            placeholder="Title"
+          />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Category
+          <input
+            value={draft.category}
+            onChange={(event) => setDraft((prev) => ({ ...prev, category: event.target.value }))}
+            className={ADMIN_INPUT}
+            placeholder="Category"
+          />
+        </label>
       </div>
-      <input
-        value={draft.date}
-        onChange={(event) => setDraft((prev) => ({ ...prev, date: event.target.value }))}
-        className={INPUT}
-        placeholder="Date (YYYY-MM-DD)"
-      />
-      <textarea
-        rows={2}
-        value={draft.summary}
-        onChange={(event) => setDraft((prev) => ({ ...prev, summary: event.target.value }))}
-        className={INPUT}
-        placeholder="Headline summary"
-      />
-      <textarea
-        rows={4}
-        value={draft.details}
-        onChange={(event) => setDraft((prev) => ({ ...prev, details: event.target.value }))}
-        className={INPUT}
-        placeholder="Full notification details"
-      />
-      <div className="grid gap-2 sm:grid-cols-2">
+      <label className={ADMIN_LABEL}>
+        Date
         <input
-          value={draft.image_url || ""}
-          onChange={(event) => setDraft((prev) => ({ ...prev, image_url: event.target.value }))}
-          className={INPUT}
-          placeholder="Image URL (optional)"
+          value={draft.date}
+          onChange={(event) => setDraft((prev) => ({ ...prev, date: event.target.value }))}
+          className={ADMIN_INPUT}
+          placeholder="YYYY-MM-DD"
         />
-        <input
-          value={draft.link_url || ""}
-          onChange={(event) => setDraft((prev) => ({ ...prev, link_url: event.target.value }))}
-          className={INPUT}
-          placeholder="Link URL (optional)"
+      </label>
+      <label className={ADMIN_LABEL}>
+        Summary
+        <textarea
+          rows={2}
+          value={draft.summary}
+          onChange={(event) => setDraft((prev) => ({ ...prev, summary: event.target.value }))}
+          className={ADMIN_TEXTAREA}
+          placeholder="Short summary"
         />
+      </label>
+      <label className={ADMIN_LABEL}>
+        Full details
+        <textarea
+          rows={4}
+          value={draft.details}
+          onChange={(event) => setDraft((prev) => ({ ...prev, details: event.target.value }))}
+          className={ADMIN_TEXTAREA}
+          placeholder="Full notification details"
+        />
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={ADMIN_LABEL}>
+          Image URL (optional)
+          <input
+            value={draft.image_url || ""}
+            onChange={(event) => setDraft((prev) => ({ ...prev, image_url: event.target.value }))}
+            className={ADMIN_INPUT}
+            placeholder="https://..."
+          />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Link URL (optional)
+          <input
+            value={draft.link_url || ""}
+            onChange={(event) => setDraft((prev) => ({ ...prev, link_url: event.target.value }))}
+            className={ADMIN_INPUT}
+            placeholder="https://..."
+          />
+        </label>
       </div>
-      <input
-        value={draft.link_label || ""}
-        onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
-        className={INPUT}
-        placeholder="Link label (optional)"
-      />
+      <label className={ADMIN_LABEL}>
+        Link label (optional)
+        <input
+          value={draft.link_label || ""}
+          onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
+          className={ADMIN_INPUT}
+          placeholder="Open link"
+        />
+      </label>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <button className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onSave(item.id, draft)}>
-          Save Changes
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button className={ADMIN_BUTTON} onClick={() => onSave(item.id, draft)}>
+          Save changes
         </button>
-        <button className={`${DANGER_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onRemove(item.id)}>
+        <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.id)}>
           Delete
         </button>
       </div>
@@ -93,74 +127,100 @@ export default function NotificationsManager({ items, onAdd, onSave, onRemove })
   };
 
   return (
-    <section className={CARD}>
-      <h2 className="text-2xl max-sm:text-xl">Notifications (Full Details)</h2>
-      <p className="m-0 text-sm text-slate-600">
-        Add, update, and delete notification title, category, description, image, and link.
-      </p>
+    <section className={ADMIN_SECTION} id="notifications">
+      <div>
+        <h2 className={ADMIN_SECTION_TITLE}>Website Notifications</h2>
+        <p className={ADMIN_SECTION_DESC}>
+          Publish news and official notices that appear across the homepage and notifications page.
+        </p>
+      </div>
 
-      <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 max-sm:p-2.5">
-        <h3 className="m-0 text-base font-bold text-slate-900">Add New Notification</h3>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <input
-            value={form.title}
-            onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-            className={INPUT}
-            placeholder="Title"
-          />
-          <input
-            value={form.category}
-            onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}
-            className={INPUT}
-            placeholder="Category"
-          />
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <h3 className="text-base font-semibold text-slate-900">Add new notification</h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className={ADMIN_LABEL}>
+            Title
+            <input
+              value={form.title}
+              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+              className={ADMIN_INPUT}
+              placeholder="Title"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Category
+            <input
+              value={form.category}
+              onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}
+              className={ADMIN_INPUT}
+              placeholder="Admissions, Exams"
+            />
+          </label>
         </div>
-        <input
-          value={form.date}
-          onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
-          className={INPUT}
-          placeholder="Date (YYYY-MM-DD)"
-        />
-        <textarea
-          rows={2}
-          value={form.summary}
-          onChange={(event) => setForm((prev) => ({ ...prev, summary: event.target.value }))}
-          className={INPUT}
-          placeholder="Summary"
-        />
-        <textarea
-          rows={4}
-          value={form.details}
-          onChange={(event) => setForm((prev) => ({ ...prev, details: event.target.value }))}
-          className={INPUT}
-          placeholder="Details"
-        />
-        <div className="grid gap-2 sm:grid-cols-2">
+        <label className={ADMIN_LABEL}>
+          Date
           <input
-            value={form.image_url}
-            onChange={(event) => setForm((prev) => ({ ...prev, image_url: event.target.value }))}
-            className={INPUT}
-            placeholder="Image URL (optional)"
+            value={form.date}
+            onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
+            className={ADMIN_INPUT}
+            placeholder="YYYY-MM-DD"
           />
-          <input
-            value={form.link_url}
-            onChange={(event) => setForm((prev) => ({ ...prev, link_url: event.target.value }))}
-            className={INPUT}
-            placeholder="Link URL (optional)"
+        </label>
+        <label className={ADMIN_LABEL}>
+          Summary
+          <textarea
+            rows={2}
+            value={form.summary}
+            onChange={(event) => setForm((prev) => ({ ...prev, summary: event.target.value }))}
+            className={ADMIN_TEXTAREA}
+            placeholder="Short summary"
           />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Full details
+          <textarea
+            rows={4}
+            value={form.details}
+            onChange={(event) => setForm((prev) => ({ ...prev, details: event.target.value }))}
+            className={ADMIN_TEXTAREA}
+            placeholder="Full notification details"
+          />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={ADMIN_LABEL}>
+            Image URL (optional)
+            <input
+              value={form.image_url}
+              onChange={(event) => setForm((prev) => ({ ...prev, image_url: event.target.value }))}
+              className={ADMIN_INPUT}
+              placeholder="https://..."
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Link URL (optional)
+            <input
+              value={form.link_url}
+              onChange={(event) => setForm((prev) => ({ ...prev, link_url: event.target.value }))}
+              className={ADMIN_INPUT}
+              placeholder="https://..."
+            />
+          </label>
         </div>
-        <input
-          value={form.link_label}
-          onChange={(event) => setForm((prev) => ({ ...prev, link_label: event.target.value }))}
-          className={INPUT}
-          placeholder="Link label (optional)"
-        />
-        <button onClick={handleCreate} className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}>
-          Add Notification
+        <label className={ADMIN_LABEL}>
+          Link label (optional)
+          <input
+            value={form.link_label}
+            onChange={(event) => setForm((prev) => ({ ...prev, link_label: event.target.value }))}
+            className={ADMIN_INPUT}
+            placeholder="Open link"
+          />
+        </label>
+        <button onClick={handleCreate} className={`${ADMIN_BUTTON} mt-3`}>
+          Publish notification
         </button>
       </article>
 
-      <div className={AUTO_FIT_GRID}>
+      <div className="mt-4 grid gap-3">
         {items.map((item) => (
           <NotificationEditor key={item.id} item={item} onSave={onSave} onRemove={onRemove} />
         ))}

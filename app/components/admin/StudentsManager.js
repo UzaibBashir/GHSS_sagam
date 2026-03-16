@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { CARD, DANGER_BUTTON, INPUT, PRIMARY_BUTTON } from "../../lib/uiClasses";
+import {
+  ADMIN_BUTTON,
+  ADMIN_BUTTON_DANGER,
+  ADMIN_INPUT,
+  ADMIN_LABEL,
+  ADMIN_SECTION,
+  ADMIN_SECTION_DESC,
+  ADMIN_SECTION_TITLE,
+  ADMIN_SUBCARD,
+} from "./adminStyles";
 
 const EMPTY_STUDENT = {
   rollNumber: "",
@@ -12,26 +21,28 @@ const EMPTY_STUDENT = {
 const CLASS_OPTIONS = ["Class XI", "Class XII"];
 const STREAM_OPTIONS = ["Medical", "Non-Medical", "Arts"];
 
-function StudentEditor({ item, onSave, onRemove }) {
+function StudentRow({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
 
   return (
-    <article className="grid gap-3 rounded-[1.4rem] border border-slate-200/80 bg-white/86 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.05)] max-sm:p-3">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+    <tr className="border-t border-slate-200">
+      <td className="px-3 py-2">
         <input
-          className={INPUT}
+          className={ADMIN_INPUT}
           value={draft.rollNumber}
           onChange={(event) => setDraft((prev) => ({ ...prev, rollNumber: event.target.value }))}
-          placeholder="Roll Number"
         />
+      </td>
+      <td className="px-3 py-2">
         <input
-          className={INPUT}
+          className={ADMIN_INPUT}
           value={draft.name}
           onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))}
-          placeholder="Student Name"
         />
+      </td>
+      <td className="px-3 py-2">
         <select
-          className={INPUT}
+          className={ADMIN_INPUT}
           value={draft.className}
           onChange={(event) => setDraft((prev) => ({ ...prev, className: event.target.value }))}
         >
@@ -41,8 +52,10 @@ function StudentEditor({ item, onSave, onRemove }) {
             </option>
           ))}
         </select>
+      </td>
+      <td className="px-3 py-2">
         <select
-          className={INPUT}
+          className={ADMIN_INPUT}
           value={draft.stream}
           onChange={(event) => setDraft((prev) => ({ ...prev, stream: event.target.value }))}
         >
@@ -52,23 +65,26 @@ function StudentEditor({ item, onSave, onRemove }) {
             </option>
           ))}
         </select>
+      </td>
+      <td className="px-3 py-2">
         <input
           type="text"
-          className={INPUT}
+          className={ADMIN_INPUT}
           value={draft.password}
           onChange={(event) => setDraft((prev) => ({ ...prev, password: event.target.value }))}
-          placeholder="Password"
         />
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <button className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onSave(item.rollNumber, draft)}>
-          Save Student
-        </button>
-        <button className={`${DANGER_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onRemove(item.rollNumber)}>
-          Delete Student
-        </button>
-      </div>
-    </article>
+      </td>
+      <td className="px-3 py-2">
+        <div className="flex flex-wrap gap-2">
+          <button className={ADMIN_BUTTON} onClick={() => onSave(item.rollNumber, draft)}>
+            Save
+          </button>
+          <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.rollNumber)}>
+            Remove
+          </button>
+        </div>
+      </td>
+    </tr>
   );
 }
 
@@ -76,73 +92,102 @@ export default function StudentsManager({ students, onAdd, onSave, onRemove }) {
   const [studentForm, setStudentForm] = useState(EMPTY_STUDENT);
 
   return (
-    <section className={CARD}>
-      <div className="grid gap-2">
-        <h2 className="m-0 text-2xl font-bold text-slate-950 max-sm:text-xl">Student Password Manager</h2>
-        <p className="m-0 text-sm leading-6 text-slate-600">
-          Manage roll numbers, class, stream, and passwords for student login on the Academics page.
+    <section className={ADMIN_SECTION} id="students">
+      <div>
+        <h2 className={ADMIN_SECTION_TITLE}>Student Portal Access</h2>
+        <p className={ADMIN_SECTION_DESC}>
+          Manage roll numbers, classes, streams, and passwords for the Academics portal.
         </p>
       </div>
 
-      <article className="grid gap-3 rounded-[1.5rem] border border-slate-200/80 bg-slate-50/85 p-4 max-sm:p-3">
-        <h3 className="m-0 text-base font-bold text-slate-900">Add Student Login</h3>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <input
-            className={INPUT}
-            value={studentForm.rollNumber}
-            onChange={(event) => setStudentForm((prev) => ({ ...prev, rollNumber: event.target.value }))}
-            placeholder="Roll Number"
-          />
-          <input
-            className={INPUT}
-            value={studentForm.name}
-            onChange={(event) => setStudentForm((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder="Student Name"
-          />
-          <select
-            className={INPUT}
-            value={studentForm.className}
-            onChange={(event) => setStudentForm((prev) => ({ ...prev, className: event.target.value }))}
-          >
-            {CLASS_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <select
-            className={INPUT}
-            value={studentForm.stream}
-            onChange={(event) => setStudentForm((prev) => ({ ...prev, stream: event.target.value }))}
-          >
-            {STREAM_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <input
-            className={INPUT}
-            value={studentForm.password}
-            onChange={(event) => setStudentForm((prev) => ({ ...prev, password: event.target.value }))}
-            placeholder="Password"
-          />
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <h3 className="text-base font-semibold text-slate-900">Add new student login</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <label className={ADMIN_LABEL}>
+            Roll number
+            <input
+              className={ADMIN_INPUT}
+              value={studentForm.rollNumber}
+              onChange={(event) => setStudentForm((prev) => ({ ...prev, rollNumber: event.target.value }))}
+              placeholder="Roll number"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Student name
+            <input
+              className={ADMIN_INPUT}
+              value={studentForm.name}
+              onChange={(event) => setStudentForm((prev) => ({ ...prev, name: event.target.value }))}
+              placeholder="Student name"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Class
+            <select
+              className={ADMIN_INPUT}
+              value={studentForm.className}
+              onChange={(event) => setStudentForm((prev) => ({ ...prev, className: event.target.value }))}
+            >
+              {CLASS_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={ADMIN_LABEL}>
+            Stream
+            <select
+              className={ADMIN_INPUT}
+              value={studentForm.stream}
+              onChange={(event) => setStudentForm((prev) => ({ ...prev, stream: event.target.value }))}
+            >
+              {STREAM_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={ADMIN_LABEL}>
+            Password
+            <input
+              className={ADMIN_INPUT}
+              value={studentForm.password}
+              onChange={(event) => setStudentForm((prev) => ({ ...prev, password: event.target.value }))}
+              placeholder="Password"
+            />
+          </label>
         </div>
         <button
-          className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}
+          className={`${ADMIN_BUTTON} mt-3`}
           onClick={() => {
             onAdd(studentForm);
             setStudentForm(EMPTY_STUDENT);
           }}
         >
-          Add Student Login
+          Add student login
         </button>
       </article>
 
-      <div className="grid gap-3">
-        {(students || []).map((student) => (
-          <StudentEditor key={student.rollNumber} item={student} onSave={onSave} onRemove={onRemove} />
-        ))}
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full border-collapse text-sm">
+          <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <tr>
+              <th className="px-3 py-2">Roll number</th>
+              <th className="px-3 py-2">Name</th>
+              <th className="px-3 py-2">Class</th>
+              <th className="px-3 py-2">Stream</th>
+              <th className="px-3 py-2">Password</th>
+              <th className="px-3 py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(students || []).map((student) => (
+              <StudentRow key={student.rollNumber} item={student} onSave={onSave} onRemove={onRemove} />
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
   );

@@ -51,6 +51,22 @@ function getPublicInstituteData(store) {
     academic_content: undefined,
   };
 }
+function getAdminInstituteData(store) {
+  const data = store.instituteData || {};
+  return {
+    name: data.name,
+    tagline: data.tagline,
+    description: data.description,
+    about_us: data.about_us,
+    institute_details: data.institute_details || [],
+    academics: data.academics || [],
+    faculties: data.faculties || [],
+    streams_subjects: data.streams_subjects || [],
+    staff: data.staff || [],
+    facilities: data.facilities || [],
+    contact: data.contact || {},
+  };
+}
 
 function parseIndex(value, label) {
   const index = Number(value);
@@ -79,6 +95,71 @@ function normalizeStudentPayload(payload) {
     name: assertNonEmpty("Student name", payload.name),
     className: assertNonEmpty("Class", payload.className),
     stream: assertNonEmpty("Stream", payload.stream),
+  };
+}
+function normalizeStringList(items, label) {
+  if (!Array.isArray(items)) {
+    throw new Error(`${label} must be an array`);
+  }
+  return items.map((item) => assertNonEmpty(label, item));
+}
+
+function normalizePrograms(items) {
+  if (!Array.isArray(items)) {
+    throw new Error("Programs must be an array");
+  }
+  return items.map((item) => ({
+    title: assertNonEmpty("Program title", item?.title),
+    description: assertNonEmpty("Program description", item?.description),
+  }));
+}
+
+function normalizeFaculties(items) {
+  if (!Array.isArray(items)) {
+    throw new Error("Faculties must be an array");
+  }
+  return items.map((item) => ({
+    name: assertNonEmpty("Faculty name", item?.name),
+    department: assertNonEmpty("Faculty department", item?.department),
+    qualification: assertNonEmpty("Faculty qualification", item?.qualification),
+    photo: String(item?.photo || "").trim(),
+  }));
+}
+
+function normalizeStreams(items) {
+  if (!Array.isArray(items)) {
+    throw new Error("Streams must be an array");
+  }
+  return items.map((item) => {
+    const subjects = Array.isArray(item?.subjects) ? item.subjects : [];
+    if (!subjects.length) {
+      throw new Error("Stream subjects cannot be empty");
+    }
+    return {
+      stream: assertNonEmpty("Stream name", item?.stream),
+      subjects: subjects.map((subject) => assertNonEmpty("Subject", subject)),
+    };
+  });
+}
+
+function normalizeStaff(items) {
+  if (!Array.isArray(items)) {
+    throw new Error("Staff list must be an array");
+  }
+  return items.map((item) => ({
+    name: assertNonEmpty("Staff name", item?.name),
+    role: assertNonEmpty("Staff role", item?.role),
+  }));
+}
+
+function normalizeContact(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Contact details are required");
+  }
+  return {
+    email: assertNonEmpty("Contact email", payload.email),
+    phone: assertNonEmpty("Contact phone", payload.phone),
+    address: assertNonEmpty("Contact address", payload.address),
   };
 }
 
@@ -203,6 +284,9 @@ export async function GET(request, context) {
 
   if (path[1] === "controls" && path.length === 2) {
     return json(getControls(store));
+  }
+  if (path[1] === "institute" && path.length === 2) {
+    return json(getAdminInstituteData(store));
   }
 
   if (path[1] === "students" && path.length === 2) {
@@ -434,7 +518,10 @@ export async function PATCH(request, context) {
   const path = await getPath(context?.params);
   const store = getStore();
 
-  if (!(path[0] === "admin" && path[1] === "controls" && path.length === 2)) {
+  const isControls = path[0] === "admin" && path[1] === "controls" && path.length === 2;
+  const isInstitute = path[0] === "admin" && path[1] === "institute" && path.length === 2;
+
+  if (!isControls && !isInstitute) {
     return error("Not found", 404);
   }
 
@@ -451,6 +538,27 @@ export async function PATCH(request, context) {
 
   try {
     const payload = await parseJsonBody(request);
+
+    if (isInstitute) {
+      const data = store.instituteData;
+
+      if (payload.name !== undefined) data.name = assertNonEmpty("Institute name", payload.name);
+      if (payload.tagline !== undefined) data.tagline = assertNonEmpty("Tagline", payload.tagline);
+      if (payload.description !== undefined) data.description = assertNonEmpty("Description", payload.description);
+      if (payload.about_us !== undefined) data.about_us = assertNonEmpty("About", payload.about_us);
+      if (payload.institute_details !== undefined) {
+        data.institute_details = normalizeStringList(payload.institute_details, "Institute detail");
+      }
+      if (payload.academics !== undefined) data.academics = normalizePrograms(payload.academics);
+      if (payload.faculties !== undefined) data.faculties = normalizeFaculties(payload.faculties);
+      if (payload.streams_subjects !== undefined) data.streams_subjects = normalizeStreams(payload.streams_subjects);
+      if (payload.staff !== undefined) data.staff = normalizeStaff(payload.staff);
+      if (payload.facilities !== undefined) data.facilities = normalizeStringList(payload.facilities, "Facility");
+      if (payload.contact !== undefined) data.contact = normalizeContact(payload.contact);
+
+      return json({ success: true, institute: getAdminInstituteData(store) });
+    }
+
     const controls = store.instituteData.site_controls;
 
     if (payload.notifications_page_enabled !== undefined) {
@@ -510,6 +618,26 @@ export async function PUT(request, context) {
       ensureUniqueRollNumber(store.students, student.rollNumber, path[2]);
       store.students[index] = student;
       return json({ success: true, student });
+    }
+    if (path[1] === "notices" && path.length === 3) {
+      const index = parseIndex(path[2], "Notice");
+      if (index >= store.instituteData.notices.length) {
+        return error("Notice not found", 404);
+      }
+      const textValue = assertNonEmpty("Notice", payload.text);
+      store.instituteData.notices[index] = { text: textValue };
+      return json({ success: true, notice: store.instituteData.notices[index] });
+    }
+
+    if (path[1] === "downloads" && path.length === 3) {
+      const index = parseIndex(path[2], "Download item");
+      if (index >= store.instituteData.downloads.length) {
+        return error("Download item not found", 404);
+      }
+      const title = assertNonEmpty("Title", payload.title);
+      const url = assertNonEmpty("URL", payload.url);
+      store.instituteData.downloads[index] = { title, url };
+      return json({ success: true, download: store.instituteData.downloads[index] });
     }
 
     if (path[1] === "notification-items" && path.length === 3) {
@@ -663,6 +791,12 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
+
+
+
+
 
 
 

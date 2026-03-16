@@ -27,15 +27,36 @@ export default function useAdminApi(token) {
   };
 
   const loadDashboard = async () => {
-    const [contactsRes, controlsRes, notificationRes, academicsRes, studentsRes] = await Promise.all([
+    const [
+      contactsRes,
+      controlsRes,
+      notificationRes,
+      academicsRes,
+      studentsRes,
+      noticesRes,
+      downloadsRes,
+      instituteRes,
+    ] = await Promise.all([
       fetch(`${API_BASE}/admin/contacts`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/controls`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/notification-items`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/academics/content`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/students`, { headers: withAuth() }),
+      fetch(`${API_BASE}/admin/notices`, { headers: withAuth() }),
+      fetch(`${API_BASE}/admin/downloads`, { headers: withAuth() }),
+      fetch(`${API_BASE}/admin/institute`, { headers: withAuth() }),
     ]);
 
-    if (!contactsRes.ok || !controlsRes.ok || !notificationRes.ok || !academicsRes.ok || !studentsRes.ok) {
+    if (
+      !contactsRes.ok ||
+      !controlsRes.ok ||
+      !notificationRes.ok ||
+      !academicsRes.ok ||
+      !studentsRes.ok ||
+      !noticesRes.ok ||
+      !downloadsRes.ok ||
+      !instituteRes.ok
+    ) {
       throw new Error("Session expired. Please login again.");
     }
 
@@ -44,8 +65,11 @@ export default function useAdminApi(token) {
     const notificationItems = await notificationRes.json();
     const academicContent = await academicsRes.json();
     const students = await studentsRes.json();
+    const notices = await noticesRes.json();
+    const downloads = await downloadsRes.json();
+    const institute = await instituteRes.json();
 
-    return { contacts, controls, notificationItems, academicContent, students };
+    return { contacts, controls, notificationItems, academicContent, students, notices, downloads, institute };
   };
 
   const clearContacts = async () => {
@@ -89,6 +113,15 @@ export default function useAdminApi(token) {
       body: JSON.stringify(payload),
     });
     return parseResponse(res, "Could not update controls.");
+  };
+
+  const updateInstitute = async (payload) => {
+    const res = await fetch(`${API_BASE}/admin/institute`, {
+      method: "PATCH",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update institute content.");
   };
 
   const addNotificationItem = async (payload) => {
@@ -178,6 +211,58 @@ export default function useAdminApi(token) {
     return parseResponse(res, "Could not update study materials.");
   };
 
+  const addNotice = async (payload) => {
+    const res = await fetch(`${API_BASE}/admin/notices`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not add notice.");
+  };
+
+  const updateNotice = async (index, payload) => {
+    const res = await fetch(`${API_BASE}/admin/notices/${index}`, {
+      method: "PUT",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update notice.");
+  };
+
+  const removeNotice = async (index) => {
+    const res = await fetch(`${API_BASE}/admin/notices/${index}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete notice.");
+  };
+
+  const addDownload = async (payload) => {
+    const res = await fetch(`${API_BASE}/admin/downloads`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not add download.");
+  };
+
+  const updateDownload = async (index, payload) => {
+    const res = await fetch(`${API_BASE}/admin/downloads/${index}`, {
+      method: "PUT",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update download.");
+  };
+
+  const removeDownload = async (index) => {
+    const res = await fetch(`${API_BASE}/admin/downloads/${index}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete download.");
+  };
+
   return {
     login,
     loadDashboard,
@@ -186,6 +271,7 @@ export default function useAdminApi(token) {
     updateStudent,
     removeStudent,
     updateControls,
+    updateInstitute,
     addNotificationItem,
     updateNotificationItem,
     removeNotificationItem,
@@ -196,5 +282,11 @@ export default function useAdminApi(token) {
     updateTimetableItem,
     removeTimetableItem,
     updateMaterials,
+    addNotice,
+    updateNotice,
+    removeNotice,
+    addDownload,
+    updateDownload,
+    removeDownload,
   };
 }

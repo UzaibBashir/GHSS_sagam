@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { CARD, DANGER_BUTTON, INPUT, PRIMARY_BUTTON } from "../../lib/uiClasses";
+import {
+  ADMIN_BUTTON,
+  ADMIN_BUTTON_DANGER,
+  ADMIN_INPUT,
+  ADMIN_LABEL,
+  ADMIN_SECTION,
+  ADMIN_SECTION_DESC,
+  ADMIN_SECTION_TITLE,
+  ADMIN_SUBCARD,
+  ADMIN_TEXTAREA,
+} from "./adminStyles";
 
 const EMPTY_NOTICE = {
   headline: "",
@@ -24,65 +34,89 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
 
   return (
-    <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 max-sm:p-2.5">
-      <input
-        className={INPUT}
-        value={draft.headline}
-        onChange={(event) => setDraft((prev) => ({ ...prev, headline: event.target.value }))}
-        placeholder="Headline"
-      />
-      <textarea
-        rows={3}
-        className={INPUT}
-        value={draft.description}
-        onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))}
-        placeholder="Description"
-      />
-      <input
-        className={INPUT}
-        value={draft.time}
-        onChange={(event) => setDraft((prev) => ({ ...prev, time: event.target.value }))}
-        placeholder="Time"
-      />
-      <div className="grid gap-2 sm:grid-cols-2">
+    <article className={ADMIN_SUBCARD}>
+      <label className={ADMIN_LABEL}>
+        Headline
         <input
-          className={INPUT}
-          value={draft.class_name}
-          onChange={(event) => setDraft((prev) => ({ ...prev, class_name: event.target.value }))}
-          placeholder="Class"
+          className={ADMIN_INPUT}
+          value={draft.headline}
+          onChange={(event) => setDraft((prev) => ({ ...prev, headline: event.target.value }))}
+          placeholder="Headline"
         />
+      </label>
+      <label className={ADMIN_LABEL}>
+        Description
+        <textarea
+          rows={3}
+          className={ADMIN_TEXTAREA}
+          value={draft.description}
+          onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))}
+          placeholder="Description"
+        />
+      </label>
+      <label className={ADMIN_LABEL}>
+        Time
         <input
-          className={INPUT}
-          value={draft.stream}
-          onChange={(event) => setDraft((prev) => ({ ...prev, stream: event.target.value }))}
-          placeholder="Stream"
+          className={ADMIN_INPUT}
+          value={draft.time}
+          onChange={(event) => setDraft((prev) => ({ ...prev, time: event.target.value }))}
+          placeholder="09:00 AM"
         />
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={ADMIN_LABEL}>
+          Class
+          <input
+            className={ADMIN_INPUT}
+            value={draft.class_name}
+            onChange={(event) => setDraft((prev) => ({ ...prev, class_name: event.target.value }))}
+            placeholder="Class XI"
+          />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Stream
+          <input
+            className={ADMIN_INPUT}
+            value={draft.stream}
+            onChange={(event) => setDraft((prev) => ({ ...prev, stream: event.target.value }))}
+            placeholder="Medical"
+          />
+        </label>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <input
-          className={INPUT}
-          value={draft.image_url || ""}
-          onChange={(event) => setDraft((prev) => ({ ...prev, image_url: event.target.value }))}
-          placeholder="Image URL"
-        />
-        <input
-          className={INPUT}
-          value={draft.link_url || ""}
-          onChange={(event) => setDraft((prev) => ({ ...prev, link_url: event.target.value }))}
-          placeholder="Link URL"
-        />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={ADMIN_LABEL}>
+          Image URL (optional)
+          <input
+            className={ADMIN_INPUT}
+            value={draft.image_url || ""}
+            onChange={(event) => setDraft((prev) => ({ ...prev, image_url: event.target.value }))}
+            placeholder="https://..."
+          />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Link URL (optional)
+          <input
+            className={ADMIN_INPUT}
+            value={draft.link_url || ""}
+            onChange={(event) => setDraft((prev) => ({ ...prev, link_url: event.target.value }))}
+            placeholder="https://..."
+          />
+        </label>
       </div>
-      <input
-        className={INPUT}
-        value={draft.link_label || ""}
-        onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
-        placeholder="Link Label"
-      />
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <button className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onSave(item.id, draft)}>
-          Save
+      <label className={ADMIN_LABEL}>
+        Link label (optional)
+        <input
+          className={ADMIN_INPUT}
+          value={draft.link_label || ""}
+          onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
+          placeholder="Open link"
+        />
+      </label>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button className={ADMIN_BUTTON} onClick={() => onSave(item.id, draft)}>
+          Save changes
         </button>
-        <button className={`${DANGER_BUTTON} w-full justify-center sm:w-fit`} onClick={() => onRemove(item.id)}>
+        <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.id)}>
           Delete
         </button>
       </div>
@@ -90,105 +124,57 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
   );
 }
 
-function TimetableEditor({ item, onSave, onRemove }) {
+function TimetableRow({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
 
   return (
-    <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)] md:hidden">
-      <input
-        className={INPUT}
-        value={draft.period}
-        onChange={(event) => setDraft((prev) => ({ ...prev, period: event.target.value }))}
-        placeholder="Period"
-      />
-      <input
-        className={INPUT}
-        value={draft.time}
-        onChange={(event) => setDraft((prev) => ({ ...prev, time: event.target.value }))}
-        placeholder="Time"
-      />
-      <input
-        className={INPUT}
-        value={draft.detail}
-        onChange={(event) => setDraft((prev) => ({ ...prev, detail: event.target.value }))}
-        placeholder="Detail"
-      />
-      <input
-        className={INPUT}
-        value={draft.class_name}
-        onChange={(event) => setDraft((prev) => ({ ...prev, class_name: event.target.value }))}
-        placeholder="Class"
-      />
-      <input
-        className={INPUT}
-        value={draft.stream}
-        onChange={(event) => setDraft((prev) => ({ ...prev, stream: event.target.value }))}
-        placeholder="Stream"
-      />
-      <div className="flex flex-col gap-2">
-        <button className={`${PRIMARY_BUTTON} w-full justify-center`} onClick={() => onSave(item.id, draft)}>
-          Save
-        </button>
-        <button className={`${DANGER_BUTTON} w-full justify-center`} onClick={() => onRemove(item.id)}>
-          Delete
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function TimetableEditorDesktop({ item, onSave, onRemove }) {
-  const [draft, setDraft] = useState(item);
-
-  return (
-    <tr className="hidden md:table-row">
-      <td className="border border-slate-200 px-2 py-1">
+    <tr className="border-t border-slate-200">
+      <td className="px-3 py-2">
         <input
-          className="w-full rounded border border-slate-300 px-2 py-1"
+          className={ADMIN_INPUT}
           value={draft.period}
           onChange={(event) => setDraft((prev) => ({ ...prev, period: event.target.value }))}
+          placeholder="1"
         />
       </td>
-      <td className="border border-slate-200 px-2 py-1">
+      <td className="px-3 py-2">
         <input
-          className="w-full rounded border border-slate-300 px-2 py-1"
+          className={ADMIN_INPUT}
           value={draft.time}
           onChange={(event) => setDraft((prev) => ({ ...prev, time: event.target.value }))}
+          placeholder="09:00 - 09:45"
         />
       </td>
-      <td className="border border-slate-200 px-2 py-1">
+      <td className="px-3 py-2">
         <input
-          className="w-full rounded border border-slate-300 px-2 py-1"
+          className={ADMIN_INPUT}
           value={draft.detail}
           onChange={(event) => setDraft((prev) => ({ ...prev, detail: event.target.value }))}
+          placeholder="Core subject"
         />
       </td>
-      <td className="border border-slate-200 px-2 py-1">
+      <td className="px-3 py-2">
         <input
-          className="w-full rounded border border-slate-300 px-2 py-1"
+          className={ADMIN_INPUT}
           value={draft.class_name}
           onChange={(event) => setDraft((prev) => ({ ...prev, class_name: event.target.value }))}
+          placeholder="Class XI"
         />
       </td>
-      <td className="border border-slate-200 px-2 py-1">
+      <td className="px-3 py-2">
         <input
-          className="w-full rounded border border-slate-300 px-2 py-1"
+          className={ADMIN_INPUT}
           value={draft.stream}
           onChange={(event) => setDraft((prev) => ({ ...prev, stream: event.target.value }))}
+          placeholder="Medical"
         />
       </td>
-      <td className="border border-slate-200 px-2 py-1">
-        <div className="flex flex-wrap gap-1">
-          <button
-            className="rounded bg-teal-700 px-2 py-1 text-xs font-bold text-white"
-            onClick={() => onSave(item.id, draft)}
-          >
+      <td className="px-3 py-2">
+        <div className="flex flex-wrap gap-2">
+          <button className={ADMIN_BUTTON} onClick={() => onSave(item.id, draft)}>
             Save
           </button>
-          <button
-            className="rounded bg-red-700 px-2 py-1 text-xs font-bold text-white"
-            onClick={() => onRemove(item.id)}
-          >
+          <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.id)}>
             Delete
           </button>
         </div>
@@ -210,162 +196,187 @@ export default function AcademicsManager({
   const [timetableForm, setTimetableForm] = useState(EMPTY_TIMETABLE);
 
   return (
-    <section className={CARD}>
-      <h2 className="text-2xl max-sm:text-xl">Academics Management</h2>
-      <p className="m-0 text-sm text-slate-600">Manage noticeboard and timetable content for academics page.</p>
+    <section className={ADMIN_SECTION} id="academic-noticeboard">
+      <div>
+        <h2 className={ADMIN_SECTION_TITLE}>Academic Noticeboard & Timetable</h2>
+        <p className={ADMIN_SECTION_DESC}>Maintain class-wise announcements and timetable rows.</p>
+      </div>
 
-      <article className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 max-sm:p-2.5">
-        <h3 className="m-0 text-base font-bold text-slate-900">Noticeboard: Add Item</h3>
-        <input
-          className={INPUT}
-          value={noticeForm.headline}
-          onChange={(event) => setNoticeForm((prev) => ({ ...prev, headline: event.target.value }))}
-          placeholder="Headline"
-        />
-        <textarea
-          rows={3}
-          className={INPUT}
-          value={noticeForm.description}
-          onChange={(event) => setNoticeForm((prev) => ({ ...prev, description: event.target.value }))}
-          placeholder="Description"
-        />
-        <input
-          className={INPUT}
-          value={noticeForm.time}
-          onChange={(event) => setNoticeForm((prev) => ({ ...prev, time: event.target.value }))}
-          placeholder="Time"
-        />
-        <div className="grid gap-2 sm:grid-cols-2">
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <h3 className="text-base font-semibold text-slate-900">Add noticeboard item</h3>
+        <label className={ADMIN_LABEL}>
+          Headline
           <input
-            className={INPUT}
-            value={noticeForm.class_name}
-            onChange={(event) => setNoticeForm((prev) => ({ ...prev, class_name: event.target.value }))}
-            placeholder="Class"
+            className={ADMIN_INPUT}
+            value={noticeForm.headline}
+            onChange={(event) => setNoticeForm((prev) => ({ ...prev, headline: event.target.value }))}
+            placeholder="Headline"
           />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Description
+          <textarea
+            rows={3}
+            className={ADMIN_TEXTAREA}
+            value={noticeForm.description}
+            onChange={(event) => setNoticeForm((prev) => ({ ...prev, description: event.target.value }))}
+            placeholder="Description"
+          />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Time
           <input
-            className={INPUT}
-            value={noticeForm.stream}
-            onChange={(event) => setNoticeForm((prev) => ({ ...prev, stream: event.target.value }))}
-            placeholder="Stream"
+            className={ADMIN_INPUT}
+            value={noticeForm.time}
+            onChange={(event) => setNoticeForm((prev) => ({ ...prev, time: event.target.value }))}
+            placeholder="09:00 AM"
           />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={ADMIN_LABEL}>
+            Class
+            <input
+              className={ADMIN_INPUT}
+              value={noticeForm.class_name}
+              onChange={(event) => setNoticeForm((prev) => ({ ...prev, class_name: event.target.value }))}
+              placeholder="Class XI"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Stream
+            <input
+              className={ADMIN_INPUT}
+              value={noticeForm.stream}
+              onChange={(event) => setNoticeForm((prev) => ({ ...prev, stream: event.target.value }))}
+              placeholder="Medical"
+            />
+          </label>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <input
-            className={INPUT}
-            value={noticeForm.image_url}
-            onChange={(event) => setNoticeForm((prev) => ({ ...prev, image_url: event.target.value }))}
-            placeholder="Image URL"
-          />
-          <input
-            className={INPUT}
-            value={noticeForm.link_url}
-            onChange={(event) => setNoticeForm((prev) => ({ ...prev, link_url: event.target.value }))}
-            placeholder="Link URL"
-          />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={ADMIN_LABEL}>
+            Image URL (optional)
+            <input
+              className={ADMIN_INPUT}
+              value={noticeForm.image_url}
+              onChange={(event) => setNoticeForm((prev) => ({ ...prev, image_url: event.target.value }))}
+              placeholder="https://..."
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Link URL (optional)
+            <input
+              className={ADMIN_INPUT}
+              value={noticeForm.link_url}
+              onChange={(event) => setNoticeForm((prev) => ({ ...prev, link_url: event.target.value }))}
+              placeholder="https://..."
+            />
+          </label>
         </div>
-        <input
-          className={INPUT}
-          value={noticeForm.link_label}
-          onChange={(event) => setNoticeForm((prev) => ({ ...prev, link_label: event.target.value }))}
-          placeholder="Link Label"
-        />
+        <label className={ADMIN_LABEL}>
+          Link label (optional)
+          <input
+            className={ADMIN_INPUT}
+            value={noticeForm.link_label}
+            onChange={(event) => setNoticeForm((prev) => ({ ...prev, link_label: event.target.value }))}
+            placeholder="Open link"
+          />
+        </label>
         <button
-          className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}
+          className={`${ADMIN_BUTTON} mt-3`}
           onClick={() => {
             onAddNoticeboard(noticeForm);
             setNoticeForm(EMPTY_NOTICE);
           }}
         >
-          Add Noticeboard Item
+          Add noticeboard item
         </button>
-
-        <div className="grid gap-2">
-          {(academicContent?.noticeboard || []).map((item) => (
-            <NoticeboardEditor key={item.id} item={item} onSave={onSaveNoticeboard} onRemove={onRemoveNoticeboard} />
-          ))}
-        </div>
       </article>
 
-      <article className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 max-sm:p-2.5">
-        <h3 className="m-0 text-base font-bold text-slate-900">Timetable: Add Row</h3>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-          <input
-            className={INPUT}
-            value={timetableForm.period}
-            onChange={(event) => setTimetableForm((prev) => ({ ...prev, period: event.target.value }))}
-            placeholder="Period"
-          />
-          <input
-            className={INPUT}
-            value={timetableForm.time}
-            onChange={(event) => setTimetableForm((prev) => ({ ...prev, time: event.target.value }))}
-            placeholder="Time"
-          />
-          <input
-            className={INPUT}
-            value={timetableForm.detail}
-            onChange={(event) => setTimetableForm((prev) => ({ ...prev, detail: event.target.value }))}
-            placeholder="Detail"
-          />
-          <input
-            className={INPUT}
-            value={timetableForm.class_name}
-            onChange={(event) => setTimetableForm((prev) => ({ ...prev, class_name: event.target.value }))}
-            placeholder="Class"
-          />
-          <input
-            className={INPUT}
-            value={timetableForm.stream}
-            onChange={(event) => setTimetableForm((prev) => ({ ...prev, stream: event.target.value }))}
-            placeholder="Stream"
-          />
+      <div className="mt-4 grid gap-3">
+        {(academicContent?.noticeboard || []).map((item) => (
+          <NoticeboardEditor key={item.id} item={item} onSave={onSaveNoticeboard} onRemove={onRemoveNoticeboard} />
+        ))}
+      </div>
+
+      <article className={`${ADMIN_SUBCARD} mt-6`}>
+        <h3 className="text-base font-semibold text-slate-900">Add timetable row</h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <label className={ADMIN_LABEL}>
+            Period
+            <input
+              className={ADMIN_INPUT}
+              value={timetableForm.period}
+              onChange={(event) => setTimetableForm((prev) => ({ ...prev, period: event.target.value }))}
+              placeholder="1"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Time
+            <input
+              className={ADMIN_INPUT}
+              value={timetableForm.time}
+              onChange={(event) => setTimetableForm((prev) => ({ ...prev, time: event.target.value }))}
+              placeholder="09:00 - 09:45"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Detail
+            <input
+              className={ADMIN_INPUT}
+              value={timetableForm.detail}
+              onChange={(event) => setTimetableForm((prev) => ({ ...prev, detail: event.target.value }))}
+              placeholder="Core subject"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Class
+            <input
+              className={ADMIN_INPUT}
+              value={timetableForm.class_name}
+              onChange={(event) => setTimetableForm((prev) => ({ ...prev, class_name: event.target.value }))}
+              placeholder="Class XI"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Stream
+            <input
+              className={ADMIN_INPUT}
+              value={timetableForm.stream}
+              onChange={(event) => setTimetableForm((prev) => ({ ...prev, stream: event.target.value }))}
+              placeholder="Medical"
+            />
+          </label>
         </div>
         <button
-          className={`${PRIMARY_BUTTON} w-full justify-center sm:w-fit`}
+          className={`${ADMIN_BUTTON} mt-3`}
           onClick={() => {
             onAddTimetable(timetableForm);
             setTimetableForm(EMPTY_TIMETABLE);
           }}
         >
-          Add Timetable Row
+          Add timetable row
         </button>
-
-        <div className="grid gap-2 md:hidden">
-          {(academicContent?.timetable || []).map((item) => (
-            <TimetableEditor key={item.id} item={item} onSave={onSaveTimetable} onRemove={onRemoveTimetable} />
-          ))}
-        </div>
-
-        <div className="hidden overflow-x-auto md:block">
-          <table className="min-w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="bg-slate-100 text-slate-800">
-                <th className="border border-slate-200 px-2 py-1">Period</th>
-                <th className="border border-slate-200 px-2 py-1">Time</th>
-                <th className="border border-slate-200 px-2 py-1">Detail</th>
-                <th className="border border-slate-200 px-2 py-1">Class</th>
-                <th className="border border-slate-200 px-2 py-1">Stream</th>
-                <th className="border border-slate-200 px-2 py-1">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(academicContent?.timetable || []).map((item) => (
-                <TimetableEditorDesktop key={item.id} item={item} onSave={onSaveTimetable} onRemove={onRemoveTimetable} />
-              ))}
-            </tbody>
-          </table>
-        </div>
       </article>
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full border-collapse text-sm">
+          <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <tr>
+              <th className="px-3 py-2">Period</th>
+              <th className="px-3 py-2">Time</th>
+              <th className="px-3 py-2">Detail</th>
+              <th className="px-3 py-2">Class</th>
+              <th className="px-3 py-2">Stream</th>
+              <th className="px-3 py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(academicContent?.timetable || []).map((item) => (
+              <TimetableRow key={item.id} item={item} onSave={onSaveTimetable} onRemove={onRemoveTimetable} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
-
-
-
-
-
-
-
-
-
-
