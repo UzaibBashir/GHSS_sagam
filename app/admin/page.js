@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AcademicsManager from "../components/admin/AcademicsManager";
+import AdmissionsManager from "../components/admin/AdmissionsManager";
 import AdminLoginCard from "../components/admin/AdminLoginCard";
 import ControlsManager from "../components/admin/ControlsManager";
 import DownloadsManager from "../components/admin/DownloadsManager";
@@ -20,7 +21,11 @@ import StreamsSubjectsManager from "../components/admin/StreamsSubjectsManager";
 import StudentsManager from "../components/admin/StudentsManager";
 import useAdminApi from "../hooks/useAdminApi";
 import {
+  ADMIN_BUTTON_OUTLINE,
   ADMIN_CONTAINER,
+  ADMIN_INPUT,
+  ADMIN_LABEL,
+  ADMIN_NAV,
   ADMIN_PAGE,
   ADMIN_SECTION,
   ADMIN_SECTION_TITLE,
@@ -62,6 +67,7 @@ const defaultInstitute = {
 
 const SECTIONS = [
   { id: "controls", label: "Site controls" },
+  { id: "admissions", label: "Admissions" },
   { id: "profile", label: "Institute profile" },
   { id: "highlights", label: "Institute highlights" },
   { id: "programs", label: "Programs" },
@@ -94,9 +100,9 @@ export default function AdminPage() {
   const [controls, setControls] = useState(defaultControls);
   const [notices, setNotices] = useState([]);
   const [downloads, setDownloads] = useState([]);
+  const [admissions, setAdmissions] = useState([]);
   const [institute, setInstitute] = useState(defaultInstitute);
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
-  const navScrollRef = useRef(null);
 
   const adminApi = useAdminApi(token);
 
@@ -112,6 +118,7 @@ export default function AdminPage() {
       setControls({ ...defaultControls, ...(data.controls || {}) });
       setNotices(data.notices || []);
       setDownloads(data.downloads || []);
+      setAdmissions(data.admissions || []);
       setInstitute({
         ...defaultInstitute,
         ...(data.institute || {}),
@@ -158,6 +165,7 @@ export default function AdminPage() {
     setControls(defaultControls);
     setNotices([]);
     setDownloads([]);
+    setAdmissions([]);
     setInstitute(defaultInstitute);
     localStorage.removeItem("admin_token");
     setStatus("Logged out.");
@@ -377,6 +385,16 @@ export default function AdminPage() {
     }
   };
 
+  const handleUpdateAdmission = async (applicationId, payload) => {
+    try {
+      await adminApi.updateAdmission(applicationId, payload);
+      setStatus("Admission status updated.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
   const handleSaveMaterials = async (materials) => {
     try {
       const updated = await adminApi.updateMaterials(materials);
@@ -398,17 +416,12 @@ export default function AdminPage() {
     [contacts.length, downloads.length, notificationItems.length, notices.length, students.length]
   );
 
-  const scrollNav = (direction) => {
-    const node = navScrollRef.current;
-    if (!node) return;
-    const amount = direction === "left" ? -320 : 320;
-    node.scrollTo({ left: node.scrollLeft + amount, behavior: "smooth" });
-  };
-
   const activePane = useMemo(() => {
     switch (activeSection) {
       case "controls":
         return <ControlsManager controls={controls} onSave={handleSaveControls} />;
+      case "admissions":
+        return <AdmissionsManager admissions={admissions} onUpdate={handleUpdateAdmission} />;
       case "profile":
         return <InstituteProfileManager institute={institute} onSave={handleSaveInstitute} />;
       case "highlights":
@@ -497,6 +510,7 @@ export default function AdminPage() {
     handleSaveDownload,
     handleSaveInstitute,
     handleSaveMaterials,
+    handleUpdateAdmission,
     handleSaveNotice,
     handleSaveNoticeboard,
     handleSaveNotification,
@@ -509,7 +523,7 @@ export default function AdminPage() {
   ]);
 
   return (
-    <main className={ADMIN_PAGE}>
+    <main className={`${ADMIN_PAGE} admin-root`}>
       <div className={ADMIN_CONTAINER}>
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -527,7 +541,7 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <div className="mt-6 grid gap-6 min-w-0">
+        <div className="mt-6 grid gap-6 min-w-0 max-w-full overflow-x-hidden">
           <AdminLoginCard
             connected={connected}
             username={username}
@@ -558,48 +572,32 @@ export default function AdminPage() {
                 </div>
               </section>
 
-              <div className="sticky top-4 z-20 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur max-sm:top-2">
+              <div className={ADMIN_NAV}>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Navigate</p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => scrollNav("left")}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[0.7rem] font-semibold text-slate-600 hover:border-slate-400"
-                    >
-                      Prev
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => scrollNav("right")}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[0.7rem] font-semibold text-slate-600 hover:border-slate-400"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-                <div className="relative mt-3">
-                  <div
-                    ref={navScrollRef}
-                    className="admin-scrollbar max-w-full overflow-x-auto scroll-smooth pb-2 pr-2"
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection(SECTIONS[0].id)}
+                    className={ADMIN_BUTTON_OUTLINE}
                   >
-                    <div className="flex min-w-max gap-2 snap-x snap-mandatory">
-                      {SECTIONS.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => setActiveSection(item.id)}
-                          className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition snap-start ${
-                            activeSection === item.id
-                              ? "border-slate-900 bg-slate-900 text-white"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                    Reset
+                  </button>
                 </div>
+                <label className="mt-3 grid gap-2" htmlFor="admin-section-select">
+                  <span className={ADMIN_LABEL}>Select section</span>
+                  <select
+                    id="admin-section-select"
+                    className={ADMIN_INPUT}
+                    value={activeSection}
+                    onChange={(event) => setActiveSection(event.target.value)}
+                  >
+                    {SECTIONS.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
               <div className="min-w-0 max-w-full overflow-hidden">{activePane}</div>
@@ -610,12 +608,6 @@ export default function AdminPage() {
     </main>
   );
 }
-
-
-
-
-
-
 
 
 

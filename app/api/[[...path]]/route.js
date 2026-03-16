@@ -163,6 +163,20 @@ function normalizeContact(payload) {
   };
 }
 
+function normalizeAdmissionPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Admission details are required");
+  }
+  return {
+    name: assertNonEmpty("Student name", payload.name),
+    dob: assertNonEmpty("Date of birth", payload.dob),
+  };
+}
+
+function matchesAdmissionIdentity(admission, name, dob) {
+  return admission.name.toLowerCase() === name.toLowerCase() && admission.dob === dob;
+}
+
 function ensureUniqueRollNumber(students, rollNumber, currentRollNumber = "") {
   const duplicate = students.find(
     (item) => item.rollNumber === rollNumber && item.rollNumber !== currentRollNumber
@@ -199,6 +213,32 @@ export async function GET(request, context) {
 
   if (path[0] === "institute" && path.length === 1) {
     return json(getPublicInstituteData(store));
+  }
+
+  if (path[0] === "admissions" && path[1] === "status" && path.length === 2) {
+    const url = new URL(request.url);
+    const applicationId = String(url.searchParams.get("application_id") || "").trim();
+    const name = String(url.searchParams.get("name") || "").trim();
+    const dob = String(url.searchParams.get("dob") || "").trim();
+
+    if (!applicationId || !name || !dob) {
+      return error("Application ID, name, and date of birth are required", 400);
+    }
+
+    const admission = store.admissions.find((item) => item.application_id === applicationId);
+    if (!admission || !matchesAdmissionIdentity(admission, name, dob)) {
+      return error("Application not found", 404);
+    }
+
+    return json({
+      application_id: admission.application_id,
+      name: admission.name,
+      dob: admission.dob,
+      status: admission.status,
+      remarks: admission.remarks || "",
+      submitted_at: admission.submitted_at,
+      approved_at: admission.approved_at || "",
+    });
   }
 
   if (path[0] === "student") {
@@ -285,6 +325,9 @@ export async function GET(request, context) {
   if (path[1] === "controls" && path.length === 2) {
     return json(getControls(store));
   }
+  if (path[1] === "admissions" && path.length === 2) {
+    return json(store.admissions);
+  }
   if (path[1] === "institute" && path.length === 2) {
     return json(getAdminInstituteData(store));
   }
@@ -319,6 +362,26 @@ export async function GET(request, context) {
 export async function POST(request, context) {
   const path = await getPath(context?.params);
   const store = getStore();
+
+  if (path[0] === "admissions" && path.length === 1) {
+    try {
+      const payload = await parseJsonBody(request);
+      const applicant = normalizeAdmissionPayload(payload);
+      const admission = {
+        application_id: createId("app"),
+        name: applicant.name,
+        dob: applicant.dob,
+        status: "pending",
+        remarks: "",
+        submitted_at: new Date().toISOString(),
+        approved_at: "",
+      };
+      store.admissions.unshift(admission);
+      return json({ success: true, ...admission });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Invalid payload", 400);
+    }
+  }
 
   if (path[0] === "contact" && path.length === 1) {
     const rateError = rateLimitOrReject(store, request, "contact", config.contactRateLimit);
@@ -520,8 +583,9 @@ export async function PATCH(request, context) {
 
   const isControls = path[0] === "admin" && path[1] === "controls" && path.length === 2;
   const isInstitute = path[0] === "admin" && path[1] === "institute" && path.length === 2;
+  const isAdmissions = path[0] === "admin" && path[1] === "admissions" && path.length === 3;
 
-  if (!isControls && !isInstitute) {
+  if (!isControls && !isInstitute && !isAdmissions) {
     return error("Not found", 404);
   }
 
@@ -538,6 +602,27 @@ export async function PATCH(request, context) {
 
   try {
     const payload = await parseJsonBody(request);
+
+    if (isAdmissions) {
+      const admission = store.admissions.find((item) => item.application_id === path[2]);
+      if (!admission) {
+        return error("Application not found", 404);
+      }
+      if (payload.status !== undefined) {
+        const status = String(payload.status || "").trim().toLowerCase();
+        if (!["pending", "approved", "rejected"].includes(status)) {
+          return error("Invalid status", 400);
+        }
+        admission.status = status;
+        if (status === "approved") {
+          admission.approved_at = new Date().toISOString();
+        }
+      }
+      if (payload.remarks !== undefined) {
+        admission.remarks = String(payload.remarks || "").trim();
+      }
+      return json({ success: true, admission });
+    }
 
     if (isInstitute) {
       const data = store.instituteData;
@@ -791,6 +876,17 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

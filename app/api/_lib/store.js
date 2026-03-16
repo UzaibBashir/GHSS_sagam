@@ -269,6 +269,7 @@ const DEFAULT_STUDENTS = [
 
 const DEFAULT_STATE = {
   contacts: [],
+  admissions: [],
   adminSessions: {},
   loginFailures: {},
   rateLimits: {},
@@ -328,6 +329,12 @@ function resetFacultyShape(store) {
     }
   }
 }
+function resetAdmissionsShape(store) {
+  if (!Array.isArray(store.admissions)) {
+    store.admissions = [];
+  }
+}
+
 function resetStudentShape(store) {
   if (!Array.isArray(store.students) || !store.students.length) {
     store.students = structuredClone(DEFAULT_STUDENTS);
@@ -384,9 +391,12 @@ export function getStore() {
   resetContentShape(store);
   resetFacultyShape(store);
   resetStudentShape(store);
+  resetAdmissionsShape(store);
   resetRateLimitShape(store);
   return store;
 }
+
+
 
 
 

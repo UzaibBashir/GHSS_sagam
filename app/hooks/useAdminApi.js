@@ -36,6 +36,7 @@ export default function useAdminApi(token) {
       noticesRes,
       downloadsRes,
       instituteRes,
+      admissionsRes,
     ] = await Promise.all([
       fetch(`${API_BASE}/admin/contacts`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/controls`, { headers: withAuth() }),
@@ -45,6 +46,7 @@ export default function useAdminApi(token) {
       fetch(`${API_BASE}/admin/notices`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/downloads`, { headers: withAuth() }),
       fetch(`${API_BASE}/admin/institute`, { headers: withAuth() }),
+      fetch(`${API_BASE}/admin/admissions`, { headers: withAuth() }),
     ]);
 
     if (
@@ -55,7 +57,8 @@ export default function useAdminApi(token) {
       !studentsRes.ok ||
       !noticesRes.ok ||
       !downloadsRes.ok ||
-      !instituteRes.ok
+      !instituteRes.ok ||
+      !admissionsRes.ok
     ) {
       throw new Error("Session expired. Please login again.");
     }
@@ -68,8 +71,9 @@ export default function useAdminApi(token) {
     const notices = await noticesRes.json();
     const downloads = await downloadsRes.json();
     const institute = await instituteRes.json();
+    const admissions = await admissionsRes.json();
 
-    return { contacts, controls, notificationItems, academicContent, students, notices, downloads, institute };
+    return { contacts, controls, notificationItems, academicContent, students, notices, downloads, institute, admissions };
   };
 
   const clearContacts = async () => {
@@ -122,6 +126,15 @@ export default function useAdminApi(token) {
       body: JSON.stringify(payload),
     });
     return parseResponse(res, "Could not update institute content.");
+  };
+
+  const updateAdmission = async (applicationId, payload) => {
+    const res = await fetch(`${API_BASE}/admin/admissions/${applicationId}`, {
+      method: "PATCH",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update admission status.");
   };
 
   const addNotificationItem = async (payload) => {
@@ -272,6 +285,7 @@ export default function useAdminApi(token) {
     removeStudent,
     updateControls,
     updateInstitute,
+    updateAdmission,
     addNotificationItem,
     updateNotificationItem,
     removeNotificationItem,

@@ -149,3 +149,56 @@ select {
   scrollbar-width: thin;
   scrollbar-color: rgba(15, 23, 42, 0.35) rgba(226, 232, 240, 0.6);
 }
+
+
+.admin-nav-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.admin-nav-scroll::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.6);
+}
+
+.admin-nav-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.admin-nav-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.35) rgba(226, 232, 240, 0.6);
+  scrollbar-gutter: stable;
+}
+
+.admin-nav-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.4) rgba(226, 232, 240, 0.8);
+  scrollbar-gutter: stable both-edges;
+}
+
+.admin-nav-scroll::-webkit-scrollbar {
+  height: 12px;
+}
+
+.admin-nav-scroll::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.8);
+  border-radius: 999px;
+}
+
+.admin-nav-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.admin-root {
+  overflow-x: hidden;
+}
+
+.admin-root * {
+  min-width: 0;
+}
+
+.admin-nav-scroll {
+  display: block;
+  width: 100%;
+}

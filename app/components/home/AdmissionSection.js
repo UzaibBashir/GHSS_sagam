@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ADMISSION_CONTENT } from "../../lib/siteContent";
+import { API_BASE } from "../../lib/api";
 import { INPUT, PRIMARY_BUTTON } from "../../lib/uiClasses";
 
 function ContactIcon({ type }) {
@@ -34,26 +35,33 @@ function ContactIcon({ type }) {
 
 export default function AdmissionSection({ institute }) {
   const [studentName, setStudentName] = useState("");
-  const [studentEmail, setStudentEmail] = useState("");
-  const [studentClass, setStudentClass] = useState("");
-  const [receipt, setReceipt] = useState(null);
+  const [studentDob, setStudentDob] = useState("");
+  const [submission, setSubmission] = useState(null);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const formUrl = institute?.admission_form_url || ADMISSION_CONTENT.formUrl;
 
-  const generateReceipt = (event) => {
+  const submitApplication = async (event) => {
     event.preventDefault();
-    if (!studentName.trim() || !studentEmail.trim() || !studentClass.trim()) {
-      return;
-    }
+    setStatusMessage("");
 
-    setReceipt({
-      id: `GHHS-${Date.now().toString().slice(-8)}`,
-      name: studentName.trim(),
-      email: studentEmail.trim(),
-      desiredClass: studentClass.trim(),
-      generatedAt: new Date().toLocaleString(),
-      formLink: formUrl,
-    });
+    try {
+      const res = await fetch(`${API_BASE}/admissions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: studentName.trim(), dob: studentDob.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.detail || "Submission failed");
+      }
+      setSubmission(data);
+      setStudentName("");
+      setStudentDob("");
+      setStatusMessage("Application submitted. Status: Verification pending.");
+    } catch (error) {
+      setStatusMessage(error.message || "Submission failed.");
+    }
   };
 
   return (
@@ -137,9 +145,9 @@ export default function AdmissionSection({ institute }) {
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <div>
             <p className="section-kicker">Online Form</p>
-            <h3 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">Submit the official form and generate a provisional receipt</h3>
+            <h3 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">Submit the official form and register your application</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Complete the admission form first, then return here to generate a provisional acknowledgement for your record.
+              Step 1: Complete the Google form. Step 2: Enter the same student name and date of birth below to create your application ID.
             </p>
             <a
               href={formUrl}
@@ -151,8 +159,8 @@ export default function AdmissionSection({ institute }) {
             </a>
           </div>
 
-          <form onSubmit={generateReceipt} className="rounded-[1.7rem] border border-slate-200/80 bg-white/86 p-5 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
-            <h4 className="text-[0.78rem] font-extrabold tracking-[0.16em] text-teal-700 uppercase">Generate Submission Receipt</h4>
+          <form onSubmit={submitApplication} className="rounded-[1.7rem] border border-slate-200/80 bg-white/86 p-5 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
+            <h4 className="text-[0.78rem] font-extrabold tracking-[0.16em] text-teal-700 uppercase">Register After Form Submission</h4>
             <div className="mt-4 grid gap-3">
               <input
                 value={studentName}
@@ -162,57 +170,45 @@ export default function AdmissionSection({ institute }) {
                 required
               />
               <input
-                type="email"
-                value={studentEmail}
-                onChange={(event) => setStudentEmail(event.target.value)}
-                placeholder="Email Address"
-                className={INPUT}
-                required
-              />
-              <input
-                value={studentClass}
-                onChange={(event) => setStudentClass(event.target.value)}
-                placeholder="Applying For Class (for example XI Medical)"
+                value={studentDob}
+                onChange={(event) => setStudentDob(event.target.value)}
+                placeholder="Date of Birth (YYYY-MM-DD)"
                 className={INPUT}
                 required
               />
               <button type="submit" className={PRIMARY_BUTTON}>
-                Generate Receipt
+                Create Application ID
               </button>
             </div>
+            {statusMessage ? <p className="mt-3 text-sm text-slate-600">{statusMessage}</p> : null}
           </form>
         </div>
       </article>
 
-      {receipt ? (
-        <article className="rounded-[2rem] border border-emerald-300/80 bg-linear-to-br from-emerald-50 to-teal-50 p-6 shadow-[0_18px_36px_rgba(16,185,129,0.14)] max-md:p-4">
-          <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-emerald-700 uppercase">Acknowledgement</p>
-          <h3 className="font-display mt-3 text-3xl font-semibold text-emerald-950 max-md:text-2xl">Provisional Admission Receipt</h3>
+      {submission ? (
+        <article className="rounded-[2rem] border border-amber-300/80 bg-amber-50/90 p-6 text-amber-900 shadow-[0_18px_36px_rgba(217,119,6,0.12)] max-md:p-4">
+          <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-amber-700 uppercase">Verification Pending</p>
+          <h3 className="font-display mt-3 text-3xl font-semibold text-amber-950 max-md:text-2xl">Your application is under review</h3>
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <div className="rounded-[1.2rem] border border-emerald-200/80 bg-white/80 px-4 py-3 text-sm text-emerald-900">
-              <p className="font-bold">Receipt ID</p>
-              <p className="mt-1">{receipt.id}</p>
+            <div className="rounded-[1.2rem] border border-amber-200/80 bg-white/80 px-4 py-3 text-sm">
+              <p className="font-bold">Application ID</p>
+              <p className="mt-1">{submission.application_id}</p>
             </div>
-            <div className="rounded-[1.2rem] border border-emerald-200/80 bg-white/80 px-4 py-3 text-sm text-emerald-900">
+            <div className="rounded-[1.2rem] border border-amber-200/80 bg-white/80 px-4 py-3 text-sm">
               <p className="font-bold">Student Name</p>
-              <p className="mt-1">{receipt.name}</p>
+              <p className="mt-1">{submission.name}</p>
             </div>
-            <div className="rounded-[1.2rem] border border-emerald-200/80 bg-white/80 px-4 py-3 text-sm text-emerald-900">
-              <p className="font-bold">Email</p>
-              <p className="mt-1">{receipt.email}</p>
-            </div>
-            <div className="rounded-[1.2rem] border border-emerald-200/80 bg-white/80 px-4 py-3 text-sm text-emerald-900">
-              <p className="font-bold">Applied Class</p>
-              <p className="mt-1">{receipt.desiredClass}</p>
-            </div>
-            <div className="rounded-[1.2rem] border border-emerald-200/80 bg-white/80 px-4 py-3 text-sm text-emerald-900 md:col-span-2 xl:col-span-2">
-              <p className="font-bold">Generated On</p>
-              <p className="mt-1">{receipt.generatedAt}</p>
+            <div className="rounded-[1.2rem] border border-amber-200/80 bg-white/80 px-4 py-3 text-sm">
+              <p className="font-bold">Date of Birth</p>
+              <p className="mt-1">{submission.dob}</p>
             </div>
           </div>
-          <p className="mt-4 text-xs leading-6 text-emerald-900">
-            This is a demonstration receipt for the current webapp. Replace this with final backend verification when the admission workflow is finalized.
+          <p className="mt-4 text-sm leading-6">
+            Save your Application ID. Use the public status page to check approval and download the receipt after approval.
           </p>
+          <a href="/admission/status" className="mt-4 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white">
+            Check Application Status
+          </a>
         </article>
       ) : null}
     </section>

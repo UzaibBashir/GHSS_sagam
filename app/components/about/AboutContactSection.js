@@ -9,13 +9,13 @@ export default function AboutContactSection({ institute }) {
   const contactItems = [
     {
       label: "Email",
-      value: contact.email || "ghhssagam@school.edu.in",
-      href: `mailto:${contact.email || "ghhssagam@school.edu.in"}`,
+      value: contact.email || "ghsssagam@gmail.com",
+      href: `mailto:${contact.email || "ghsssagam@gmail.com"}`,
     },
     {
       label: "Phone",
-      value: contact.phone || "+91-7000000000",
-      href: `tel:${contact.phone || "+91-7000000000"}`,
+      value: contact.phone || "+91-7006670384",
+      href: `tel:${contact.phone || "+91-7006670384"}`,
     },
     {
       label: "Address",

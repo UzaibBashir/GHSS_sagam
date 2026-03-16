@@ -55,8 +55,8 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 export default function HomeFooter({ institute }) {
   const instituteName = institute?.name || "Government Girls Higher Secondary School, Sagam";
-  const email = institute?.contact?.email || "ghhssagam@school.edu.in";
-  const phone = institute?.contact?.phone || "+91-7000000000";
+  const email = institute?.contact?.email || "ghsssagam@gmail.com";
+  const phone = institute?.contact?.phone || "+91-7006670384";
   const address = institute?.contact?.address || "Government Girls Higher Secondary School, Sagam, Jammu and Kashmir, India";
   const mapQuery = encodeURIComponent(address);
   const mapSrc = `https://maps.google.com/maps?q=${mapQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
@@ -178,6 +178,9 @@ export default function HomeFooter({ institute }) {
       <div className="relative border-t border-white/10">
         <div className="mx-auto flex w-[min(1180px,calc(100%-2rem))] flex-wrap items-center justify-between gap-3 py-4 text-xs text-slate-400 max-sm:w-[min(1180px,calc(100%-1rem))]">
           <p className="m-0">(c) {year} {instituteName}. All rights reserved.</p>
+        </div>
+        <div className="mx-auto flex w-[min(1180px,calc(100%-2rem))] flex-wrap items-center justify-between gap-3 py-4 text-xs text-slate-400 max-sm:w-[min(1180px,calc(100%-1rem))]">
+          <p className="m-0">This site is under Development and may contain subjects of error</p>
         </div>
       </div>
     </footer>
