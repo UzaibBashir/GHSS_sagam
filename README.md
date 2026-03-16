@@ -1,4 +1,3 @@
- 
 # GHHS Web App (Next.js Full-Stack)
  
 This project is now a single **Next.js** application with both frontend and backend API in one codebase, ready for Vercel deployment.
