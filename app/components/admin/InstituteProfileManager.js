@@ -11,8 +11,6 @@ import {
 } from "./adminStyles";
 
 const EMPTY_PROFILE = {
-  name: "",
-  tagline: "",
   description: "",
   about_us: "",
   contact: {
@@ -27,11 +25,12 @@ export default function InstituteProfileManager({ institute, onSave }) {
 
   useEffect(() => {
     setDraft({
-      ...EMPTY_PROFILE,
-      ...institute,
+      description: String(institute?.description || ""),
+      about_us: String(institute?.about_us || ""),
       contact: {
-        ...EMPTY_PROFILE.contact,
-        ...(institute?.contact || {}),
+        email: String(institute?.contact?.email || ""),
+        phone: String(institute?.contact?.phone || ""),
+        address: String(institute?.contact?.address || ""),
       },
     });
   }, [institute]);
@@ -41,28 +40,12 @@ export default function InstituteProfileManager({ institute, onSave }) {
       <div>
         <h2 className={ADMIN_SECTION_TITLE}>Institute Profile</h2>
         <p className={ADMIN_SECTION_DESC}>
-          Update the name, tagline, and core description shown across the website.
+          Update core institute description and contact details shown across the website.
         </p>
       </div>
 
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <div className="grid gap-3">
-          <label className={ADMIN_LABEL}>
-            Institute name
-            <input
-              className={ADMIN_INPUT}
-              value={draft.name}
-              onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))}
-            />
-          </label>
-          <label className={ADMIN_LABEL}>
-            Tagline
-            <input
-              className={ADMIN_INPUT}
-              value={draft.tagline}
-              onChange={(event) => setDraft((prev) => ({ ...prev, tagline: event.target.value }))}
-            />
-          </label>
           <label className={ADMIN_LABEL}>
             Short description
             <textarea

@@ -252,7 +252,7 @@ export default function AcademicsPage() {
             <CallToActionBanner
               title="Need help choosing the right stream after Class X?"
               description="The institute supports families with stream selection guidance, admission queries, and academic planning for the higher secondary stage."
-              primaryAction={{ label: "Apply For Admission", href: "/admission" }}
+              primaryAction={{ label: "Open Admission Form", href: "/admission" }}
               secondaryAction={{ label: "Talk To The School", href: "/about#contact" }}
             />
           </>
@@ -261,3 +261,4 @@ export default function AcademicsPage() {
     </div>
   );
 }
+

@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { FACULTY_FALLBACK } from "../../lib/siteContent";
 
 function initialsFor(name) {
   return String(name || "")
@@ -15,7 +14,7 @@ function initialsFor(name) {
 }
 
 export default function FacultySliderSection({ institute }) {
-  const faculties = institute?.faculties?.length ? institute.faculties : FACULTY_FALLBACK;
+  const faculties = Array.isArray(institute?.faculties) ? institute.faculties : [];
   const trackRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -72,7 +71,7 @@ export default function FacultySliderSection({ institute }) {
       >
         {faculties.map((faculty, index) => (
           <article
-            key={`${faculty.name}-${faculty.department}`}
+            key={`${faculty.name}-${faculty.department}-${index}`}
             className="min-w-[280px] flex-1 snap-center rounded-[1.6rem] border border-white/80 bg-white/90 p-4 shadow-[0_14px_30px_rgba(14,116,144,0.12)] backdrop-blur"
           >
             <div className="relative overflow-hidden rounded-[1.3rem] bg-[radial-gradient(circle_at_top,#cfefff_0%,#8fd0ef_45%,#0f172a_100%)] p-4">
@@ -122,8 +121,3 @@ export default function FacultySliderSection({ institute }) {
     </section>
   );
 }
-
-
-
-
-

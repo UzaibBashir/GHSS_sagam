@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function AboutContactSection({ institute }) {
   const contact = institute?.contact || {};
-  const formUrl = institute?.admission_form_url || "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor";
+  const formUrl = "/admission";
 
   const contactItems = [
     {
@@ -47,7 +47,7 @@ export default function AboutContactSection({ institute }) {
             rel="noreferrer"
             className="rounded-full border border-amber-300/70 bg-amber-400 px-4 py-2 text-sm font-bold text-slate-900 transition hover:bg-amber-300"
           >
-            Admission Link
+            Admission Form
           </Link>
         </div>
       </div>
@@ -78,3 +78,4 @@ export default function AboutContactSection({ institute }) {
     </section>
   );
 }
+

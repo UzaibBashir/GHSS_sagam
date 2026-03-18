@@ -11,7 +11,7 @@ import {
   verifyStudentCredentials,
   verifyToken,
 } from "../_lib/auth";
-import { checkRateLimit, getStore } from "../_lib/store";
+import { checkRateLimit, getStore, saveStore } from "../_lib/store";
 import {
   assertNonEmpty,
   assertOptionalHttpUrl,
@@ -41,7 +41,7 @@ function getControls(store) {
     notifications_page_enabled: Boolean(controls.notifications_page_enabled),
     academics_page_enabled: Boolean(controls.academics_page_enabled),
     admission_open: Boolean(controls.admission_open),
-    admission_form_url: store.instituteData.admission_form_url || "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
+    admission_form_url: store.instituteData.admission_form_url || "/admission",
   };
 }
 
@@ -65,6 +65,18 @@ function getAdminInstituteData(store) {
     staff: data.staff || [],
     facilities: data.facilities || [],
     contact: data.contact || {},
+    hero_slides: data.hero_slides || [],
+    home_highlights: data.home_highlights || { stats: [], reasons: [] },
+    home_front_desk: data.home_front_desk || { title: "", items: [] },
+    home_achievements: data.home_achievements || [],
+    home_resources: data.home_resources || [],
+    home_testimonials: data.home_testimonials || [],
+    admission_content: data.admission_content || {
+      sessionYear: "2026",
+      guidelines: [],
+      eligibility: [],
+      requiredDocuments: [],
+    },
   };
 }
 
@@ -101,7 +113,9 @@ function normalizeStringList(items, label) {
   if (!Array.isArray(items)) {
     throw new Error(`${label} must be an array`);
   }
-  return items.map((item) => assertNonEmpty(label, item));
+  return items
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
 }
 
 function normalizePrograms(items) {
@@ -163,6 +177,82 @@ function normalizeContact(payload) {
   };
 }
 
+
+function normalizeHomeHighlights(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Home highlights are required");
+  }
+  const stats = (Array.isArray(payload.stats) ? payload.stats : [])
+    .map((item) => ({
+      value: String(item?.value || "").trim(),
+      label: String(item?.label || "").trim(),
+    }))
+    .filter((item) => item.value && item.label);
+  const reasons = normalizeStringList(payload.reasons || [], "Highlight reason");
+  return { stats, reasons };
+}
+
+function normalizeHomeFrontDesk(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Front desk content is required");
+  }
+  return {
+    title: assertNonEmpty("Front desk title", payload.title),
+    items: normalizeStringList(payload.items || [], "Front desk item"),
+  };
+}
+
+function normalizeHomeResources(items) {
+  if (!Array.isArray(items)) {
+    throw new Error("Home resources must be an array");
+  }
+  return items
+    .map((item) => ({
+      title: String(item?.title || "").trim(),
+      description: String(item?.description || "").trim(),
+      href: String(item?.href || "").trim(),
+      label: String(item?.label || "").trim(),
+    }))
+    .filter((item) => item.title && item.description && item.href && item.label);
+}
+
+function normalizeHomeTestimonials(items) {
+  if (!Array.isArray(items)) {
+    throw new Error("Home testimonials must be an array");
+  }
+  return items
+    .map((item) => ({
+      name: String(item?.name || "").trim(),
+      role: String(item?.role || "").trim(),
+      quote: String(item?.quote || "").trim(),
+    }))
+    .filter((item) => item.name && item.role && item.quote);
+}
+
+function normalizeHeroSlides(items) {
+  if (!Array.isArray(items)) {
+    throw new Error("Hero slides must be an array");
+  }
+  return items
+    .map((item) => ({
+      src: String(item?.src || "").trim(),
+      title: String(item?.title || "").trim(),
+      subtitle: String(item?.subtitle || "").trim(),
+    }))
+    .filter((item) => item.src && item.title && item.subtitle);
+}
+
+function normalizeAdmissionContent(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Admission content is required");
+  }
+  return {
+    sessionYear: assertNonEmpty("Admission session year", payload.sessionYear || "2026"),
+    guidelines: normalizeStringList(payload.guidelines || [], "Admission guideline"),
+    eligibility: normalizeStringList(payload.eligibility || [], "Admission eligibility"),
+    requiredDocuments: normalizeStringList(payload.requiredDocuments || [], "Required document"),
+  };
+}
 function normalizeAdmissionPayload(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("Admission details are required");
@@ -173,6 +263,148 @@ function normalizeAdmissionPayload(payload) {
   };
 }
 
+
+function getFormText(formData, key) {
+  return String(formData.get(key) || "").trim();
+}
+
+function getRequiredFormText(formData, key, label) {
+  return assertNonEmpty(label, getFormText(formData, key));
+}
+
+function getFormList(formData, key) {
+  return formData
+    .getAll(key)
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+}
+
+async function parseUploadedFile(formData, key, label, required = false) {
+  const value = formData.get(key);
+  const oneMb = 1024 * 1024;
+
+  if (!value || typeof value === "string") {
+    if (required) {
+      throw new Error(`${label} is required`);
+    }
+    return null;
+  }
+
+  if (!value.size) {
+    if (required) {
+      throw new Error(`${label} is required`);
+    }
+    return null;
+  }
+
+  if (value.size > oneMb) {
+    throw new Error(`${label} must be less than 1 MB`);
+  }
+
+  const data = Buffer.from(await value.arrayBuffer()).toString("base64");
+  return {
+    name: value.name || "upload",
+    type: value.type || "application/octet-stream",
+    size: value.size,
+    data,
+  };
+}
+
+async function normalizeMultipartAdmissionPayload(request) {
+  const formData = await request.formData();
+  const feesPaidVia = getRequiredFormText(formData, "fees_paid_via", "Fees paid via").toLowerCase();
+  const classForAdmission = getRequiredFormText(formData, "class_for_admission", "Class for admission");
+  const subjects = getFormList(formData, "subjects");
+
+  if (!subjects.length) {
+    throw new Error("At least one subject must be selected");
+  }
+
+  const stream = getFormText(formData, "stream");
+  if ((classForAdmission === "11th" || classForAdmission === "12th") && !stream) {
+    throw new Error("Stream is required for 11th and 12th classes");
+  }
+
+  return {
+    name: getRequiredFormText(formData, "applicant_name", "Applicant name"),
+    dob: getRequiredFormText(formData, "dob", "Date of birth"),
+    form_data: {
+      session_year: getFormText(formData, "session_year") || "2026",
+      applicant_name: getRequiredFormText(formData, "applicant_name", "Applicant name"),
+      father_name: getRequiredFormText(formData, "father_name", "Father's name"),
+      mother_name: getRequiredFormText(formData, "mother_name", "Mother's name"),
+      dob: getRequiredFormText(formData, "dob", "Date of birth"),
+      dob_words: getFormText(formData, "dob_words"),
+      permanent_address: getRequiredFormText(formData, "permanent_address", "Permanent address"),
+      present_address: getRequiredFormText(formData, "present_address", "Present address"),
+      parent_cell: getRequiredFormText(formData, "parent_cell", "Parent cell number"),
+      email: getFormText(formData, "email"),
+      aadhar_no: getRequiredFormText(formData, "aadhar_no", "Aadhar number"),
+      blood_group: getFormText(formData, "blood_group") || "Not Known",
+      height: getFormText(formData, "height"),
+      weight: getFormText(formData, "weight"),
+      parents_occupation: getFormText(formData, "parents_occupation"),
+      family_income: getRequiredFormText(formData, "family_income", "Family income"),
+      category: getRequiredFormText(formData, "category", "Category"),
+      sub_category: getFormText(formData, "sub_category") || "APL",
+      bank_account_no: getRequiredFormText(formData, "bank_account_no", "Bank account number"),
+      ifsc_code: getFormText(formData, "ifsc_code"),
+      class_for_admission: classForAdmission,
+      stream,
+      subjects,
+      fees_paid_via: feesPaidVia,
+      reference_no: getRequiredFormText(formData, "reference_no", "Reference number"),
+    },
+    uploads: {
+      fees_proof: await parseUploadedFile(formData, "fees_proof", "Fees proof", feesPaidVia === "online"),
+      aadhar_file: await parseUploadedFile(formData, "aadhar_file", "Aadhar upload", true),
+      ration_card_file: await parseUploadedFile(formData, "ration_card_file", "Ration card upload", false),
+      bank_copy_file: await parseUploadedFile(formData, "bank_copy_file", "Bank account copy", true),
+      applicant_photo: await parseUploadedFile(formData, "applicant_photo", "Applicant photograph", true),
+    },
+  };
+}
+
+async function normalizeAdmissionSubmission(request) {
+  const contentType = (request.headers.get("content-type") || "").toLowerCase();
+  if (contentType.includes("multipart/form-data")) {
+    return normalizeMultipartAdmissionPayload(request);
+  }
+
+  const payload = await parseJsonBody(request);
+  const basic = normalizeAdmissionPayload(payload);
+  return {
+    ...basic,
+    form_data: {},
+    uploads: {},
+  };
+}
+
+function sanitizeAdmissionForAdmin(admission) {
+  const uploads = admission.uploads || {};
+  const files = Object.entries(uploads)
+    .filter(([, file]) => Boolean(file))
+    .map(([key, file]) => ({
+      key,
+      name: file.name || "",
+      type: file.type || "",
+      size: file.size || 0,
+    }));
+
+  return {
+    application_id: admission.application_id,
+    name: admission.name,
+    dob: admission.dob,
+    status: admission.status,
+    remarks: admission.remarks || "",
+    submitted_at: admission.submitted_at,
+    approved_at: admission.approved_at || "",
+    class_for_admission: admission.form_data?.class_for_admission || "",
+    stream: admission.form_data?.stream || "",
+    fees_paid_via: admission.form_data?.fees_paid_via || "",
+    files,
+  };
+}
 function matchesAdmissionIdentity(admission, name, dob) {
   return admission.name.toLowerCase() === name.toLowerCase() && admission.dob === dob;
 }
@@ -199,9 +431,20 @@ function rateLimitOrReject(store, request, keyPrefix, limit) {
   return null;
 }
 
+
+async function persistAndJson(store, payload, status = 200, headers = undefined) {
+  await saveStore(store);
+  return json(payload, status, headers);
+}
+
+async function persistAndResponse(store, response) {
+  await saveStore(store);
+  return response;
+}
+
 export async function GET(request, context) {
   const path = await getPath(context?.params);
-  const store = getStore();
+  const store = await getStore();
 
   if (path.length === 0) {
     return json({ message: "Institute API is running" });
@@ -361,12 +604,11 @@ export async function GET(request, context) {
 
 export async function POST(request, context) {
   const path = await getPath(context?.params);
-  const store = getStore();
+  const store = await getStore();
 
   if (path[0] === "admissions" && path.length === 1) {
     try {
-      const payload = await parseJsonBody(request);
-      const applicant = normalizeAdmissionPayload(payload);
+      const applicant = await normalizeAdmissionSubmission(request);
       const admission = {
         application_id: createId("app"),
         name: applicant.name,
@@ -375,9 +617,11 @@ export async function POST(request, context) {
         remarks: "",
         submitted_at: new Date().toISOString(),
         approved_at: "",
+        form_data: applicant.form_data || {},
+        uploads: applicant.uploads || {},
       };
       store.admissions.unshift(admission);
-      return json({ success: true, ...admission });
+      return persistAndJson(store, { success: true, ...sanitizeAdmissionForAdmin(admission) });
     } catch (err) {
       return error(err instanceof Error ? err.message : "Invalid payload", 400);
     }
@@ -386,7 +630,7 @@ export async function POST(request, context) {
   if (path[0] === "contact" && path.length === 1) {
     const rateError = rateLimitOrReject(store, request, "contact", config.contactRateLimit);
     if (rateError) {
-      return rateError;
+      return persistAndResponse(store, rateError);
     }
 
     try {
@@ -399,7 +643,7 @@ export async function POST(request, context) {
         message: assertNonEmpty("Message", payload.message),
       };
       store.contacts.push(contact);
-      return json({ success: true, message: "Thanks for contacting us. Our team will reach out soon." });
+      return persistAndJson(store, { success: true, message: "Thanks for contacting us. Our team will reach out soon." });
     } catch (err) {
       return error(err instanceof Error ? err.message : "Invalid payload", 400);
     }
@@ -408,7 +652,7 @@ export async function POST(request, context) {
   if (path[0] === "student" && path[1] === "login" && path.length === 2) {
     const rateError = rateLimitOrReject(store, request, "student-login", config.studentRateLimit);
     if (rateError) {
-      return rateError;
+      return persistAndResponse(store, rateError);
     }
 
     try {
@@ -420,15 +664,15 @@ export async function POST(request, context) {
       const student = verifyStudentCredentials(store, rollNumber, password);
 
       if (!student) {
-        return error("Invalid roll number or password", 401);
+        return persistAndResponse(store, error("Invalid roll number or password", 401));
       }
 
       if (student.className !== className || student.stream !== stream) {
-        return error("Selected class or stream does not match the student record", 401);
+        return persistAndResponse(store, error("Selected class or stream does not match the student record", 401));
       }
 
       const session = createSession({ role: "student", ...student });
-      return json({ success: true, token: session.token, expires_in: session.expiresIn, student });
+      return persistAndJson(store, { success: true, token: session.token, expires_in: session.expiresIn, student });
     } catch (err) {
       return error(err instanceof Error ? err.message : "Login failed", 400);
     }
@@ -443,7 +687,7 @@ export async function POST(request, context) {
 
     const rateError = rateLimitOrReject(store, request, "admin-login", config.adminRateLimit);
     if (rateError) {
-      return rateError;
+      return persistAndResponse(store, rateError);
     }
 
     try {
@@ -455,7 +699,7 @@ export async function POST(request, context) {
       const now = Math.floor(Date.now() / 1000);
 
       if (now < bucket.lockedUntil) {
-        return error("Account temporarily locked. Please try again later.", 429);
+        return persistAndResponse(store, error("Account temporarily locked. Please try again later.", 429));
       }
 
       if (!verifyAdminCredentials(username, password)) {
@@ -463,15 +707,15 @@ export async function POST(request, context) {
         if (bucket.count >= config.failedLoginLimit) {
           bucket.count = 0;
           bucket.lockedUntil = now + config.lockoutSeconds;
-          return error("Too many failed attempts. Try again in 5 minutes.", 429);
+          return persistAndResponse(store, error("Too many failed attempts. Try again in 5 minutes.", 429));
         }
-        return error("Invalid username or password", 401);
+        return persistAndResponse(store, error("Invalid username or password", 401));
       }
 
       store.loginFailures[bucketKey] = { count: 0, lockedUntil: 0 };
       clearSessions(store);
       const session = createSession({ role: "admin" });
-      return json({ success: true, token: session.token, expires_in: session.expiresIn });
+      return persistAndJson(store, { success: true, token: session.token, expires_in: session.expiresIn });
     } catch (err) {
       return error(err instanceof Error ? err.message : "Login failed", 400);
     }
@@ -499,20 +743,20 @@ export async function POST(request, context) {
       const student = normalizeStudentPayload(payload);
       ensureUniqueRollNumber(store.students, student.rollNumber);
       store.students.unshift(student);
-      return json({ success: true, student });
+      return persistAndJson(store, { success: true, student });
     }
 
     if (path[1] === "notices" && path.length === 2) {
       const text = assertNonEmpty("Notice", payload.text);
       store.instituteData.notices.unshift({ text });
-      return json({ success: true, message: "Notice published." });
+      return persistAndJson(store, { success: true, message: "Notice published." });
     }
 
     if (path[1] === "downloads" && path.length === 2) {
       const title = assertNonEmpty("Title", payload.title);
       const url = assertNonEmpty("URL", payload.url);
       store.instituteData.downloads.unshift({ title, url });
-      return json({ success: true, message: "Download item added." });
+      return persistAndJson(store, { success: true, message: "Download item added." });
     }
 
     if (path[1] === "notification-items" && path.length === 2) {
@@ -533,7 +777,7 @@ export async function POST(request, context) {
       }
 
       store.instituteData.notification_items.unshift(item);
-      return json({ success: true, item });
+      return persistAndJson(store, { success: true, item });
     }
 
     if (path[1] === "academics" && path[2] === "noticeboard" && path.length === 3) {
@@ -554,7 +798,7 @@ export async function POST(request, context) {
       }
 
       store.instituteData.academic_content.noticeboard.unshift(item);
-      return json({ success: true, item });
+      return persistAndJson(store, { success: true, item });
     }
 
     if (path[1] === "academics" && path[2] === "timetable" && path.length === 3) {
@@ -568,7 +812,7 @@ export async function POST(request, context) {
       };
 
       store.instituteData.academic_content.timetable.push(item);
-      return json({ success: true, item });
+      return persistAndJson(store, { success: true, item });
     }
 
     return error("Not found", 404);
@@ -579,7 +823,7 @@ export async function POST(request, context) {
 
 export async function PATCH(request, context) {
   const path = await getPath(context?.params);
-  const store = getStore();
+  const store = await getStore();
 
   const isControls = path[0] === "admin" && path[1] === "controls" && path.length === 2;
   const isInstitute = path[0] === "admin" && path[1] === "institute" && path.length === 2;
@@ -621,14 +865,12 @@ export async function PATCH(request, context) {
       if (payload.remarks !== undefined) {
         admission.remarks = String(payload.remarks || "").trim();
       }
-      return json({ success: true, admission });
+      return persistAndJson(store, { success: true, admission: sanitizeAdmissionForAdmin(admission) });
     }
 
     if (isInstitute) {
       const data = store.instituteData;
 
-      if (payload.name !== undefined) data.name = assertNonEmpty("Institute name", payload.name);
-      if (payload.tagline !== undefined) data.tagline = assertNonEmpty("Tagline", payload.tagline);
       if (payload.description !== undefined) data.description = assertNonEmpty("Description", payload.description);
       if (payload.about_us !== undefined) data.about_us = assertNonEmpty("About", payload.about_us);
       if (payload.institute_details !== undefined) {
@@ -640,10 +882,22 @@ export async function PATCH(request, context) {
       if (payload.staff !== undefined) data.staff = normalizeStaff(payload.staff);
       if (payload.facilities !== undefined) data.facilities = normalizeStringList(payload.facilities, "Facility");
       if (payload.contact !== undefined) data.contact = normalizeContact(payload.contact);
+      if (payload.home_highlights !== undefined) data.home_highlights = normalizeHomeHighlights(payload.home_highlights);
+      if (payload.home_front_desk !== undefined) data.home_front_desk = normalizeHomeFrontDesk(payload.home_front_desk);
+      if (payload.home_achievements !== undefined) {
+        data.home_achievements = normalizeStringList(payload.home_achievements, "Achievement");
+      }
+      if (payload.home_resources !== undefined) data.home_resources = normalizeHomeResources(payload.home_resources);
+      if (payload.home_testimonials !== undefined) {
+        data.home_testimonials = normalizeHomeTestimonials(payload.home_testimonials);
+      }
+      if (payload.hero_slides !== undefined) data.hero_slides = normalizeHeroSlides(payload.hero_slides);
+      if (payload.admission_content !== undefined) {
+        data.admission_content = normalizeAdmissionContent(payload.admission_content);
+      }
 
-      return json({ success: true, institute: getAdminInstituteData(store) });
+      return persistAndJson(store, { success: true, institute: getAdminInstituteData(store) });
     }
-
     const controls = store.instituteData.site_controls;
 
     if (payload.notifications_page_enabled !== undefined) {
@@ -660,13 +914,13 @@ export async function PATCH(request, context) {
 
     if (payload.admission_form_url !== undefined) {
       const url = assertNonEmpty("Admission form URL", payload.admission_form_url);
-      if (!url.startsWith("http://") && !url.startsWith("https://")) {
-        return error("Admission form URL must start with http:// or https://", 400);
+      if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("/")) {
+        return error("Admission form URL must start with http://, https://, or /", 400);
       }
       store.instituteData.admission_form_url = url;
     }
 
-    return json({ success: true, message: "Controls updated.", ...getControls(store) });
+    return persistAndJson(store, { success: true, message: "Controls updated.", ...getControls(store) });
   } catch (err) {
     return error(err instanceof Error ? err.message : "Invalid payload", 400);
   }
@@ -674,7 +928,7 @@ export async function PATCH(request, context) {
 
 export async function PUT(request, context) {
   const path = await getPath(context?.params);
-  const store = getStore();
+  const store = await getStore();
 
   if (path[0] !== "admin") {
     return error("Not found", 404);
@@ -702,7 +956,7 @@ export async function PUT(request, context) {
       }
       ensureUniqueRollNumber(store.students, student.rollNumber, path[2]);
       store.students[index] = student;
-      return json({ success: true, student });
+      return persistAndJson(store, { success: true, student });
     }
     if (path[1] === "notices" && path.length === 3) {
       const index = parseIndex(path[2], "Notice");
@@ -711,7 +965,7 @@ export async function PUT(request, context) {
       }
       const textValue = assertNonEmpty("Notice", payload.text);
       store.instituteData.notices[index] = { text: textValue };
-      return json({ success: true, notice: store.instituteData.notices[index] });
+      return persistAndJson(store, { success: true, notice: store.instituteData.notices[index] });
     }
 
     if (path[1] === "downloads" && path.length === 3) {
@@ -722,7 +976,7 @@ export async function PUT(request, context) {
       const title = assertNonEmpty("Title", payload.title);
       const url = assertNonEmpty("URL", payload.url);
       store.instituteData.downloads[index] = { title, url };
-      return json({ success: true, download: store.instituteData.downloads[index] });
+      return persistAndJson(store, { success: true, download: store.instituteData.downloads[index] });
     }
 
     if (path[1] === "notification-items" && path.length === 3) {
@@ -743,7 +997,7 @@ export async function PUT(request, context) {
         return error("Link label is required when link URL is provided", 400);
       }
 
-      return json({ success: true, item: current });
+      return persistAndJson(store, { success: true, item: current });
     }
 
     if (path[1] === "academics" && path[2] === "noticeboard" && path.length === 4) {
@@ -764,7 +1018,7 @@ export async function PUT(request, context) {
         return error("Link label is required when link URL is provided", 400);
       }
 
-      return json({ success: true, item: current });
+      return persistAndJson(store, { success: true, item: current });
     }
 
     if (path[1] === "academics" && path[2] === "timetable" && path.length === 4) {
@@ -778,7 +1032,7 @@ export async function PUT(request, context) {
       if (payload.class_name !== undefined) current.class_name = assertNonEmpty("Class", payload.class_name);
       if (payload.stream !== undefined) current.stream = assertNonEmpty("Stream", payload.stream);
 
-      return json({ success: true, item: current });
+      return persistAndJson(store, { success: true, item: current });
     }
 
     if (path[1] === "academics" && path[2] === "materials" && path.length === 3) {
@@ -786,7 +1040,7 @@ export async function PUT(request, context) {
         return error("materials must be an array", 400);
       }
       store.instituteData.academic_content.materials = payload.materials;
-      return json({ success: true, materials: store.instituteData.academic_content.materials });
+      return persistAndJson(store, { success: true, materials: store.instituteData.academic_content.materials });
     }
 
     return error("Not found", 404);
@@ -800,7 +1054,7 @@ export async function PUT(request, context) {
 
 export async function DELETE(request, context) {
   const path = await getPath(context?.params);
-  const store = getStore();
+  const store = await getStore();
 
   if (path[0] !== "admin") {
     return error("Not found", 404);
@@ -824,7 +1078,7 @@ export async function DELETE(request, context) {
         return error("Student not found", 404);
       }
       store.students.splice(index, 1);
-      return json({ success: true, message: "Student removed." });
+      return persistAndJson(store, { success: true, message: "Student removed." });
     }
 
     if (path[1] === "notices" && path.length === 3) {
@@ -833,7 +1087,7 @@ export async function DELETE(request, context) {
         return error("Notice not found", 404);
       }
       store.instituteData.notices.splice(index, 1);
-      return json({ success: true, message: "Notice removed." });
+      return persistAndJson(store, { success: true, message: "Notice removed." });
     }
 
     if (path[1] === "downloads" && path.length === 3) {
@@ -842,30 +1096,30 @@ export async function DELETE(request, context) {
         return error("Download item not found", 404);
       }
       store.instituteData.downloads.splice(index, 1);
-      return json({ success: true, message: "Download item removed." });
+      return persistAndJson(store, { success: true, message: "Download item removed." });
     }
 
     if (path[1] === "contacts" && path.length === 2) {
       store.contacts = [];
-      return json({ success: true, message: "All enquiries cleared." });
+      return persistAndJson(store, { success: true, message: "All enquiries cleared." });
     }
 
     if (path[1] === "notification-items" && path.length === 3) {
       const index = findItemIndex(store.instituteData.notification_items, path[2]);
       store.instituteData.notification_items.splice(index, 1);
-      return json({ success: true, message: "Notification deleted." });
+      return persistAndJson(store, { success: true, message: "Notification deleted." });
     }
 
     if (path[1] === "academics" && path[2] === "noticeboard" && path.length === 4) {
       const index = findItemIndex(store.instituteData.academic_content.noticeboard, path[3]);
       store.instituteData.academic_content.noticeboard.splice(index, 1);
-      return json({ success: true, message: "Noticeboard item deleted." });
+      return persistAndJson(store, { success: true, message: "Noticeboard item deleted." });
     }
 
     if (path[1] === "academics" && path[2] === "timetable" && path.length === 4) {
       const index = findItemIndex(store.instituteData.academic_content.timetable, path[3]);
       store.instituteData.academic_content.timetable.splice(index, 1);
-      return json({ success: true, message: "Timetable item deleted." });
+      return persistAndJson(store, { success: true, message: "Timetable item deleted." });
     }
 
     return error("Not found", 404);
@@ -876,6 +1130,25 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

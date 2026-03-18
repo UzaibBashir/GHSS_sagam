@@ -1,3 +1,5 @@
+import { getDb } from "./mongodb";
+
 const DEFAULT_INSTITUTE_DATA = {
   name: "Government Girls Higher Secondary School, Sagam",
   tagline: "Educating Girls, Building Futures",
@@ -10,7 +12,7 @@ const DEFAULT_INSTITUTE_DATA = {
     "Supports higher secondary learning with Medical, Non-Medical, and Arts streams.",
     "Focused on board preparation, character formation, and future academic growth.",
   ],
-  admission_form_url: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
+  admission_form_url: "/admission",
   site_controls: {
     notifications_page_enabled: true,
     academics_page_enabled: true,
@@ -120,7 +122,7 @@ const DEFAULT_INSTITUTE_DATA = {
         "Students seeking admission to Medical, Non-Medical, and Arts streams should complete the admission process within the announced dates.",
       image_url: "",
       link_label: "Open Admission Form",
-      link_url: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
+      link_url: "/admission",
     },
     {
       id: "n-002",
@@ -234,6 +236,122 @@ const DEFAULT_INSTITUTE_DATA = {
     phone: "+91-7000000000",
     address: "Government Girls Higher Secondary School, Sagam, Jammu and Kashmir, India",
   },
+  hero_slides: [
+    {
+      src: "/slideshow/slide1.jpeg",
+      title: "Government Girls Higher Secondary School, Sagam",
+      subtitle: "A vibrant campus where students learn, grow, and lead.",
+    },
+    {
+      src: "/slideshow/slide2.jpeg",
+      title: "Admissions Open 2026",
+      subtitle: "Join a supportive academic environment focused on excellence and values.",
+    },
+    {
+      src: "/slideshow/slide3.jpeg",
+      title: "Educating Girls, Building Futures",
+      subtitle: "Empowering young minds through quality education, discipline, and opportunity.",
+    },
+  ],
+  home_highlights: {
+    stats: [
+      { value: "1000+", label: "Girls Enrolled" },
+      { value: "30+", label: "Teachers and Staff" },
+      { value: "90%+", label: "Higher Secondary Success" },
+      { value: "3", label: "Streams Offered" },
+    ],
+    reasons: [
+      "Dedicated higher secondary teaching for Medical, Non-Medical, and Arts students.",
+      "A disciplined government institution supporting girls' education and progression.",
+      "Academic mentoring, scholarships guidance, and a supportive campus atmosphere.",
+    ],
+  },
+  home_front_desk: {
+    title: "Visitor Essentials",
+    items: [
+      "Admission and stream selection guidance",
+      "Scholarship and student welfare information",
+      "Board exam notices and academic support links",
+      "Parent communication and institutional updates",
+    ],
+  },
+  home_achievements: [
+    "Student achievements in board results, science fairs, and community competitions.",
+    "Awards for academic excellence, attendance, and leadership across Medical, Non-Medical, and Arts streams.",
+    "Milestones in scholarships secured and higher education admissions for graduating students.",
+    "Recognition for disciplined campus culture and sustained academic performance.",
+  ],
+  home_resources: [
+    {
+      title: "Scholarship Information",
+      description: "Important guidance for girls applying under scholarship and support schemes.",
+      href: "https://example.com/scholarships",
+      label: "View Scholarships",
+    },
+    {
+      title: "Admission Updates",
+      description: "Latest information for admissions, stream selection, and student entry requirements.",
+      href: "/admission",
+      label: "Open Admission Form",
+    },
+    {
+      title: "Academic Calendar",
+      description: "Board preparation dates, school activities, and important institutional events.",
+      href: "https://example.com/academic-calendar.pdf",
+      label: "Open Calendar",
+    },
+    {
+      title: "Student Notices",
+      description: "Circulars, exam updates, and school announcements relevant to students and parents.",
+      href: "https://example.com/student-notices",
+      label: "Open Notices",
+    },
+  ],
+  home_testimonials: [
+    {
+      name: "Student Voice",
+      role: "Class XII, Medical",
+      quote:
+        "Our teachers guide us seriously for board exams and always encourage us to stay focused and confident.",
+    },
+    {
+      name: "Parent Feedback",
+      role: "Parent",
+      quote:
+        "The school provides a disciplined environment for girls and gives real attention to both studies and values.",
+    },
+    {
+      name: "Alumna Reflection",
+      role: "Former Student",
+      quote:
+        "This school gave me the confidence to continue my education and believe in my own potential.",
+    },
+  ],
+  admission_content: {
+    sessionYear: "2026",
+    guidelines: [
+      "Open the admission form on the school website.",
+      "Enter student details exactly as per certificates (name, date of birth, class).",
+      "Select the correct stream and class based on eligibility.",
+      "Provide parent or guardian contact details with an active phone number and email.",
+      "Upload clear scans/photos of all required documents (marksheet, TC, photo, ID).",
+      "Upload the payment screenshot or receipt in the form and mention the transaction/reference ID.",
+      "Review all entries carefully, submit the form, and save the acknowledgement.",
+    ],
+    eligibility: [
+      "Students must have passed the qualifying examination from a recognized board.",
+      "Admission without fee payment will be considered incomplete.",
+      "Documents will be verified during admission and must be original and valid as per norms.",
+      "Final admission is subject to seat availability and institutional norms.",
+    ],
+    requiredDocuments: [
+      "Previous class marksheet",
+      "School leaving or transfer certificate",
+      "Aadhar, Bank Account photocopy and Ration Card photocopy",
+      "Domicile and identity proof",
+      "Recent passport-size photographs",
+    ],
+  },
 };
 
 const DEFAULT_STUDENTS = [
@@ -277,6 +395,15 @@ const DEFAULT_STATE = {
   instituteData: structuredClone(DEFAULT_INSTITUTE_DATA),
 };
 
+function resetIdentityShape(store) {
+  if (!store.instituteData || typeof store.instituteData !== "object") {
+    store.instituteData = structuredClone(DEFAULT_INSTITUTE_DATA);
+    return;
+  }
+
+  store.instituteData.name = DEFAULT_INSTITUTE_DATA.name;
+  store.instituteData.tagline = DEFAULT_INSTITUTE_DATA.tagline;
+}
 function resetControlsShape(store) {
   if (!store.instituteData.site_controls || typeof store.instituteData.site_controls !== "object") {
     store.instituteData.site_controls = {
@@ -305,29 +432,69 @@ function resetContentShape(store) {
 }
 
 function resetFacultyShape(store) {
-  const defaults = DEFAULT_INSTITUTE_DATA.faculties || [];
-
   if (!Array.isArray(store.instituteData.faculties)) {
-    store.instituteData.faculties = structuredClone(defaults);
+    store.instituteData.faculties = structuredClone(DEFAULT_INSTITUTE_DATA.faculties || []);
     return;
   }
 
-  for (const item of defaults) {
-    const index = store.instituteData.faculties.findIndex(
-      (faculty) =>
-        (faculty.name && faculty.name === item.name) ||
-        (faculty.photo && item.photo && faculty.photo === item.photo)
-    );
+  store.instituteData.faculties = store.instituteData.faculties.map((item) => ({
+    name: String(item?.name || "").trim(),
+    department: String(item?.department || "").trim(),
+    qualification: String(item?.qualification || "").trim(),
+    photo: String(item?.photo || "").trim(),
+  }));
+}
+function resetHomeContentShape(store) {
+  const data = store.instituteData || {};
 
-    if (index === -1) {
-      store.instituteData.faculties.push(structuredClone(item));
-    } else {
-      store.instituteData.faculties[index] = {
-        ...store.instituteData.faculties[index],
-        ...structuredClone(item),
-      };
-    }
+  if (!Array.isArray(data.hero_slides)) {
+    data.hero_slides = structuredClone(DEFAULT_INSTITUTE_DATA.hero_slides || []);
   }
+
+  if (!data.home_highlights || typeof data.home_highlights !== "object") {
+    data.home_highlights = structuredClone(DEFAULT_INSTITUTE_DATA.home_highlights);
+  }
+  if (!Array.isArray(data.home_highlights.stats)) {
+    data.home_highlights.stats = structuredClone(DEFAULT_INSTITUTE_DATA.home_highlights.stats || []);
+  }
+  if (!Array.isArray(data.home_highlights.reasons)) {
+    data.home_highlights.reasons = structuredClone(DEFAULT_INSTITUTE_DATA.home_highlights.reasons || []);
+  }
+
+  if (!data.home_front_desk || typeof data.home_front_desk !== "object") {
+    data.home_front_desk = structuredClone(DEFAULT_INSTITUTE_DATA.home_front_desk);
+  }
+  if (!Array.isArray(data.home_front_desk.items)) {
+    data.home_front_desk.items = structuredClone(DEFAULT_INSTITUTE_DATA.home_front_desk.items || []);
+  }
+
+  if (!Array.isArray(data.home_achievements)) {
+    data.home_achievements = structuredClone(DEFAULT_INSTITUTE_DATA.home_achievements || []);
+  }
+  if (!Array.isArray(data.home_resources)) {
+    data.home_resources = structuredClone(DEFAULT_INSTITUTE_DATA.home_resources || []);
+  }
+  if (!Array.isArray(data.home_testimonials)) {
+    data.home_testimonials = structuredClone(DEFAULT_INSTITUTE_DATA.home_testimonials || []);
+  }
+
+  if (!data.admission_content || typeof data.admission_content !== "object") {
+    data.admission_content = structuredClone(DEFAULT_INSTITUTE_DATA.admission_content || {});
+  }
+  if (!Array.isArray(data.admission_content.guidelines)) {
+    data.admission_content.guidelines = structuredClone(DEFAULT_INSTITUTE_DATA.admission_content.guidelines || []);
+  }
+  if (!Array.isArray(data.admission_content.eligibility)) {
+    data.admission_content.eligibility = structuredClone(DEFAULT_INSTITUTE_DATA.admission_content.eligibility || []);
+  }
+  if (!Array.isArray(data.admission_content.requiredDocuments)) {
+    data.admission_content.requiredDocuments = structuredClone(DEFAULT_INSTITUTE_DATA.admission_content.requiredDocuments || []);
+  }
+  if (!data.admission_content.sessionYear) {
+    data.admission_content.sessionYear = DEFAULT_INSTITUTE_DATA.admission_content.sessionYear || "2026";
+  }
+
+  store.instituteData = data;
 }
 function resetAdmissionsShape(store) {
   if (!Array.isArray(store.admissions)) {
@@ -380,21 +547,75 @@ export function checkRateLimit(store, key, limit, windowSeconds) {
   return { ok: true, remaining: Math.max(0, limit - bucket.count), retryAfter: 0 };
 }
 
-export function getStore() {
-  const globalStoreKey = "__ghhs_store_v1__";
-  if (!globalThis[globalStoreKey]) {
-    globalThis[globalStoreKey] = structuredClone(DEFAULT_STATE);
-  }
-
-  const store = globalThis[globalStoreKey];
+function normalizeStoreShape(store) {
+  resetIdentityShape(store);
   resetControlsShape(store);
   resetContentShape(store);
+  resetHomeContentShape(store);
   resetFacultyShape(store);
   resetStudentShape(store);
   resetAdmissionsShape(store);
   resetRateLimitShape(store);
+  if (!Array.isArray(store.contacts)) {
+    store.contacts = [];
+  }
+  if (!store.adminSessions || typeof store.adminSessions !== "object") {
+    store.adminSessions = {};
+  }
+  if (!store.loginFailures || typeof store.loginFailures !== "object") {
+    store.loginFailures = {};
+  }
   return store;
 }
+
+function getCollectionName() {
+  return process.env.MONGODB_STATE_COLLECTION || "app_state";
+}
+
+function stripMetaFields(doc) {
+  const store = { ...doc };
+  delete store._id;
+  delete store.updatedAt;
+  return store;
+}
+
+export async function getStore() {
+  const db = await getDb();
+  const collection = db.collection(getCollectionName());
+  const existing = await collection.findOne({ _id: "main" });
+
+  if (!existing) {
+    const initial = normalizeStoreShape(structuredClone(DEFAULT_STATE));
+    await collection.insertOne({ _id: "main", ...initial, updatedAt: new Date().toISOString() });
+    return initial;
+  }
+
+  const store = normalizeStoreShape({
+    ...structuredClone(DEFAULT_STATE),
+    ...stripMetaFields(existing),
+  });
+  return store;
+}
+
+export async function saveStore(store) {
+  const db = await getDb();
+  const collection = db.collection(getCollectionName());
+  const normalized = normalizeStoreShape(store);
+  await collection.updateOne(
+    { _id: "main" },
+    { $set: { ...normalized, updatedAt: new Date().toISOString() } },
+    { upsert: true }
+  );
+}
+
+
+
+
+
+
+
+
+
 
 
 

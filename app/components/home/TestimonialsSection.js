@@ -1,6 +1,10 @@
 import { HOME_TESTIMONIALS } from "../../lib/siteContent";
 
-export default function TestimonialsSection() {
+export default function TestimonialsSection({ institute }) {
+  const items = Array.isArray(institute?.home_testimonials) && institute.home_testimonials.length
+    ? institute.home_testimonials
+    : HOME_TESTIMONIALS;
+
   return (
     <section className="grid gap-5 rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#f6fbf8_0%,#ffffff_100%)] p-6 shadow-[0_10px_24px_rgba(15,23,42,0.06)] max-md:p-4">
       <div>
@@ -10,8 +14,8 @@ export default function TestimonialsSection() {
         </h2>
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
-        {HOME_TESTIMONIALS.map((item) => (
-          <article key={item.name} className="rounded-[1.5rem] border border-emerald-100 bg-white p-5 shadow-[0_10px_24px_rgba(5,150,105,0.06)]">
+        {items.map((item, index) => (
+          <article key={`${item.name}-${index}`} className="rounded-[1.5rem] border border-emerald-100 bg-white p-5 shadow-[0_10px_24px_rgba(5,150,105,0.06)]">
             <p className="text-sm leading-7 text-slate-700">&ldquo;{item.quote}&rdquo;</p>
             <div className="mt-4 border-t border-slate-200 pt-4">
               <p className="text-base font-extrabold text-slate-900">{item.name}</p>

@@ -133,8 +133,8 @@ export const HOME_RESOURCES = [
   {
     title: "Admission Updates",
     description: "Latest information for admissions, stream selection, and student entry requirements.",
-    href: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
-    label: "Open Admission",
+    href: "/admission",
+    label: "Open Admission Form",
   },
   {
     title: "Academic Calendar",
@@ -169,7 +169,7 @@ export const NOTIFICATION_ITEMS = [
     summary: "Admission process is open for eligible students in the new academic session.",
     details:
       "Students seeking admission to Medical, Non-Medical, and Arts streams should complete the admission process within the announced dates.",
-    links: [{ label: "Open Admission Form", href: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor" }],
+    links: [{ label: "Go to Admission Form", href: "/admission" }],
   },
   {
     id: "n-002",
@@ -205,13 +205,13 @@ export const NOTIFICATION_ITEMS = [
 
 export const ADMISSION_CONTENT = {
   guidelines: [
-    "Open the Google admission form and sign in if prompted.",
+    "Open the admission form on the school website.",
     "Enter student details exactly as per certificates (name, date of birth, class).",
     "Select the correct stream and class based on eligibility.",
     "Provide parent or guardian contact details with an active phone number and email.",
     "Upload clear scans/photos of all required documents (marksheet, TC, photo, ID).",
     "Pay the admission fee online to the dummy bank account: Account Name: GHHS Sagam (Dummy), A/C No: 123456789012, IFSC: ABCD0123456.",
-    "Upload the payment screenshot/receipt in the form and mention the transaction/reference ID.",
+    "Upload the payment screenshot or receipt in the form and mention the transaction/reference ID.",
     "Review all entries carefully, submit the form, and save the acknowledgement.",
   ],
   eligibility: [
@@ -227,7 +227,7 @@ export const ADMISSION_CONTENT = {
     "Domicile and Identity Proof",
     "Recent passport-size photographs",
   ],
-  formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor",
+  formUrl: "/admission",
 };
 
 export const ACADEMICS_CONTENT = {
@@ -267,7 +267,7 @@ export const ACADEMICS_CONTENT = {
   ],
   documents: [
     { label: "Academic Calendar", href: "https://example.com/academic-calendar.pdf" },
-    { label: "Admission Form", href: "https://docs.google.com/forms/d/e/1FAIpQLSdvS2PlCZL8kHiXKlZZ3yrPCmG9diiOGj1SUl4QvIA8DFlYIw/viewform?usp=publish-editor" },
+    { label: "Admission Form", href: "/admission" },
     { label: "Scholarship Information", href: "https://example.com/scholarships" },
   ],
   events: [
@@ -382,6 +382,8 @@ export const ACADEMIC_MATERIALS = {
     },
   ],
 };
+
+
 
 
 

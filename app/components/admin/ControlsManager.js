@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   ADMIN_BUTTON,
-  ADMIN_INPUT,
-  ADMIN_LABEL,
   ADMIN_SECTION,
   ADMIN_SECTION_DESC,
   ADMIN_SECTION_TITLE,
@@ -13,7 +11,6 @@ const DEFAULT_CONTROLS = {
   notifications_page_enabled: true,
   academics_page_enabled: true,
   admission_open: true,
-  admission_form_url: "",
 };
 
 export default function ControlsManager({ controls, onSave }) {
@@ -62,15 +59,6 @@ export default function ControlsManager({ controls, onSave }) {
             />
           </label>
         </div>
-        <label className={`${ADMIN_LABEL} mt-3`}>
-          Admission form URL
-          <input
-            className={ADMIN_INPUT}
-            value={draft.admission_form_url}
-            onChange={(event) => setDraft((prev) => ({ ...prev, admission_form_url: event.target.value }))}
-            placeholder="https://..."
-          />
-        </label>
       </article>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(draft)}>

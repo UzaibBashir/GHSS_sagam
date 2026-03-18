@@ -19,6 +19,7 @@ import ProgramsManager from "../components/admin/ProgramsManager";
 import StaffManager from "../components/admin/StaffManager";
 import StreamsSubjectsManager from "../components/admin/StreamsSubjectsManager";
 import StudentsManager from "../components/admin/StudentsManager";
+import WebContentManager from "../components/admin/WebContentManager";
 import useAdminApi from "../hooks/useAdminApi";
 import {
   ADMIN_BUTTON_OUTLINE,
@@ -44,7 +45,6 @@ const defaultControls = {
   notifications_page_enabled: true,
   academics_page_enabled: true,
   admission_open: true,
-  admission_form_url: "",
 };
 
 const defaultInstitute = {
@@ -63,6 +63,13 @@ const defaultInstitute = {
     phone: "",
     address: "",
   },
+  hero_slides: [],
+  home_highlights: { stats: [], reasons: [] },
+  home_front_desk: { title: "", items: [] },
+  home_achievements: [],
+  home_resources: [],
+  home_testimonials: [],
+  admission_content: { sessionYear: "2026", guidelines: [], eligibility: [], requiredDocuments: [] },
 };
 
 const SECTIONS = [
@@ -80,6 +87,7 @@ const SECTIONS = [
   { id: "notifications", label: "Notifications" },
   { id: "academic-noticeboard", label: "Academic noticeboard" },
   { id: "materials", label: "Study materials" },
+  { id: "web-content", label: "Website content" },
   { id: "students", label: "Student access" },
   { id: "enquiries", label: "Enquiries" },
 ];
@@ -473,6 +481,8 @@ export default function AdminPage() {
         );
       case "materials":
         return <MaterialsManager materials={academicContent.materials} onSave={handleSaveMaterials} />;
+      case "web-content":
+        return <WebContentManager institute={institute} onSave={handleSaveInstitute} />;
       case "students":
         return (
           <StudentsManager
@@ -608,6 +618,13 @@ export default function AdminPage() {
     </main>
   );
 }
+
+
+
+
+
+
+
 
 
 

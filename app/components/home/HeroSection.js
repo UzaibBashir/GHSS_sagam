@@ -7,8 +7,14 @@ import { useEffect, useMemo, useState } from "react";
 const AUTO_SLIDE_MS = 4500;
 
 export default function HeroSection({ institute }) {
-  const slides = useMemo(
-    () => [
+  const slides = useMemo(() => {
+    const dynamicSlides = Array.isArray(institute?.hero_slides) ? institute.hero_slides : [];
+
+    if (dynamicSlides.length) {
+      return dynamicSlides;
+    }
+
+    return [
       {
         src: "/slideshow/slide1.jpeg",
         title: institute?.name || "Government Girls Higher Secondary School, Sagam",
@@ -21,55 +27,34 @@ export default function HeroSection({ institute }) {
       },
       {
         src: "/slideshow/slide3.jpeg",
-        title: institute?.tagline || "Learn Today, Lead Tomorrow",
+        title: institute?.tagline || "Educating Girls, Building Futures",
         subtitle:
           institute?.description ||
           "Empowering young minds through quality education, discipline, and opportunity.",
       },
-      {
-        src: "/slideshow/slide4.jpeg",
-        title: "Strong Academics, Bright Futures",
-        subtitle: "From classroom learning to co-curricular growth, every student gets opportunities to shine.",
-      },
-      {
-        src: "/slideshow/slide5.jpeg",
-        title: "A Safe And Supportive Campus",
-        subtitle: "A disciplined and encouraging environment where every learner is respected and inspired.",
-      },
-      {
-        src: "/slideshow/slide6.jpeg",
-        title: "Focused Classroom Learning",
-        subtitle: "Daily lessons that build confidence, clarity, and subject mastery.",
-      },
-      {
-        src: "/slideshow/slide7.jpeg",
-        title: "Learning Beyond The Classroom",
-        subtitle: "Co-curricular activities that nurture leadership, teamwork, and creativity.",
-      },
-      {
-        src: "/slideshow/slide8.jpeg",
-        title: "Guidance For Every Stream",
-        subtitle: "Academic support tailored for Medical, Non-Medical, and Arts students.",
-      },
-      {
-        src: "/slideshow/slide9.jpeg",
-        title: "Building Bright Futures",
-        subtitle: "A caring school community committed to student success and wellbeing.",
-      },
-    ],
-    [institute]
-  );
+    ];
+  }, [institute]);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [failedSlides, setFailedSlides] = useState({});
 
   useEffect(() => {
+    if (!slides.length) return undefined;
+
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % slides.length);
     }, AUTO_SLIDE_MS);
 
     return () => clearInterval(timer);
   }, [slides.length]);
+
+  useEffect(() => {
+    if (activeSlide >= slides.length) {
+      setActiveSlide(0);
+    }
+  }, [activeSlide, slides.length]);
+
+  if (!slides.length) return null;
 
   return (
     <section
@@ -78,7 +63,7 @@ export default function HeroSection({ institute }) {
     >
       {slides.map((slide, index) => (
         <div
-          key={slide.src}
+          key={`${slide.src}-${index}`}
           className={`absolute inset-0 transition-all duration-700 ${
             activeSlide === index ? "scale-100 opacity-100" : "scale-105 opacity-0"
           }`}
@@ -114,7 +99,7 @@ export default function HeroSection({ institute }) {
               href="/admission"
               className="rounded-full bg-amber-400 px-1.5 py-[1px] text-[0.5rem] font-bold tracking-normal text-slate-900 transition hover:-translate-y-px hover:bg-amber-300 sm:px-2.5 sm:py-1 sm:text-[0.7rem] md:px-2 md:text-[0.62rem]"
             >
-              Apply For Admission
+              Open Admission Form
             </Link>
             <Link
               href="/notifications"
@@ -129,7 +114,7 @@ export default function HeroSection({ institute }) {
       <div className="absolute right-6 bottom-5 flex gap-2.5 max-sm:right-4 max-sm:bottom-4">
         {slides.map((slide, index) => (
           <button
-            key={slide.src + index}
+            key={`${slide.src}-${index}-dot`}
             onClick={() => setActiveSlide(index)}
             aria-label={`Show slide ${index + 1}`}
             className={`h-2.5 rounded-full transition-all ${
@@ -142,20 +127,3 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

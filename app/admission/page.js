@@ -1,6 +1,6 @@
 "use client";
 
-import AdmissionSection from "../components/home/AdmissionSection";
+import AdmissionOverviewSection from "../components/home/AdmissionOverviewSection";
 import CallToActionBanner from "../components/common/CallToActionBanner";
 import PageHero from "../components/common/PageHero";
 import Navbar from "../components/layout/Navbar";
@@ -39,7 +39,7 @@ export default function AdmissionPage() {
           </section>
         ) : (
           <>
-            <AdmissionSection institute={institute} />
+            <AdmissionOverviewSection />
             <CallToActionBanner
               title="Have questions about eligibility, documents, or stream placement?"
               description="Reach out to the school before submitting the form if you need support related to admissions, scholarships, or the most suitable stream for the student."
