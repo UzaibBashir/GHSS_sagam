@@ -21,6 +21,7 @@ import {
   json,
   parseJsonBody,
 } from "../_lib/utils";
+import { getDb } from "../_lib/mongodb";
 
 async function getPath(params) {
   const resolvedParams = await params;
@@ -122,48 +123,52 @@ function normalizePrograms(items) {
   if (!Array.isArray(items)) {
     throw new Error("Programs must be an array");
   }
-  return items.map((item) => ({
-    title: assertNonEmpty("Program title", item?.title),
-    description: assertNonEmpty("Program description", item?.description),
-  }));
+  return items
+    .map((item) => ({
+      title: String(item?.title || "").trim(),
+      description: String(item?.description || "").trim(),
+    }))
+    .filter((item) => item.title && item.description);
 }
 
 function normalizeFaculties(items) {
   if (!Array.isArray(items)) {
     throw new Error("Faculties must be an array");
   }
-  return items.map((item) => ({
-    name: assertNonEmpty("Faculty name", item?.name),
-    department: assertNonEmpty("Faculty department", item?.department),
-    qualification: assertNonEmpty("Faculty qualification", item?.qualification),
-    photo: String(item?.photo || "").trim(),
-  }));
+  return items
+    .map((item) => ({
+      name: String(item?.name || "").trim(),
+      department: String(item?.department || "").trim(),
+      qualification: String(item?.qualification || "").trim(),
+      photo: String(item?.photo || "").trim(),
+    }))
+    .filter((item) => item.name && item.department && item.qualification);
 }
 
 function normalizeStreams(items) {
   if (!Array.isArray(items)) {
     throw new Error("Streams must be an array");
   }
-  return items.map((item) => {
-    const subjects = Array.isArray(item?.subjects) ? item.subjects : [];
-    if (!subjects.length) {
-      throw new Error("Stream subjects cannot be empty");
-    }
-    return {
-      stream: assertNonEmpty("Stream name", item?.stream),
-      subjects: subjects.map((subject) => assertNonEmpty("Subject", subject)),
-    };
-  });
+  return items
+    .map((item) => ({
+      stream: String(item?.stream || "").trim(),
+      subjects: (Array.isArray(item?.subjects) ? item.subjects : [])
+        .map((subject) => String(subject || "").trim())
+        .filter(Boolean),
+    }))
+    .filter((item) => item.stream && item.subjects.length);
 }
 
 function normalizeStaff(items) {
   if (!Array.isArray(items)) {
     throw new Error("Staff list must be an array");
   }
-  return items.map((item) => ({
-    name: assertNonEmpty("Staff name", item?.name),
-    role: assertNonEmpty("Staff role", item?.role),
-  }));
+  return items
+    .map((item) => ({
+      name: String(item?.name || "").trim(),
+      role: String(item?.role || "").trim(),
+    }))
+    .filter((item) => item.name && item.role);
 }
 
 function normalizeContact(payload) {
@@ -171,12 +176,11 @@ function normalizeContact(payload) {
     throw new Error("Contact details are required");
   }
   return {
-    email: assertNonEmpty("Contact email", payload.email),
-    phone: assertNonEmpty("Contact phone", payload.phone),
-    address: assertNonEmpty("Contact address", payload.address),
+    email: String(payload.email || "").trim(),
+    phone: String(payload.phone || "").trim(),
+    address: String(payload.address || "").trim(),
   };
 }
-
 
 function normalizeHomeHighlights(payload) {
   if (!payload || typeof payload !== "object") {
@@ -444,7 +448,6 @@ async function persistAndResponse(store, response) {
 
 export async function GET(request, context) {
   const path = await getPath(context?.params);
-  const store = await getStore();
 
   if (path.length === 0) {
     return json({ message: "Institute API is running" });
@@ -452,6 +455,23 @@ export async function GET(request, context) {
 
   if (path[0] === "health" && path.length === 1) {
     return json({ status: "ok" });
+  }
+
+  if (path[0] === "health" && path[1] === "db" && path.length === 2) {
+    try {
+      const db = await getDb();
+      await db.command({ ping: 1 });
+      return json({ status: "ok", database: "connected" });
+    } catch (err) {
+      return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
+    }
+  }
+
+  let store;
+  try {
+    store = await getStore();
+  } catch (err) {
+    return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
   }
 
   if (path[0] === "institute" && path.length === 1) {
@@ -1130,6 +1150,8 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
 
 
 
