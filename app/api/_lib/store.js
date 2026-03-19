@@ -14,8 +14,13 @@ const DEFAULT_INSTITUTE_DATA = {
   ],
   admission_form_url: "/admission",
   site_controls: {
+    about_page_enabled: true,
     notifications_page_enabled: true,
     academics_page_enabled: true,
+    admission_page_enabled: true,
+    admission_apply_page_enabled: true,
+    admission_status_page_enabled: true,
+    contact_page_enabled: true,
     admission_open: true,
   },
   academics: [
@@ -222,6 +227,29 @@ const DEFAULT_INSTITUTE_DATA = {
     "Milestones in scholarships secured and higher education admissions for graduating students.",
     "Recognition for disciplined campus culture and sustained academic performance.",
   ],
+  home_student_achievements: [
+    {
+      name: "Aaliya Bashir",
+      className: "Class XII, Medical",
+      title: "Top Board Performer",
+      description: "Secured distinction in board exams with excellent subject-wise consistency.",
+      photo: "",
+    },
+    {
+      name: "Sana Jan",
+      className: "Class XI, Non-Medical",
+      title: "Science Fair Winner",
+      description: "Won district-level science fair for an innovative low-cost model project.",
+      photo: "",
+    },
+    {
+      name: "Insha Yousuf",
+      className: "Class XII, Arts",
+      title: "Debate Champion",
+      description: "Recognized for outstanding communication and leadership in inter-school debates.",
+      photo: "",
+    },
+  ],
   home_resources: [
     {
       title: "Scholarship Information",
@@ -346,13 +374,21 @@ function resetIdentityShape(store) {
   store.instituteData.tagline = DEFAULT_INSTITUTE_DATA.tagline;
 }
 function resetControlsShape(store) {
-  if (!store.instituteData.site_controls || typeof store.instituteData.site_controls !== "object") {
-    store.instituteData.site_controls = {
-      notifications_page_enabled: true,
-      academics_page_enabled: true,
-      admission_open: true,
-    };
-  }
+  const existing =
+    store.instituteData.site_controls && typeof store.instituteData.site_controls === "object"
+      ? store.instituteData.site_controls
+      : {};
+
+  store.instituteData.site_controls = {
+    about_page_enabled: existing.about_page_enabled ?? true,
+    notifications_page_enabled: existing.notifications_page_enabled ?? true,
+    academics_page_enabled: existing.academics_page_enabled ?? true,
+    admission_page_enabled: existing.admission_page_enabled ?? true,
+    admission_apply_page_enabled: existing.admission_apply_page_enabled ?? true,
+    admission_status_page_enabled: existing.admission_status_page_enabled ?? true,
+    contact_page_enabled: existing.contact_page_enabled ?? true,
+    admission_open: existing.admission_open ?? true,
+  };
 }
 
 function resetContentShape(store) {
@@ -380,7 +416,7 @@ function resetFacultyShape(store) {
 
   store.instituteData.faculties = store.instituteData.faculties.map((item) => ({
     name: String(item?.name || "").trim(),
-    department: String(item?.department || "").trim(),
+    designation: String(item?.designation || item?.department || "").trim(),
     qualification: String(item?.qualification || "").trim(),
     photo: String(item?.photo || "").trim(),
   }));
@@ -411,6 +447,9 @@ function resetHomeContentShape(store) {
 
   if (!Array.isArray(data.home_achievements)) {
     data.home_achievements = structuredClone(DEFAULT_INSTITUTE_DATA.home_achievements || []);
+  }
+  if (!Array.isArray(data.home_student_achievements)) {
+    data.home_student_achievements = structuredClone(DEFAULT_INSTITUTE_DATA.home_student_achievements || []);
   }
   if (!Array.isArray(data.home_resources)) {
     data.home_resources = structuredClone(DEFAULT_INSTITUTE_DATA.home_resources || []);
@@ -548,29 +587,4 @@ export async function saveStore(store) {
     { upsert: true }
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

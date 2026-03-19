@@ -10,6 +10,7 @@ import { PAGE_MAIN } from "../lib/uiClasses";
 export default function AdmissionPage() {
   const { institute } = useInstituteData();
   const controls = institute?.site_controls;
+  const admissionPageEnabled = controls?.admission_page_enabled ?? true;
   const admissionOpen = controls?.admission_open ?? true;
 
   return (
@@ -32,7 +33,12 @@ export default function AdmissionPage() {
           ]}
         />
 
-        {!admissionOpen ? (
+        {!admissionPageEnabled ? (
+          <section className="rounded-[2rem] border border-amber-300/70 bg-amber-50/90 p-6 text-amber-900 shadow-[0_18px_36px_rgba(217,119,6,0.12)]">
+            <h1 className="text-xl font-extrabold">Admission Page Disabled</h1>
+            <p className="mt-2 text-sm">This page is currently turned off by the administrator.</p>
+          </section>
+        ) : !admissionOpen ? (
           <section className="rounded-[2rem] border border-amber-300/70 bg-amber-50/90 p-6 text-amber-900 shadow-[0_18px_36px_rgba(217,119,6,0.12)]">
             <h1 className="text-xl font-extrabold">Admissions Are Currently Closed</h1>
             <p className="mt-2 text-sm">The administrator has temporarily turned admissions off. Please check again later.</p>

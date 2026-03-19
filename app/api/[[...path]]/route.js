@@ -39,8 +39,13 @@ function unauthorizedIfNeeded(request, store, requiredRole = null) {
 function getControls(store) {
   const controls = store.instituteData.site_controls;
   return {
+    about_page_enabled: Boolean(controls.about_page_enabled),
     notifications_page_enabled: Boolean(controls.notifications_page_enabled),
     academics_page_enabled: Boolean(controls.academics_page_enabled),
+    admission_page_enabled: Boolean(controls.admission_page_enabled),
+    admission_apply_page_enabled: Boolean(controls.admission_apply_page_enabled),
+    admission_status_page_enabled: Boolean(controls.admission_status_page_enabled),
+    contact_page_enabled: Boolean(controls.contact_page_enabled),
     admission_open: Boolean(controls.admission_open),
     admission_form_url: store.instituteData.admission_form_url || "/admission",
   };
@@ -70,6 +75,7 @@ function getAdminInstituteData(store) {
     home_highlights: data.home_highlights || { stats: [], reasons: [] },
     home_front_desk: data.home_front_desk || { title: "", items: [] },
     home_achievements: data.home_achievements || [],
+    home_student_achievements: data.home_student_achievements || [],
     home_resources: data.home_resources || [],
     home_testimonials: data.home_testimonials || [],
     admission_content: data.admission_content || {
@@ -87,6 +93,10 @@ function parseIndex(value, label) {
     throw new Error(`${label} not found`);
   }
   return index;
+}
+
+function normalizeComparable(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 function safeAdminError(err) {
@@ -138,7 +148,7 @@ function normalizeFaculties(items) {
   return items
     .map((item) => ({
       name: String(item?.name || "").trim(),
-      department: String(item?.department || "").trim() || "Faculty",
+      designation: String(item?.designation || item?.department || "").trim() || "Faculty",
       qualification: String(item?.qualification || "").trim() || "Not specified",
       photo: String(item?.photo || "").trim(),
     }))
@@ -233,6 +243,25 @@ function normalizeHomeTestimonials(items) {
     .filter((item) => item.name && item.role && item.quote);
 }
 
+
+function normalizeHomeStudentAchievements(items) {
+  if (!Array.isArray(items)) {
+    throw new Error("Home student achievements must be an array");
+  }
+  return items
+    .map((item) => ({
+      name: String(item?.name || "").trim() || "Student Achievement",
+      className: String(item?.className || item?.class || item?.stream || "Student Recognition").trim(),
+      title: String(item?.title || item?.achievement || "Award and Achievement").trim(),
+      description: String(item?.description || item?.text || "").trim(),
+      photo: String(item?.photo || "").trim(),
+    }))
+    .filter((item) => item.title && item.description)
+    .map((item) => ({
+      ...item,
+      className: item.className || "Student Recognition",
+    }));
+}
 function normalizeHeroSlides(items) {
   if (!Array.isArray(items)) {
     throw new Error("Hero slides must be an array");
@@ -436,6 +465,29 @@ function rateLimitOrReject(store, request, keyPrefix, limit) {
 }
 
 
+function normalizeOptionalNotificationAttachment(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+
+  if (text.startsWith("data:image/") || text.startsWith("data:application/pdf")) {
+    return text;
+  }
+
+  if (text.startsWith("http://") || text.startsWith("https://") || text.startsWith("/")) {
+    return text;
+  }
+
+  throw new Error("Attachment must be an uploaded image/pdf or a valid URL");
+}
+
+function normalizeOptionalNotificationLink(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (!text.startsWith("http://") && !text.startsWith("https://") && !text.startsWith("/")) {
+    throw new Error("Link URL must start with http://, https://, or /");
+  }
+  return text;
+}
 async function persistAndJson(store, payload, status = 200, headers = undefined) {
   await saveStore(store);
   return json(payload, status, headers);
@@ -540,11 +592,15 @@ export async function GET(request, context) {
       const academicContent = store.instituteData.academic_content || {};
       const className = verified.session.className;
       const stream = verified.session.stream;
+      const classKey = normalizeComparable(className);
+      const streamKey = normalizeComparable(stream);
       const filteredMaterials = (academicContent.materials || [])
-        .filter((item) => item.class_name === className)
+        .filter((item) => normalizeComparable(item.class_name) === classKey)
         .map((item) => ({
           ...item,
-          streams: (item.streams || []).filter((streamItem) => streamItem.stream === stream),
+          streams: (item.streams || []).filter(
+            (streamItem) => normalizeComparable(streamItem.stream) === streamKey
+          ),
         }));
 
       return json({
@@ -557,10 +613,14 @@ export async function GET(request, context) {
         academic_content: {
           ...academicContent,
           noticeboard: (academicContent.noticeboard || []).filter(
-            (item) => item.class_name === className && item.stream === stream
+            (item) =>
+              normalizeComparable(item.class_name) === classKey &&
+              normalizeComparable(item.stream) === streamKey
           ),
           timetable: (academicContent.timetable || []).filter(
-            (item) => item.class_name === className && item.stream === stream
+            (item) =>
+              normalizeComparable(item.class_name) === classKey &&
+              normalizeComparable(item.stream) === streamKey
           ),
           materials: filteredMaterials,
         },
@@ -804,9 +864,9 @@ export async function POST(request, context) {
         date: assertNonEmpty("Date", payload.date),
         summary: assertNonEmpty("Summary", payload.summary),
         details: assertNonEmpty("Details", payload.details),
-        image_url: assertOptionalHttpUrl("Image URL", payload.image_url),
+        image_url: normalizeOptionalNotificationAttachment(payload.image_url),
         link_label: String(payload.link_label || "").trim(),
-        link_url: assertOptionalHttpUrl("Link URL", payload.link_url),
+        link_url: normalizeOptionalNotificationLink(payload.link_url),
       };
 
       if (item.link_url && !item.link_label) {
@@ -825,9 +885,9 @@ export async function POST(request, context) {
         time: assertNonEmpty("Time", payload.time),
         class_name: assertNonEmpty("Class", payload.class_name),
         stream: assertNonEmpty("Stream", payload.stream),
-        image_url: assertOptionalHttpUrl("Image URL", payload.image_url),
+        image_url: normalizeOptionalNotificationAttachment(payload.image_url),
         link_label: String(payload.link_label || "").trim(),
-        link_url: assertOptionalHttpUrl("Link URL", payload.link_url),
+        link_url: normalizeOptionalNotificationLink(payload.link_url),
       };
 
       if (item.link_url && !item.link_label) {
@@ -929,6 +989,9 @@ export async function PATCH(request, context) {
       if (payload.home_achievements !== undefined) {
         data.home_achievements = normalizeStringList(payload.home_achievements, "Achievement");
       }
+      if (payload.home_student_achievements !== undefined) {
+        data.home_student_achievements = normalizeHomeStudentAchievements(payload.home_student_achievements);
+      }
       if (payload.home_resources !== undefined) data.home_resources = normalizeHomeResources(payload.home_resources);
       if (payload.home_testimonials !== undefined) {
         data.home_testimonials = normalizeHomeTestimonials(payload.home_testimonials);
@@ -942,12 +1005,32 @@ export async function PATCH(request, context) {
     }
     const controls = store.instituteData.site_controls;
 
+    if (payload.about_page_enabled !== undefined) {
+      controls.about_page_enabled = Boolean(payload.about_page_enabled);
+    }
+
     if (payload.notifications_page_enabled !== undefined) {
       controls.notifications_page_enabled = Boolean(payload.notifications_page_enabled);
     }
 
     if (payload.academics_page_enabled !== undefined) {
       controls.academics_page_enabled = Boolean(payload.academics_page_enabled);
+    }
+
+    if (payload.admission_page_enabled !== undefined) {
+      controls.admission_page_enabled = Boolean(payload.admission_page_enabled);
+    }
+
+    if (payload.admission_apply_page_enabled !== undefined) {
+      controls.admission_apply_page_enabled = Boolean(payload.admission_apply_page_enabled);
+    }
+
+    if (payload.admission_status_page_enabled !== undefined) {
+      controls.admission_status_page_enabled = Boolean(payload.admission_status_page_enabled);
+    }
+
+    if (payload.contact_page_enabled !== undefined) {
+      controls.contact_page_enabled = Boolean(payload.contact_page_enabled);
     }
 
     if (payload.admission_open !== undefined) {
@@ -1036,9 +1119,9 @@ export async function PUT(request, context) {
       if (payload.date !== undefined) current.date = assertNonEmpty("Date", payload.date);
       if (payload.summary !== undefined) current.summary = assertNonEmpty("Summary", payload.summary);
       if (payload.details !== undefined) current.details = assertNonEmpty("Details", payload.details);
-      if (payload.image_url !== undefined) current.image_url = assertOptionalHttpUrl("Image URL", payload.image_url);
+      if (payload.image_url !== undefined) current.image_url = normalizeOptionalNotificationAttachment(payload.image_url);
       if (payload.link_label !== undefined) current.link_label = String(payload.link_label || "").trim();
-      if (payload.link_url !== undefined) current.link_url = assertOptionalHttpUrl("Link URL", payload.link_url);
+      if (payload.link_url !== undefined) current.link_url = normalizeOptionalNotificationLink(payload.link_url);
 
       if (current.link_url && !current.link_label) {
         return error("Link label is required when link URL is provided", 400);
@@ -1057,9 +1140,9 @@ export async function PUT(request, context) {
       if (payload.time !== undefined) current.time = assertNonEmpty("Time", payload.time);
       if (payload.class_name !== undefined) current.class_name = assertNonEmpty("Class", payload.class_name);
       if (payload.stream !== undefined) current.stream = assertNonEmpty("Stream", payload.stream);
-      if (payload.image_url !== undefined) current.image_url = assertOptionalHttpUrl("Image URL", payload.image_url);
+      if (payload.image_url !== undefined) current.image_url = normalizeOptionalNotificationAttachment(payload.image_url);
       if (payload.link_label !== undefined) current.link_label = String(payload.link_label || "").trim();
-      if (payload.link_url !== undefined) current.link_url = assertOptionalHttpUrl("Link URL", payload.link_url);
+      if (payload.link_url !== undefined) current.link_url = normalizeOptionalNotificationLink(payload.link_url);
 
       if (current.link_url && !current.link_label) {
         return error("Link label is required when link URL is provided", 400);
@@ -1182,57 +1265,3 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Navbar from "../../components/layout/Navbar";
 import PageHero from "../../components/common/PageHero";
+import useInstituteData from "../../hooks/useInstituteData";
 import { PAGE_MAIN } from "../../lib/uiClasses";
 import { API_BASE } from "../../lib/api";
 
@@ -14,6 +15,10 @@ function formatDate(value) {
 }
 
 export default function AdmissionStatusPage() {
+  const { institute } = useInstituteData();
+  const controls = institute?.site_controls;
+  const admissionStatusEnabled = controls?.admission_status_page_enabled ?? true;
+
   const [applicationId, setApplicationId] = useState("");
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
@@ -116,98 +121,105 @@ export default function AdmissionStatusPage() {
           actions={[{ label: "Back to Admission", href: "/admission", variant: "secondary" }]}
         />
 
-        <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
-          <form onSubmit={checkStatus} className="grid gap-3 md:grid-cols-3">
-            <input
-              value={applicationId}
-              onChange={(event) => setApplicationId(event.target.value)}
-              placeholder="Application ID"
-              className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none"
-              required
-            />
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Student Name"
-              className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none"
-              required
-            />
-            <input
-              value={dob}
-              onChange={(event) => setDob(event.target.value)}
-              placeholder="Date of Birth (YYYY-MM-DD)"
-              className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none"
-              required
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(15,23,42,0.18)] md:col-span-3"
-            >
-              Check Status
-            </button>
-          </form>
-          {error ? <p className="mt-3 text-sm text-rose-700">{error}</p> : null}
-        </section>
-
-        {statusData ? (
-          <section className="rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_18px_36px_rgba(15,23,42,0.1)] max-md:p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-extrabold tracking-[0.16em] text-slate-500 uppercase">Application Status</p>
-                <h2 className="font-display mt-2 text-2xl font-semibold text-slate-950">
-                  {statusData.status === "approved" ? "Approved" : statusData.status === "rejected" ? "Rejected" : "Verification Pending"}
-                </h2>
-              </div>
-              {statusData.status === "approved" ? (
-                <button
-                  type="button"
-                  onClick={downloadReceipt}
-                  className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white"
-                >
-                  Download Receipt (PDF)
-                </button>
-              ) : null}
-            </div>
-
-            {statusData.status === "approved" ? (
-              <p className="mt-3 text-xs text-slate-500">Receipt is generated in your browser and not stored on the server.</p>
-            ) : null}
-
-            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
-                <p className="font-bold">Application ID</p>
-                <p className="mt-1">{statusData.application_id}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
-                <p className="font-bold">Student Name</p>
-                <p className="mt-1">{statusData.name}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
-                <p className="font-bold">Date of Birth</p>
-                <p className="mt-1">{statusData.dob}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
-                <p className="font-bold">Submitted On</p>
-                <p className="mt-1">{formatDate(statusData.submitted_at)}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
-                <p className="font-bold">Approved On</p>
-                <p className="mt-1">{formatDate(statusData.approved_at)}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900 md:col-span-2 xl:col-span-3">
-                <p className="font-bold">Remarks</p>
-                <p className="mt-1">{statusData.remarks || "No remarks yet."}</p>
-              </div>
-            </div>
-
-            {statusData.status !== "approved" ? (
-              <p className="mt-4 text-sm text-slate-600">Receipt will be available after admin approval.</p>
-            ) : null}
+        {!admissionStatusEnabled ? (
+          <section className="rounded-[2rem] border border-amber-300/70 bg-amber-50/90 p-6 text-amber-900 shadow-[0_18px_36px_rgba(217,119,6,0.12)]">
+            <h1 className="text-xl font-extrabold">Admission Status Page Disabled</h1>
+            <p className="mt-2 text-sm">This page is currently turned off by the administrator.</p>
           </section>
-        ) : null}
+        ) : (
+          <>
+            <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
+              <form onSubmit={checkStatus} className="grid gap-3 md:grid-cols-3">
+                <input
+                  value={applicationId}
+                  onChange={(event) => setApplicationId(event.target.value)}
+                  placeholder="Application ID"
+                  className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none"
+                  required
+                />
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Student Name"
+                  className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none"
+                  required
+                />
+                <input
+                  value={dob}
+                  onChange={(event) => setDob(event.target.value)}
+                  placeholder="Date of Birth (YYYY-MM-DD)"
+                  className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(15,23,42,0.18)] md:col-span-3"
+                >
+                  Check Status
+                </button>
+              </form>
+              {error ? <p className="mt-3 text-sm text-rose-700">{error}</p> : null}
+            </section>
+
+            {statusData ? (
+              <section className="rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_18px_36px_rgba(15,23,42,0.1)] max-md:p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-extrabold tracking-[0.16em] text-slate-500 uppercase">Application Status</p>
+                    <h2 className="font-display mt-2 text-2xl font-semibold text-slate-950">
+                      {statusData.status === "approved" ? "Approved" : statusData.status === "rejected" ? "Rejected" : "Verification Pending"}
+                    </h2>
+                  </div>
+                  {statusData.status === "approved" ? (
+                    <button
+                      type="button"
+                      onClick={downloadReceipt}
+                      className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white"
+                    >
+                      Download Receipt (PDF)
+                    </button>
+                  ) : null}
+                </div>
+
+                {statusData.status === "approved" ? (
+                  <p className="mt-3 text-xs text-slate-500">Receipt is generated in your browser and not stored on the server.</p>
+                ) : null}
+
+                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
+                    <p className="font-bold">Application ID</p>
+                    <p className="mt-1">{statusData.application_id}</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
+                    <p className="font-bold">Student Name</p>
+                    <p className="mt-1">{statusData.name}</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
+                    <p className="font-bold">Date of Birth</p>
+                    <p className="mt-1">{statusData.dob}</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
+                    <p className="font-bold">Submitted On</p>
+                    <p className="mt-1">{formatDate(statusData.submitted_at)}</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900">
+                    <p className="font-bold">Approved On</p>
+                    <p className="mt-1">{formatDate(statusData.approved_at)}</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900 md:col-span-2 xl:col-span-3">
+                    <p className="font-bold">Remarks</p>
+                    <p className="mt-1">{statusData.remarks || "No remarks yet."}</p>
+                  </div>
+                </div>
+
+                {statusData.status !== "approved" ? (
+                  <p className="mt-4 text-sm text-slate-600">Receipt will be available after admin approval.</p>
+                ) : null}
+              </section>
+            ) : null}
+          </>
+        )}
       </main>
     </div>
   );
 }
-
-

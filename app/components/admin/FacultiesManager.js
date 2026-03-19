@@ -12,9 +12,14 @@ import {
 
 const EMPTY_FACULTY = {
   name: "",
-  department: "",
+  designation: "",
   qualification: "",
   photo: "",
+};
+
+const EMPTY_STAFF = {
+  name: "",
+  role: "",
 };
 
 async function fileToDataUrl(file) {
@@ -39,11 +44,11 @@ function FacultyEditor({ item, onChange, onRemove }) {
           />
         </label>
         <label className={ADMIN_LABEL}>
-          Department
+          Designation
           <input
             className={ADMIN_INPUT}
-            value={item.department}
-            onChange={(event) => onChange({ ...item, department: event.target.value })}
+            value={item.designation}
+            onChange={(event) => onChange({ ...item, designation: event.target.value })}
           />
         </label>
       </div>
@@ -53,15 +58,6 @@ function FacultyEditor({ item, onChange, onRemove }) {
           className={ADMIN_INPUT}
           value={item.qualification}
           onChange={(event) => onChange({ ...item, qualification: event.target.value })}
-        />
-      </label>
-      <label className={`${ADMIN_LABEL} mt-3`}>
-        Photo URL or data
-        <input
-          className={ADMIN_INPUT}
-          value={item.photo}
-          onChange={(event) => onChange({ ...item, photo: event.target.value })}
-          placeholder="https://.../faculty-photo.jpg"
         />
       </label>
       <label className={`${ADMIN_LABEL} mt-3`}>
@@ -88,19 +84,62 @@ function FacultyEditor({ item, onChange, onRemove }) {
   );
 }
 
-export default function FacultiesManager({ faculties, onSave }) {
+function StaffEditor({ item, onChange, onRemove }) {
+  return (
+    <article className={ADMIN_SUBCARD}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={ADMIN_LABEL}>
+          Name
+          <input
+            className={ADMIN_INPUT}
+            value={item.name}
+            onChange={(event) => onChange({ ...item, name: event.target.value })}
+          />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Role
+          <input
+            className={ADMIN_INPUT}
+            value={item.role}
+            onChange={(event) => onChange({ ...item, role: event.target.value })}
+          />
+        </label>
+      </div>
+      <button className={`${ADMIN_BUTTON_DANGER} mt-3`} onClick={onRemove}>
+        Remove staff
+      </button>
+    </article>
+  );
+}
+
+export default function FacultiesManager({ faculties, onSave, staff, onSaveStaff }) {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(EMPTY_FACULTY);
+  const [staffItems, setStaffItems] = useState([]);
+  const [staffForm, setStaffForm] = useState(EMPTY_STAFF);
 
   useEffect(() => {
     setItems(faculties || []);
   }, [faculties]);
 
+  useEffect(() => {
+    setStaffItems(staff || []);
+  }, [staff]);
+
+  const saveAll = async () => {
+    if (typeof onSave === "function") {
+      await onSave(items);
+    }
+    if (typeof onSaveStaff === "function") {
+      await onSaveStaff(staffItems);
+    }
+  };
+
   return (
     <section className={ADMIN_SECTION} id="faculty">
       <div>
-        <h2 className={ADMIN_SECTION_TITLE}>Faculty Directory</h2>
-        <p className={ADMIN_SECTION_DESC}>Update faculty names, qualifications, and profile photos.</p>
+        <h2 className={ADMIN_SECTION_TITLE}>Faculty & Staff Directory</h2>
+        <p className={ADMIN_SECTION_DESC}>Update faculty designations, qualifications, photos, and staff roles in one place.</p>
       </div>
 
       <article className={`${ADMIN_SUBCARD} mt-4`}>
@@ -115,11 +154,11 @@ export default function FacultiesManager({ faculties, onSave }) {
             />
           </label>
           <label className={ADMIN_LABEL}>
-            Department
+            Designation
             <input
               className={ADMIN_INPUT}
-              value={form.department}
-              onChange={(event) => setForm((prev) => ({ ...prev, department: event.target.value }))}
+              value={form.designation}
+              onChange={(event) => setForm((prev) => ({ ...prev, designation: event.target.value }))}
             />
           </label>
         </div>
@@ -129,15 +168,6 @@ export default function FacultiesManager({ faculties, onSave }) {
             className={ADMIN_INPUT}
             value={form.qualification}
             onChange={(event) => setForm((prev) => ({ ...prev, qualification: event.target.value }))}
-          />
-        </label>
-        <label className={`${ADMIN_LABEL} mt-3`}>
-          Photo URL or data
-          <input
-            className={ADMIN_INPUT}
-            value={form.photo}
-            onChange={(event) => setForm((prev) => ({ ...prev, photo: event.target.value }))}
-            placeholder="https://.../faculty-photo.jpg"
           />
         </label>
         <label className={`${ADMIN_LABEL} mt-3`}>
@@ -172,7 +202,7 @@ export default function FacultiesManager({ faculties, onSave }) {
       <div className="mt-4 grid gap-3">
         {items.map((item, index) => (
           <FacultyEditor
-            key={`${item.name}-${index}`}
+            key={`${item.name}-${item.designation}-${index}`}
             item={item}
             onChange={(updated) => setItems((prev) => prev.map((entry, idx) => (idx === index ? updated : entry)))}
             onRemove={() => setItems((prev) => prev.filter((_, idx) => idx !== index))}
@@ -180,8 +210,51 @@ export default function FacultiesManager({ faculties, onSave }) {
         ))}
       </div>
 
-      <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(items)}>
-        Save faculty list
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <h3 className="text-base font-semibold text-slate-900">Add new staff member</h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className={ADMIN_LABEL}>
+            Name
+            <input
+              className={ADMIN_INPUT}
+              value={staffForm.name}
+              onChange={(event) => setStaffForm((prev) => ({ ...prev, name: event.target.value }))}
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Role
+            <input
+              className={ADMIN_INPUT}
+              value={staffForm.role}
+              onChange={(event) => setStaffForm((prev) => ({ ...prev, role: event.target.value }))}
+            />
+          </label>
+        </div>
+        <button
+          className={`${ADMIN_BUTTON} mt-3`}
+          onClick={() => {
+            if (!staffForm.name.trim() || !staffForm.role.trim()) return;
+            setStaffItems((prev) => [{ ...staffForm }, ...prev]);
+            setStaffForm(EMPTY_STAFF);
+          }}
+        >
+          Add staff
+        </button>
+      </article>
+
+      <div className="mt-4 grid gap-3">
+        {staffItems.map((item, index) => (
+          <StaffEditor
+            key={`${item.name}-${index}`}
+            item={item}
+            onChange={(updated) => setStaffItems((prev) => prev.map((entry, idx) => (idx === index ? updated : entry)))}
+            onRemove={() => setStaffItems((prev) => prev.filter((_, idx) => idx !== index))}
+          />
+        ))}
+      </div>
+
+      <button className={`${ADMIN_BUTTON} mt-4`} onClick={saveAll}>
+        Save faculty & staff
       </button>
     </section>
   );

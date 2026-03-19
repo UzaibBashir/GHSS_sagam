@@ -6,9 +6,9 @@ export default function FacultiesSection({ institute }) {
       <h2>Faculties</h2>
       <div className={AUTO_FIT_GRID}>
         {(institute?.faculties || []).map((item) => (
-          <article className={CARD} key={`${item.name}-${item.department}`}>
+          <article className={CARD} key={`${item.name}-${item.designation || item.department}`}>
             <h3>{item.name}</h3>
-            <p>{item.department}</p>
+            <p>{item.designation || item.department}</p>
             <p>{item.qualification}</p>
           </article>
         ))}
@@ -16,3 +16,4 @@ export default function FacultiesSection({ institute }) {
     </section>
   );
 }
+

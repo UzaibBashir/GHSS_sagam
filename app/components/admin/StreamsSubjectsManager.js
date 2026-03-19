@@ -8,9 +8,38 @@ import {
   ADMIN_SECTION_DESC,
   ADMIN_SECTION_TITLE,
   ADMIN_SUBCARD,
+  ADMIN_TEXTAREA,
 } from "./adminStyles";
 
 const EMPTY_STREAM = { stream: "", subjects: [] };
+const EMPTY_PROGRAM = { title: "", description: "" };
+
+function ProgramEditor({ item, onChange, onRemove }) {
+  return (
+    <article className={ADMIN_SUBCARD}>
+      <label className={ADMIN_LABEL}>
+        Program title
+        <input
+          className={ADMIN_INPUT}
+          value={item.title}
+          onChange={(event) => onChange({ ...item, title: event.target.value })}
+        />
+      </label>
+      <label className={`${ADMIN_LABEL} mt-3`}>
+        Description
+        <textarea
+          rows={3}
+          className={ADMIN_TEXTAREA}
+          value={item.description}
+          onChange={(event) => onChange({ ...item, description: event.target.value })}
+        />
+      </label>
+      <button className={`${ADMIN_BUTTON_DANGER} mt-3`} onClick={onRemove}>
+        Remove program
+      </button>
+    </article>
+  );
+}
 
 function SubjectsEditor({ item, onChange, onRemove }) {
   return (
@@ -48,19 +77,78 @@ function SubjectsEditor({ item, onChange, onRemove }) {
   );
 }
 
-export default function StreamsSubjectsManager({ streams, onSave }) {
+export default function StreamsSubjectsManager({ streams, onSave, programs, onSavePrograms }) {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(EMPTY_STREAM);
+  const [programItems, setProgramItems] = useState([]);
+  const [programForm, setProgramForm] = useState(EMPTY_PROGRAM);
 
   useEffect(() => {
     setItems(streams || []);
   }, [streams]);
 
+  useEffect(() => {
+    setProgramItems(programs || []);
+  }, [programs]);
+
+  const saveAll = async () => {
+    if (typeof onSavePrograms === "function") {
+      await onSavePrograms(programItems);
+    }
+    if (typeof onSave === "function") {
+      await onSave(items);
+    }
+  };
+
   return (
     <section className={ADMIN_SECTION} id="streams">
       <div>
-        <h2 className={ADMIN_SECTION_TITLE}>Streams & Subjects</h2>
-        <p className={ADMIN_SECTION_DESC}>Define each stream and the subjects offered in that stream.</p>
+        <h2 className={ADMIN_SECTION_TITLE}>Programs, Streams & Subjects</h2>
+        <p className={ADMIN_SECTION_DESC}>Manage programs and define each stream with its subjects from one place.</p>
+      </div>
+
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <h3 className="text-base font-semibold text-slate-900">Add new program</h3>
+        <label className={`${ADMIN_LABEL} mt-3`}>
+          Program title
+          <input
+            className={ADMIN_INPUT}
+            value={programForm.title}
+            onChange={(event) => setProgramForm((prev) => ({ ...prev, title: event.target.value }))}
+          />
+        </label>
+        <label className={`${ADMIN_LABEL} mt-3`}>
+          Description
+          <textarea
+            rows={3}
+            className={ADMIN_TEXTAREA}
+            value={programForm.description}
+            onChange={(event) => setProgramForm((prev) => ({ ...prev, description: event.target.value }))}
+          />
+        </label>
+        <button
+          className={`${ADMIN_BUTTON} mt-3`}
+          onClick={() => {
+            if (!programForm.title.trim() || !programForm.description.trim()) return;
+            setProgramItems((prev) => [{ ...programForm }, ...prev]);
+            setProgramForm(EMPTY_PROGRAM);
+          }}
+        >
+          Add program
+        </button>
+      </article>
+
+      <div className="mt-4 grid gap-3">
+        {programItems.map((item, index) => (
+          <ProgramEditor
+            key={`${item.title}-${index}`}
+            item={item}
+            onChange={(updated) =>
+              setProgramItems((prev) => prev.map((entry, idx) => (idx === index ? updated : entry)))
+            }
+            onRemove={() => setProgramItems((prev) => prev.filter((_, idx) => idx !== index))}
+          />
+        ))}
       </div>
 
       <article className={`${ADMIN_SUBCARD} mt-4`}>
@@ -114,8 +202,8 @@ export default function StreamsSubjectsManager({ streams, onSave }) {
         ))}
       </div>
 
-      <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(items)}>
-        Save streams
+      <button className={`${ADMIN_BUTTON} mt-4`} onClick={saveAll}>
+        Save programs, streams & subjects
       </button>
     </section>
   );

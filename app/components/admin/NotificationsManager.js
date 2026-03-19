@@ -22,6 +22,39 @@ const EMPTY_FORM = {
   link_url: "",
 };
 
+function isPdfAttachment(value) {
+  const text = String(value || "").trim().toLowerCase();
+  return text.startsWith("data:application/pdf") || text.includes(".pdf");
+}
+
+async function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Attachment read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function AttachmentPreview({ value, title }) {
+  if (!value) return null;
+
+  if (isPdfAttachment(value)) {
+    return (
+      <a
+        href={value}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-2 inline-flex rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+      >
+        Open attached PDF
+      </a>
+    );
+  }
+
+  return <img src={value} alt={title || "Notification attachment"} className="mt-2 h-28 rounded-xl border border-slate-200 object-cover" />;
+}
+
 function NotificationEditor({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
 
@@ -76,35 +109,52 @@ function NotificationEditor({ item, onSave, onRemove }) {
           placeholder="Full notification details"
         />
       </label>
+
+      <label className={ADMIN_LABEL}>
+        Upload attachment (Image/PDF) (optional)
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          className={ADMIN_INPUT}
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const dataUrl = await fileToDataUrl(file);
+            setDraft((prev) => ({ ...prev, image_url: dataUrl }));
+          }}
+        />
+      </label>
+      <AttachmentPreview value={draft.image_url} title={draft.title} />
+      {draft.image_url ? (
+        <button
+          type="button"
+          className="mt-2 rounded-full border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+          onClick={() => setDraft((prev) => ({ ...prev, image_url: "" }))}
+        >
+          Remove attachment
+        </button>
+      ) : null}
+
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className={ADMIN_LABEL}>
-          Image URL (optional)
-          <input
-            value={draft.image_url || ""}
-            onChange={(event) => setDraft((prev) => ({ ...prev, image_url: event.target.value }))}
-            className={ADMIN_INPUT}
-            placeholder="https://..."
-          />
-        </label>
         <label className={ADMIN_LABEL}>
           Link URL (optional)
           <input
             value={draft.link_url || ""}
             onChange={(event) => setDraft((prev) => ({ ...prev, link_url: event.target.value }))}
             className={ADMIN_INPUT}
-            placeholder="https://..."
+            placeholder="https://... or /page"
+          />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Link label (optional)
+          <input
+            value={draft.link_label || ""}
+            onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
+            className={ADMIN_INPUT}
+            placeholder="Open link"
           />
         </label>
       </div>
-      <label className={ADMIN_LABEL}>
-        Link label (optional)
-        <input
-          value={draft.link_label || ""}
-          onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
-          className={ADMIN_INPUT}
-          placeholder="Open link"
-        />
-      </label>
 
       <div className="mt-3 flex flex-wrap gap-2">
         <button className={ADMIN_BUTTON} onClick={() => onSave(item.id, draft)}>
@@ -186,35 +236,53 @@ export default function NotificationsManager({ items, onAdd, onSave, onRemove })
             placeholder="Full notification details"
           />
         </label>
+
+        <label className={ADMIN_LABEL}>
+          Upload attachment (Image/PDF) (optional)
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            className={ADMIN_INPUT}
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const dataUrl = await fileToDataUrl(file);
+              setForm((prev) => ({ ...prev, image_url: dataUrl }));
+            }}
+          />
+        </label>
+        <AttachmentPreview value={form.image_url} title={form.title} />
+        {form.image_url ? (
+          <button
+            type="button"
+            className="mt-2 rounded-full border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+            onClick={() => setForm((prev) => ({ ...prev, image_url: "" }))}
+          >
+            Remove attachment
+          </button>
+        ) : null}
+
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className={ADMIN_LABEL}>
-            Image URL (optional)
-            <input
-              value={form.image_url}
-              onChange={(event) => setForm((prev) => ({ ...prev, image_url: event.target.value }))}
-              className={ADMIN_INPUT}
-              placeholder="https://..."
-            />
-          </label>
           <label className={ADMIN_LABEL}>
             Link URL (optional)
             <input
               value={form.link_url}
               onChange={(event) => setForm((prev) => ({ ...prev, link_url: event.target.value }))}
               className={ADMIN_INPUT}
-              placeholder="https://..."
+              placeholder="https://... or /page"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Link label (optional)
+            <input
+              value={form.link_label}
+              onChange={(event) => setForm((prev) => ({ ...prev, link_label: event.target.value }))}
+              className={ADMIN_INPUT}
+              placeholder="Open link"
             />
           </label>
         </div>
-        <label className={ADMIN_LABEL}>
-          Link label (optional)
-          <input
-            value={form.link_label}
-            onChange={(event) => setForm((prev) => ({ ...prev, link_label: event.target.value }))}
-            className={ADMIN_INPUT}
-            placeholder="Open link"
-          />
-        </label>
+
         <button onClick={handleCreate} className={`${ADMIN_BUTTON} mt-3`}>
           Publish notification
         </button>

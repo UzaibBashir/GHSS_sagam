@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -29,6 +29,51 @@ const EMPTY_TIMETABLE = {
   class_name: "",
   stream: "",
 };
+
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function matchesClassStream(item, classFilter, streamFilter) {
+  const itemClass = normalizeText(item?.class_name);
+  const itemStream = normalizeText(item?.stream);
+  const classMatch = !classFilter || itemClass === normalizeText(classFilter);
+  const streamMatch = !streamFilter || itemStream === normalizeText(streamFilter);
+  return classMatch && streamMatch;
+}
+
+function isPdfAttachment(value) {
+  const text = String(value || "").trim().toLowerCase();
+  return text.startsWith("data:application/pdf") || text.includes(".pdf");
+}
+
+async function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Attachment read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function AttachmentPreview({ value, title }) {
+  if (!value) return null;
+
+  if (isPdfAttachment(value)) {
+    return (
+      <a
+        href={value}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-2 inline-flex rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+      >
+        Open attached PDF
+      </a>
+    );
+  }
+
+  return <img src={value} alt={title || "Noticeboard attachment"} className="mt-2 h-28 rounded-xl border border-slate-200 object-cover" />;
+}
 
 function NoticeboardEditor({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
@@ -83,35 +128,53 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
           />
         </label>
       </div>
+
+      <label className={ADMIN_LABEL}>
+        Upload attachment (Image/PDF) (optional)
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          className={ADMIN_INPUT}
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const dataUrl = await fileToDataUrl(file);
+            setDraft((prev) => ({ ...prev, image_url: dataUrl }));
+          }}
+        />
+      </label>
+      <AttachmentPreview value={draft.image_url} title={draft.headline} />
+      {draft.image_url ? (
+        <button
+          type="button"
+          className="mt-2 rounded-full border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+          onClick={() => setDraft((prev) => ({ ...prev, image_url: "" }))}
+        >
+          Remove attachment
+        </button>
+      ) : null}
+
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className={ADMIN_LABEL}>
-          Image URL (optional)
-          <input
-            className={ADMIN_INPUT}
-            value={draft.image_url || ""}
-            onChange={(event) => setDraft((prev) => ({ ...prev, image_url: event.target.value }))}
-            placeholder="https://..."
-          />
-        </label>
         <label className={ADMIN_LABEL}>
           Link URL (optional)
           <input
             className={ADMIN_INPUT}
             value={draft.link_url || ""}
             onChange={(event) => setDraft((prev) => ({ ...prev, link_url: event.target.value }))}
-            placeholder="https://..."
+            placeholder="https://... or /page"
+          />
+        </label>
+        <label className={ADMIN_LABEL}>
+          Link label (optional)
+          <input
+            className={ADMIN_INPUT}
+            value={draft.link_label || ""}
+            onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
+            placeholder="Open link"
           />
         </label>
       </div>
-      <label className={ADMIN_LABEL}>
-        Link label (optional)
-        <input
-          className={ADMIN_INPUT}
-          value={draft.link_label || ""}
-          onChange={(event) => setDraft((prev) => ({ ...prev, link_label: event.target.value }))}
-          placeholder="Open link"
-        />
-      </label>
+
       <div className="mt-3 flex flex-wrap gap-2">
         <button className={ADMIN_BUTTON} onClick={() => onSave(item.id, draft)}>
           Save changes
@@ -194,13 +257,52 @@ export default function AcademicsManager({
 }) {
   const [noticeForm, setNoticeForm] = useState(EMPTY_NOTICE);
   const [timetableForm, setTimetableForm] = useState(EMPTY_TIMETABLE);
+  const [classFilter, setClassFilter] = useState("");
+  const [streamFilter, setStreamFilter] = useState("");
+
+  const noticeboardItems = academicContent?.noticeboard || [];
+  const timetableItems = academicContent?.timetable || [];
+
+  const filteredNoticeboard = useMemo(
+    () => noticeboardItems.filter((item) => matchesClassStream(item, classFilter, streamFilter)),
+    [noticeboardItems, classFilter, streamFilter]
+  );
+
+  const filteredTimetable = useMemo(
+    () => timetableItems.filter((item) => matchesClassStream(item, classFilter, streamFilter)),
+    [timetableItems, classFilter, streamFilter]
+  );
 
   return (
     <section className={ADMIN_SECTION} id="academic-noticeboard">
       <div>
         <h2 className={ADMIN_SECTION_TITLE}>Academic Noticeboard & Timetable</h2>
-        <p className={ADMIN_SECTION_DESC}>Maintain class-wise announcements and timetable rows.</p>
+        <p className={ADMIN_SECTION_DESC}>Maintain class-wise and stream-wise announcements and timetable rows.</p>
       </div>
+
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <h3 className="text-base font-semibold text-slate-900">Filter by class & stream</h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className={ADMIN_LABEL}>
+            Class filter
+            <input
+              className={ADMIN_INPUT}
+              value={classFilter}
+              onChange={(event) => setClassFilter(event.target.value)}
+              placeholder="All classes or Class XI"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Stream filter
+            <input
+              className={ADMIN_INPUT}
+              value={streamFilter}
+              onChange={(event) => setStreamFilter(event.target.value)}
+              placeholder="All streams or Medical"
+            />
+          </label>
+        </div>
+      </article>
 
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Add noticeboard item</h3>
@@ -252,35 +354,52 @@ export default function AcademicsManager({
             />
           </label>
         </div>
+
+        <label className={ADMIN_LABEL}>
+          Upload attachment (Image/PDF) (optional)
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            className={ADMIN_INPUT}
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const dataUrl = await fileToDataUrl(file);
+              setNoticeForm((prev) => ({ ...prev, image_url: dataUrl }));
+            }}
+          />
+        </label>
+        <AttachmentPreview value={noticeForm.image_url} title={noticeForm.headline} />
+        {noticeForm.image_url ? (
+          <button
+            type="button"
+            className="mt-2 rounded-full border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+            onClick={() => setNoticeForm((prev) => ({ ...prev, image_url: "" }))}
+          >
+            Remove attachment
+          </button>
+        ) : null}
+
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className={ADMIN_LABEL}>
-            Image URL (optional)
-            <input
-              className={ADMIN_INPUT}
-              value={noticeForm.image_url}
-              onChange={(event) => setNoticeForm((prev) => ({ ...prev, image_url: event.target.value }))}
-              placeholder="https://..."
-            />
-          </label>
           <label className={ADMIN_LABEL}>
             Link URL (optional)
             <input
               className={ADMIN_INPUT}
               value={noticeForm.link_url}
               onChange={(event) => setNoticeForm((prev) => ({ ...prev, link_url: event.target.value }))}
-              placeholder="https://..."
+              placeholder="https://... or /page"
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Link label (optional)
+            <input
+              className={ADMIN_INPUT}
+              value={noticeForm.link_label}
+              onChange={(event) => setNoticeForm((prev) => ({ ...prev, link_label: event.target.value }))}
+              placeholder="Open link"
             />
           </label>
         </div>
-        <label className={ADMIN_LABEL}>
-          Link label (optional)
-          <input
-            className={ADMIN_INPUT}
-            value={noticeForm.link_label}
-            onChange={(event) => setNoticeForm((prev) => ({ ...prev, link_label: event.target.value }))}
-            placeholder="Open link"
-          />
-        </label>
         <button
           className={`${ADMIN_BUTTON} mt-3`}
           onClick={() => {
@@ -293,9 +412,12 @@ export default function AcademicsManager({
       </article>
 
       <div className="mt-4 grid gap-3">
-        {(academicContent?.noticeboard || []).map((item) => (
+        {filteredNoticeboard.map((item) => (
           <NoticeboardEditor key={item.id} item={item} onSave={onSaveNoticeboard} onRemove={onRemoveNoticeboard} />
         ))}
+        {!filteredNoticeboard.length ? (
+          <article className={ADMIN_SUBCARD}>No noticeboard items for selected class/stream.</article>
+        ) : null}
       </div>
 
       <article className={`${ADMIN_SUBCARD} mt-6`}>
@@ -371,14 +493,15 @@ export default function AcademicsManager({
             </tr>
           </thead>
           <tbody>
-            {(academicContent?.timetable || []).map((item) => (
+            {filteredTimetable.map((item) => (
               <TimetableRow key={item.id} item={item} onSave={onSaveTimetable} onRemove={onRemoveTimetable} />
             ))}
           </tbody>
         </table>
+        {!filteredTimetable.length ? (
+          <article className={`${ADMIN_SUBCARD} mt-3`}>No timetable rows for selected class/stream.</article>
+        ) : null}
       </div>
     </section>
   );
 }
-
-

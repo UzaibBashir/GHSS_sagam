@@ -15,6 +15,7 @@ const EMPTY = {
   home_highlights: { stats: [], reasons: [] },
   home_front_desk: { title: "", items: [] },
   home_achievements: [],
+  home_student_achievements: [],
   home_resources: [],
   home_testimonials: [],
   admission_content: { sessionYear: "2026", guidelines: [], eligibility: [], requiredDocuments: [] },
@@ -24,6 +25,7 @@ const EMPTY_SLIDE = { src: "", title: "", subtitle: "" };
 const EMPTY_STAT = { value: "", label: "" };
 const EMPTY_RESOURCE = { title: "", description: "", href: "", label: "" };
 const EMPTY_TESTIMONIAL = { name: "", role: "", quote: "" };
+const EMPTY_STUDENT_ACHIEVEMENT = { name: "", className: "", title: "", description: "", photo: "" };
 
 function parseLines(text) {
   return String(text || "")
@@ -34,6 +36,19 @@ function parseLines(text) {
 
 function toLines(items) {
   return (items || []).join("\n");
+}
+
+function normalizeStudentAchievements(items) {
+  return (items || [])
+    .map((item) => ({
+      name: String(item?.name || "").trim(),
+      className: String(item?.className || "").trim(),
+      title: String(item?.title || "").trim(),
+      description: String(item?.description || "").trim(),
+      photo: String(item?.photo || "").trim(),
+    }))
+    .filter((item) => item.title && item.description)
+    .map((item) => ({ ...item, name: item.name || "Student Achievement", className: item.className || "Student Recognition" }));
 }
 
 async function fileToDataUrl(file) {
@@ -67,6 +82,7 @@ export default function WebContentManager({ institute, onSave }) {
         items: institute?.home_front_desk?.items || [],
       },
       home_achievements: institute?.home_achievements || [],
+      home_student_achievements: institute?.home_student_achievements || [],
       home_resources: institute?.home_resources || [],
       home_testimonials: institute?.home_testimonials || [],
       admission_content: {
@@ -98,6 +114,7 @@ export default function WebContentManager({ institute, onSave }) {
         items: parseLines(frontDeskItemsText),
       },
       home_achievements: parseLines(achievementsText),
+      home_student_achievements: normalizeStudentAchievements(draft.home_student_achievements),
       home_resources: draft.home_resources,
       home_testimonials: draft.home_testimonials,
       admission_content: {
@@ -291,6 +308,133 @@ export default function WebContentManager({ institute, onSave }) {
           Achievement lines
           <textarea rows={6} className={ADMIN_TEXTAREA} value={achievementsText} onChange={(e) => setAchievementsText(e.target.value)} />
         </label>
+      </article>
+
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <h3 className="text-base font-semibold text-slate-900">Student achievement cards</h3>
+        <div className="mt-3 grid gap-3">
+          {(draft.home_student_achievements || []).map((item, index) => (
+            <div key={`student-achievement-${index}`} className="rounded-xl border border-slate-200 bg-white p-3">
+              <div className="grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className={ADMIN_LABEL}>
+                    Student name
+                    <input
+                      className={ADMIN_INPUT}
+                      value={item.name || ""}
+                      onChange={(event) => {
+                        const items = [...(draft.home_student_achievements || [])];
+                        items[index] = { ...items[index], name: event.target.value };
+                        setDraft((prev) => ({ ...prev, home_student_achievements: items }));
+                      }}
+                    />
+                  </label>
+                  <label className={ADMIN_LABEL}>
+                    Class / stream
+                    <input
+                      className={ADMIN_INPUT}
+                      value={item.className || ""}
+                      onChange={(event) => {
+                        const items = [...(draft.home_student_achievements || [])];
+                        items[index] = { ...items[index], className: event.target.value };
+                        setDraft((prev) => ({ ...prev, home_student_achievements: items }));
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <label className={ADMIN_LABEL}>
+                  Achievement title
+                  <input
+                    className={ADMIN_INPUT}
+                    value={item.title || ""}
+                    onChange={(event) => {
+                      const items = [...(draft.home_student_achievements || [])];
+                      items[index] = { ...items[index], title: event.target.value };
+                      setDraft((prev) => ({ ...prev, home_student_achievements: items }));
+                    }}
+                  />
+                </label>
+
+                <label className={ADMIN_LABEL}>
+                  Description
+                  <textarea
+                    rows={3}
+                    className={ADMIN_TEXTAREA}
+                    value={item.description || ""}
+                    onChange={(event) => {
+                      const items = [...(draft.home_student_achievements || [])];
+                      items[index] = { ...items[index], description: event.target.value };
+                      setDraft((prev) => ({ ...prev, home_student_achievements: items }));
+                    }}
+                  />
+                </label>
+
+                <label className={ADMIN_LABEL}>
+                  Photo URL or data URL
+                  <input
+                    className={ADMIN_INPUT}
+                    value={item.photo || ""}
+                    onChange={(event) => {
+                      const items = [...(draft.home_student_achievements || [])];
+                      items[index] = { ...items[index], photo: event.target.value };
+                      setDraft((prev) => ({ ...prev, home_student_achievements: items }));
+                    }}
+                    placeholder="https://.../student.jpg"
+                  />
+                </label>
+
+                <label className={ADMIN_LABEL}>
+                  Upload student photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className={ADMIN_INPUT}
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      const dataUrl = await fileToDataUrl(file);
+                      const items = [...(draft.home_student_achievements || [])];
+                      items[index] = { ...items[index], photo: dataUrl };
+                      setDraft((prev) => ({ ...prev, home_student_achievements: items }));
+                    }}
+                  />
+                </label>
+
+                {item.photo ? (
+                  <img
+                    src={item.photo}
+                    alt={item.name || `Student achievement ${index + 1}`}
+                    className="h-20 w-20 rounded-lg border border-slate-200 object-cover"
+                  />
+                ) : null}
+
+                <button
+                  type="button"
+                  className="rounded-lg border border-rose-300 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+                  onClick={() => {
+                    const items = (draft.home_student_achievements || []).filter((_, itemIndex) => itemIndex !== index);
+                    setDraft((prev) => ({ ...prev, home_student_achievements: items }));
+                  }}
+                >
+                  Remove card
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            className={ADMIN_BUTTON}
+            onClick={() =>
+              setDraft((prev) => ({
+                ...prev,
+                home_student_achievements: [...(prev.home_student_achievements || []), EMPTY_STUDENT_ACHIEVEMENT],
+              }))
+            }
+          >
+            Add student achievement card
+          </button>
+        </div>
       </article>
 
       <article className={`${ADMIN_SUBCARD} mt-4`}>

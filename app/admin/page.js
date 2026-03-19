@@ -7,21 +7,18 @@ import AdmissionsManager from "../components/admin/AdmissionsManager";
 import AdminLoginCard from "../components/admin/AdminLoginCard";
 import ControlsManager from "../components/admin/ControlsManager";
 import DownloadsManager from "../components/admin/DownloadsManager";
-import EnquiriesManager from "../components/admin/EnquiriesManager";
 import FacultiesManager from "../components/admin/FacultiesManager";
-import FacilitiesManager from "../components/admin/FacilitiesManager";
 import InstituteDetailsManager from "../components/admin/InstituteDetailsManager";
 import InstituteProfileManager from "../components/admin/InstituteProfileManager";
 import MaterialsManager from "../components/admin/MaterialsManager";
 import NoticesManager from "../components/admin/NoticesManager";
 import NotificationsManager from "../components/admin/NotificationsManager";
-import ProgramsManager from "../components/admin/ProgramsManager";
-import StaffManager from "../components/admin/StaffManager";
 import StreamsSubjectsManager from "../components/admin/StreamsSubjectsManager";
 import StudentsManager from "../components/admin/StudentsManager";
 import WebContentManager from "../components/admin/WebContentManager";
 import useAdminApi from "../hooks/useAdminApi";
 import {
+  ADMIN_BUTTON_DANGER,
   ADMIN_BUTTON_OUTLINE,
   ADMIN_CONTAINER,
   ADMIN_INPUT,
@@ -42,8 +39,13 @@ const defaultAcademicContent = {
 };
 
 const defaultControls = {
+  about_page_enabled: true,
   notifications_page_enabled: true,
   academics_page_enabled: true,
+  admission_page_enabled: true,
+  admission_apply_page_enabled: true,
+  admission_status_page_enabled: true,
+  contact_page_enabled: true,
   admission_open: true,
 };
 
@@ -67,6 +69,7 @@ const defaultInstitute = {
   home_highlights: { stats: [], reasons: [] },
   home_front_desk: { title: "", items: [] },
   home_achievements: [],
+  home_student_achievements: [],
   home_resources: [],
   home_testimonials: [],
   admission_content: { sessionYear: "2026", guidelines: [], eligibility: [], requiredDocuments: [] },
@@ -74,22 +77,20 @@ const defaultInstitute = {
 
 const SECTIONS = [
   { id: "controls", label: "Site controls" },
-  { id: "admissions", label: "Admissions" },
-  { id: "profile", label: "Institute profile" },
-  { id: "highlights", label: "Institute highlights" },
-  { id: "programs", label: "Programs" },
-  { id: "streams", label: "Streams & subjects" },
-  { id: "faculty", label: "Faculty" },
-  { id: "staff", label: "Staff" },
-  { id: "facilities", label: "Facilities" },
-  { id: "notices", label: "Quick notices" },
-  { id: "downloads", label: "Downloads" },
-  { id: "notifications", label: "Notifications" },
+  { id: "admissions", label: "Admissions & enquiries" },
+  { id: "institute", label: "Institute content" },
+  { id: "announcements", label: "Notices & notifications" },
   { id: "academic-noticeboard", label: "Academic noticeboard" },
   { id: "materials", label: "Study materials" },
-  { id: "web-content", label: "Website content" },
   { id: "students", label: "Student access" },
-  { id: "enquiries", label: "Enquiries" },
+];
+
+const INSTITUTE_SUBSECTIONS = [
+  { id: "profile", label: "1. Institute profile" },
+  { id: "highlights", label: "2. Institute details" },
+  { id: "streams", label: "3. Streams & subjects" },
+  { id: "faculty", label: "4. Faculty & staff" },
+  { id: "web-content", label: "5. Website content" },
 ];
 
 export default function AdminPage() {
@@ -111,6 +112,9 @@ export default function AdminPage() {
   const [admissions, setAdmissions] = useState([]);
   const [institute, setInstitute] = useState(defaultInstitute);
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
+  const [activeInstituteSubsection, setActiveInstituteSubsection] = useState(
+    INSTITUTE_SUBSECTIONS[0].id
+  );
 
   const adminApi = useAdminApi(token);
   const adminApiRef = useRef(adminApi);
@@ -418,60 +422,76 @@ export default function AdminPage() {
     }
   };
 
-  const stats = useMemo(
-    () => [
-      { label: "Notifications", value: notificationItems.length },
-      { label: "Quick notices", value: notices.length },
-      { label: "Downloads", value: downloads.length },
-      { label: "Enquiries", value: contacts.length },
-      { label: "Students", value: students.length },
-    ],
-    [contacts.length, downloads.length, notificationItems.length, notices.length, students.length]
-  );
-
   const activePane = useMemo(() => {
     switch (activeSection) {
       case "controls":
         return <ControlsManager controls={controls} onSave={handleSaveControls} />;
       case "admissions":
-        return <AdmissionsManager admissions={admissions} onUpdate={handleUpdateAdmission} />;
-      case "profile":
-        return <InstituteProfileManager institute={institute} onSave={handleSaveInstitute} />;
-      case "highlights":
+        return <AdmissionsManager admissions={admissions} onUpdate={handleUpdateAdmission} enquiries={contacts} onClearEnquiries={handleClearContacts} />;
+      case "institute":
         return (
-          <InstituteDetailsManager
-            details={institute.institute_details}
-            onSave={(items) => handleSaveInstitute({ institute_details: items })}
-          />
+          <div className="grid gap-6">
+            <article className={ADMIN_NAV}>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Institute Sub Navigation</p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {INSTITUTE_SUBSECTIONS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={activeInstituteSubsection === item.id ? ADMIN_BUTTON_DANGER : ADMIN_BUTTON_OUTLINE}
+                    onClick={() => setActiveInstituteSubsection(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </article>
+            {activeInstituteSubsection === "profile" ? (
+              <InstituteProfileManager institute={institute} onSave={handleSaveInstitute} />
+            ) : null}
+            {activeInstituteSubsection === "highlights" ? (
+              <InstituteDetailsManager
+                details={institute.institute_details}
+                onSave={(items) => handleSaveInstitute({ institute_details: items })}
+              />
+            ) : null}
+            {activeInstituteSubsection === "streams" ? (
+              <StreamsSubjectsManager
+                programs={institute.academics}
+                onSavePrograms={(items) => handleSaveInstitute({ academics: items })}
+                streams={institute.streams_subjects}
+                onSave={(items) => handleSaveInstitute({ streams_subjects: items })}
+              />
+            ) : null}
+            {activeInstituteSubsection === "faculty" ? (
+              <FacultiesManager
+                faculties={institute.faculties}
+                onSave={(items) => handleSaveInstitute({ faculties: items })}
+                staff={institute.staff}
+                onSaveStaff={(items) => handleSaveInstitute({ staff: items })}
+              />
+            ) : null}
+            {activeInstituteSubsection === "web-content" ? (
+              <WebContentManager institute={institute} onSave={handleSaveInstitute} />
+            ) : null}
+          </div>
         );
-      case "programs":
-        return <ProgramsManager programs={institute.academics} onSave={(items) => handleSaveInstitute({ academics: items })} />;
-      case "streams":
+      case "announcements":
         return (
-          <StreamsSubjectsManager
-            streams={institute.streams_subjects}
-            onSave={(items) => handleSaveInstitute({ streams_subjects: items })}
-          />
+          <div className="grid gap-6">
+            <NoticesManager notices={notices} onAdd={handleAddNotice} onSave={handleSaveNotice} onRemove={handleRemoveNotice} />
+            <NotificationsManager
+              items={notificationItems}
+              onAdd={handleAddNotification}
+              onSave={handleSaveNotification}
+              onRemove={handleRemoveNotification}
+            />
+          </div>
         );
-      case "faculty":
-        return <FacultiesManager faculties={institute.faculties} onSave={(items) => handleSaveInstitute({ faculties: items })} />;
-      case "staff":
-        return <StaffManager staff={institute.staff} onSave={(items) => handleSaveInstitute({ staff: items })} />;
-      case "facilities":
-        return <FacilitiesManager facilities={institute.facilities} onSave={(items) => handleSaveInstitute({ facilities: items })} />;
-      case "notices":
-        return <NoticesManager notices={notices} onAdd={handleAddNotice} onSave={handleSaveNotice} onRemove={handleRemoveNotice} />;
       case "downloads":
         return <DownloadsManager downloads={downloads} onAdd={handleAddDownload} onSave={handleSaveDownload} onRemove={handleRemoveDownload} />;
-      case "notifications":
-        return (
-          <NotificationsManager
-            items={notificationItems}
-            onAdd={handleAddNotification}
-            onSave={handleSaveNotification}
-            onRemove={handleRemoveNotification}
-          />
-        );
       case "academic-noticeboard":
         return (
           <AcademicsManager
@@ -486,8 +506,6 @@ export default function AdminPage() {
         );
       case "materials":
         return <MaterialsManager materials={academicContent.materials} onSave={handleSaveMaterials} />;
-      case "web-content":
-        return <WebContentManager institute={institute} onSave={handleSaveInstitute} />;
       case "students":
         return (
           <StudentsManager
@@ -497,13 +515,12 @@ export default function AdminPage() {
             onRemove={handleRemoveStudent}
           />
         );
-      case "enquiries":
-        return <EnquiriesManager contacts={contacts} onClearContacts={handleClearContacts} />;
       default:
         return null;
     }
   }, [
     activeSection,
+    activeInstituteSubsection,
     academicContent,
     admissions,
     contacts,
@@ -554,6 +571,11 @@ export default function AdminPage() {
               Back to website
             </Link>
             {connected ? <span className={ADMIN_TAG}>Session active</span> : <span className={ADMIN_TAG}>Sign in required</span>}
+            {connected ? (
+              <button type="button" onClick={logout} className={ADMIN_BUTTON_DANGER}>
+                Sign out
+              </button>
+            ) : null}
           </div>
         </header>
 
@@ -566,28 +588,10 @@ export default function AdminPage() {
             onUsernameChange={setUsername}
             onPasswordChange={setPassword}
             onLogin={login}
-            onLogout={logout}
           />
 
           {connected ? (
             <>
-              <section className={ADMIN_SECTION} id="overview">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className={ADMIN_SECTION_TITLE}>Overview</h2>
-                  <span className={ADMIN_TAG}>Today</span>
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                  {stats.map((stat) => (
-                    <article key={stat.label} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                        {stat.label}
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</p>
-                    </article>
-                  ))}
-                </div>
-              </section>
-
               <div className={ADMIN_NAV}>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Navigate</p>
@@ -624,3 +628,14 @@ export default function AdminPage() {
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
+
+

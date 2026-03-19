@@ -1,11 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState } from "react";
 import CallToActionBanner from "../components/common/CallToActionBanner";
 import Navbar from "../components/layout/Navbar";
 import useInstituteData from "../hooks/useInstituteData";
 import { PAGE_MAIN } from "../lib/uiClasses";
+
+function isPdfAttachment(value) {
+  const text = String(value || "").trim().toLowerCase();
+  return text.startsWith("data:application/pdf") || text.includes(".pdf");
+}
 
 export default function NotificationsPage() {
   const { institute } = useInstituteData();
@@ -96,13 +100,22 @@ export default function NotificationsPage() {
                         <div className="mt-3 border-t border-slate-200/80 pt-3">
                           <p className="text-sm leading-6 text-slate-700">{item.details}</p>
                           {item.image_url ? (
-                            <Image
-                              src={item.image_url}
-                              alt={item.title}
-                              width={1000}
-                              height={560}
-                              className="mt-3 h-auto w-full rounded-xl border border-slate-200 object-cover"
-                            />
+                            isPdfAttachment(item.image_url) ? (
+                              <a
+                                href={item.image_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 inline-flex rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              >
+                                Open attached PDF
+                              </a>
+                            ) : (
+                              <img
+                                src={item.image_url}
+                                alt={item.title}
+                                className="mt-3 h-auto w-full rounded-xl border border-slate-200 object-cover"
+                              />
+                            )
                           ) : null}
                           {item.link_url && item.link_label ? (
                             <div className="mt-3 flex flex-wrap gap-2">

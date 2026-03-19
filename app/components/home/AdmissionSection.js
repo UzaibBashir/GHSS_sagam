@@ -7,6 +7,15 @@ import { INPUT, PRIMARY_BUTTON } from "../../lib/uiClasses";
 
 const MAX_FILE_SIZE = 1024 * 1024;
 
+function isAllowedFileType(file) {
+  if (!file) return false;
+  const type = String(file.type || "").toLowerCase();
+  const name = String(file.name || "").toLowerCase();
+  const isPdf = type === "application/pdf" || name.endsWith(".pdf");
+  const isImage = type.startsWith("image/");
+  return isPdf || isImage;
+}
+
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Not Known"];
 const CATEGORY_OPTIONS = ["OM", "RBA", "SC", "ST", "OSC", "PH"];
 const SUB_CATEGORY_OPTIONS = ["APL", "BPL", "AAY"];
@@ -31,12 +40,13 @@ const DEFAULT_FORM = {
   fatherName: "",
   motherName: "",
   dob: "",
-  dobWords: "",
+  confirmDob: "",
   permanentAddress: "",
   presentAddress: "",
   parentCell: "",
   email: "",
   aadharNo: "",
+  confirmAadharNo: "",
   bloodGroup: "A+",
   height: "",
   weight: "",
@@ -90,8 +100,46 @@ function FileInput({ label, required, accept, onChange }) {
   );
 }
 
-function downloadAutoReceipt(submission) {
+function downloadAutoReceipt(submission, details = {}) {
   const now = new Date().toLocaleString();
+  const safe = (value) => {
+    const text = String(value ?? "").trim();
+    return text || "-";
+  };
+
+  const rows = [
+    ["Application ID", submission.application_id],
+    ["Status", (submission.status || "pending").toUpperCase()],
+    ["Submitted At", submission.submitted_at || now],
+    ["Applicant Name", details.applicantName || submission.name],
+    ["Father Name", details.fatherName],
+    ["Mother Name", details.motherName],
+    ["DOB", details.dob || submission.dob],
+    ["Present Address", details.presentAddress],
+    ["Permanent Address", details.permanentAddress],
+    ["WhatsApp Contact", details.parentCell],
+    ["Email", details.email],
+    ["Aadhar No", details.aadharNo],
+    ["Blood Group", details.bloodGroup],
+    ["Family Income", details.familyIncome],
+    ["Category", details.category],
+    ["Sub-Category", details.subCategory],
+    ["Class for Admission", details.classForAdmission || submission.class_for_admission],
+    ["Stream", details.stream || submission.stream],
+    ["Subjects", Array.isArray(details.subjects) ? details.subjects.join(", ") : ""],
+    ["Bank Account No", details.bankAccountNo],
+    ["IFSC Code", details.ifscCode],
+    ["Fees Paid Via", details.feesPaidVia || submission.fees_paid_via],
+    ["Reference No", details.referenceNo],
+    ["Fees Proof File", details.feesProofName],
+    ["Aadhar File", details.aadharFileName],
+    ["Ration Card File", details.rationCardFileName],
+    ["Bank Copy File", details.bankCopyFileName],
+    ["Applicant Photo File", details.applicantPhotoName],
+  ]
+    .map(([label, value]) => `<tr><td class="label">${label}</td><td class="value">${safe(value)}</td></tr>`)
+    .join("");
+
   const html = `
   <html>
     <head>
@@ -100,19 +148,17 @@ function downloadAutoReceipt(submission) {
         body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
         h1 { font-size: 20px; margin-bottom: 8px; }
         .meta { margin-bottom: 16px; font-size: 12px; color: #475569; }
-        .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-        .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
-        .value { font-size: 14px; font-weight: 600; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        td { border-bottom: 1px solid #e2e8f0; padding: 10px 12px; vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+        .label { width: 35%; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; background: #f8fafc; }
+        .value { font-size: 14px; font-weight: 600; }
       </style>
     </head>
     <body>
       <h1>Admission Receipt</h1>
       <div class="meta">Auto generated after form submission</div>
-      <div class="card"><div class="label">Application ID</div><div class="value">${submission.application_id || ""}</div></div>
-      <div class="card"><div class="label">Student Name</div><div class="value">${submission.name || ""}</div></div>
-      <div class="card"><div class="label">Date of Birth</div><div class="value">${submission.dob || ""}</div></div>
-      <div class="card"><div class="label">Status</div><div class="value">${(submission.status || "pending").toUpperCase()}</div></div>
-      <div class="card"><div class="label">Submitted At</div><div class="value">${submission.submitted_at || now}</div></div>
+      <table>${rows}</table>
     </body>
   </html>`;
 
@@ -126,7 +172,6 @@ function downloadAutoReceipt(submission) {
   link.remove();
   URL.revokeObjectURL(url);
 }
-
 export default function AdmissionSection({ institute = null, initialOpen = false, compact = false }) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [showApplyForm, setShowApplyForm] = useState(initialOpen || compact);
@@ -171,6 +216,10 @@ export default function AdmissionSection({ institute = null, initialOpen = false
   };
 
   const setFile = (key, file) => {
+    if (file && !isAllowedFileType(file)) {
+      setStatusMessage("Only PDF or image files are allowed.");
+      return;
+    }
     if (file && file.size > MAX_FILE_SIZE) {
       setStatusMessage(`${key} exceeds 1 MB limit.`);
       return;
@@ -182,8 +231,20 @@ export default function AdmissionSection({ institute = null, initialOpen = false
     if (!form.applicantName || !form.fatherName || !form.motherName || !form.dob) {
       return "Please fill applicant, father, mother name and date of birth.";
     }
+    if (!form.confirmDob) {
+      return "Please confirm date of birth.";
+    }
+    if (form.dob !== form.confirmDob) {
+      return "DOB and Confirm DOB must match.";
+    }
     if (!form.permanentAddress || !form.presentAddress || !form.parentCell || !form.aadharNo) {
       return "Please complete address, parent cell number, and Aadhar number.";
+    }
+    if (!form.confirmAadharNo) {
+      return "Please confirm Aadhar number.";
+    }
+    if (form.aadharNo.trim() !== form.confirmAadharNo.trim()) {
+      return "Aadhar No and Confirm Aadhar No must match.";
     }
     if (!form.familyIncome || !form.category || !form.bankAccountNo || !form.classForAdmission) {
       return "Please complete family income, category, bank account and class details.";
@@ -223,7 +284,7 @@ export default function AdmissionSection({ institute = null, initialOpen = false
       formData.append("father_name", form.fatherName.trim());
       formData.append("mother_name", form.motherName.trim());
       formData.append("dob", form.dob.trim());
-      formData.append("dob_words", form.dobWords.trim());
+      formData.append("dob_words", "");
       formData.append("permanent_address", form.permanentAddress.trim());
       formData.append("present_address", form.presentAddress.trim());
       formData.append("parent_cell", form.parentCell.trim());
@@ -256,13 +317,41 @@ export default function AdmissionSection({ institute = null, initialOpen = false
         throw new Error(data?.detail || "Submission failed");
       }
 
+      const receiptDetails = {
+        applicantName: form.applicantName,
+        fatherName: form.fatherName,
+        motherName: form.motherName,
+        dob: form.dob,
+        permanentAddress: form.permanentAddress,
+        presentAddress: form.presentAddress,
+        parentCell: form.parentCell,
+        email: form.email,
+        aadharNo: form.aadharNo,
+        bloodGroup: form.bloodGroup,
+        familyIncome: form.familyIncome,
+        category: form.category,
+        subCategory: form.subCategory,
+        bankAccountNo: form.bankAccountNo,
+        ifscCode: form.ifscCode,
+        classForAdmission: form.classForAdmission,
+        stream: form.stream,
+        feesPaidVia: form.feesPaidVia,
+        referenceNo: form.referenceNo,
+        subjects: [...selectedSubjects],
+        feesProofName: files.feesProof?.name || "",
+        aadharFileName: files.aadharFile?.name || "",
+        rationCardFileName: files.rationCardFile?.name || "",
+        bankCopyFileName: files.bankCopyFile?.name || "",
+        applicantPhotoName: files.applicantPhoto?.name || "",
+      };
+
       setSubmission(data);
       setStatusLookup({ applicationId: data.application_id || "", name: data.name || "", dob: data.dob || "" });
       setForm(DEFAULT_FORM);
       setSelectedSubjects([]);
       setFiles({ feesProof: null, aadharFile: null, rationCardFile: null, bankCopyFile: null, applicantPhoto: null });
       setStatusMessage("Application submitted. Receipt generated automatically.");
-      downloadAutoReceipt(data);
+      downloadAutoReceipt(data, receiptDetails);
     } catch (error) {
       setStatusMessage(error.message || "Submission failed.");
     }
@@ -375,24 +464,26 @@ export default function AdmissionSection({ institute = null, initialOpen = false
 
             <div className="mt-4 grid gap-3">
               <input className={INPUT} value={admissionContent.sessionYear || "2026"} readOnly aria-label="Session Year" />
-              <input className={INPUT} value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="Email" type="email" />
 
-              <FileInput label="Upload Screenshot or PDF of Fees (if paid online)" required={form.feesPaidVia === "online"} accept=".pdf,.doc,.docx,image/*" onChange={(e) => setFile("feesProof", e.target.files?.[0])} />
+              <FileInput label="Upload Screenshot or PDF of Fees (if paid online)" required={form.feesPaidVia === "online"} accept=".pdf,image/*" onChange={(e) => setFile("feesProof", e.target.files?.[0])} />
 
-              <input className={INPUT} value={form.applicantName} onChange={(e) => updateField("applicantName", e.target.value)} placeholder="Applicant's Name (In Block Letters) *" required />
-              <input className={INPUT} value={form.fatherName} onChange={(e) => updateField("fatherName", e.target.value)} placeholder="Father's Name (In Block Letters) *" required />
-              <input className={INPUT} value={form.motherName} onChange={(e) => updateField("motherName", e.target.value)} placeholder="Mother's Name (In Block Letters) *" required />
+              <input className={INPUT} value={form.applicantName} onChange={(e) => updateField("applicantName", e.target.value)} placeholder="Applicant's Name *" required />
+              <input className={INPUT} value={form.fatherName} onChange={(e) => updateField("fatherName", e.target.value)} placeholder="Father's Name *" required />
+              <input className={INPUT} value={form.motherName} onChange={(e) => updateField("motherName", e.target.value)} placeholder="Mother's Name *" required />
+
+              <label className="text-xs font-semibold tracking-[0.08em] text-slate-600 uppercase">DOB *</label>
 
               <input type="date" className={INPUT} value={form.dob} onChange={(e) => updateField("dob", e.target.value)} required />
-              <input className={INPUT} value={form.dobWords} onChange={(e) => updateField("dobWords", e.target.value)} placeholder="Date of Birth (In Words)" />
+              <input type="date" className={INPUT} value={form.confirmDob} onChange={(e) => updateField("confirmDob", e.target.value)} placeholder="Confirm DOB *" required />
 
               <textarea className={INPUT} value={form.permanentAddress} onChange={(e) => updateField("permanentAddress", e.target.value)} placeholder="Permanent Address *" required rows={2} />
               <textarea className={INPUT} value={form.presentAddress} onChange={(e) => updateField("presentAddress", e.target.value)} placeholder="Present Address *" required rows={2} />
 
-              <input className={INPUT} value={form.parentCell} onChange={(e) => updateField("parentCell", e.target.value)} placeholder="Cell No: (Parent) *" required />
               <input className={INPUT} value={form.aadharNo} onChange={(e) => updateField("aadharNo", e.target.value)} placeholder="Aadhar No: *" required />
-              <FileInput label="Upload Aadhar (less than 1MB)" required accept=".pdf,.doc,.docx,image/*" onChange={(e) => setFile("aadharFile", e.target.files?.[0])} />
+              <input className={INPUT} value={form.confirmAadharNo} onChange={(e) => updateField("confirmAadharNo", e.target.value)} placeholder="Confirm Aadhar No: *" required />
+              <FileInput label="Upload Aadhar (less than 1MB)" required accept=".pdf,image/*" onChange={(e) => setFile("aadharFile", e.target.files?.[0])} />
 
+              <label className="text-xs font-semibold tracking-[0.08em] text-slate-600 uppercase">Blood Group</label>
               <select className={INPUT} value={form.bloodGroup} onChange={(e) => updateField("bloodGroup", e.target.value)}>
                 {BLOOD_GROUPS.map((group) => (
                   <option key={group} value={group}>{group}</option>
@@ -408,25 +499,26 @@ export default function AdmissionSection({ institute = null, initialOpen = false
               <input className={INPUT} value={form.familyIncome} onChange={(e) => updateField("familyIncome", e.target.value)} placeholder="Family Income (Annual) *" required />
 
               <select className={INPUT} value={form.category} onChange={(e) => updateField("category", e.target.value)} required>
-                <option value="">Tick the Category Applicable *</option>
+                <option value="">Choose Category *</option>
                 {CATEGORY_OPTIONS.map((option) => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
 
+              <label className="text-xs font-semibold tracking-[0.08em] text-slate-600 uppercase">Sub-Category</label>
               <select className={INPUT} value={form.subCategory} onChange={(e) => updateField("subCategory", e.target.value)}>
                 {SUB_CATEGORY_OPTIONS.map((option) => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
 
-              <FileInput label="Upload Ration-Card (less than 1MB)" accept=".pdf,.doc,.docx,image/*" onChange={(e) => setFile("rationCardFile", e.target.files?.[0])} />
+              <FileInput label="Upload Ration-Card (less than 1MB)" accept=".pdf,image/*" onChange={(e) => setFile("rationCardFile", e.target.files?.[0])} />
 
               <input className={INPUT} value={form.bankAccountNo} onChange={(e) => updateField("bankAccountNo", e.target.value)} placeholder="Bank Account No: *" required />
-              <FileInput label="Bank Account Photo Copy (less than 1MB)" required accept=".pdf,.doc,.docx,image/*" onChange={(e) => setFile("bankCopyFile", e.target.files?.[0])} />
+              <FileInput label="Bank Account Photo Copy (less than 1MB)" required accept=".pdf,image/*" onChange={(e) => setFile("bankCopyFile", e.target.files?.[0])} />
               <input className={INPUT} value={form.ifscCode} onChange={(e) => updateField("ifscCode", e.target.value)} placeholder="IFSC CODE" />
 
-              <FileInput label="Upload Applicant's Photograph (less than 1MB)" required accept="image/*" onChange={(e) => setFile("applicantPhoto", e.target.files?.[0])} />
+              <FileInput label="Upload Applicant's Photograph (less than 1MB)" required accept=".pdf,image/*" onChange={(e) => setFile("applicantPhoto", e.target.files?.[0])} />
 
               <select className={INPUT} value={form.classForAdmission} onChange={(e) => updateField("classForAdmission", e.target.value)} required>
                 <option value="">Select Class for Admission *</option>
@@ -469,7 +561,9 @@ export default function AdmissionSection({ institute = null, initialOpen = false
               </fieldset>
 
               <input className={INPUT} value={form.referenceNo} onChange={(e) => updateField("referenceNo", e.target.value)} placeholder="Reference No (receipt id / transaction ref) *" required />
-              <button type="submit" className={PRIMARY_BUTTON}>Create Application ID</button>
+              <input className={INPUT} value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="Email" type="email" />
+              <input className={INPUT} value={form.parentCell} onChange={(e) => updateField("parentCell", e.target.value)} placeholder="WhatsApp Contact *" required />
+              <button type="submit" className={PRIMARY_BUTTON}>Submit</button>
             </div>
             {statusMessage ? <p className="mt-3 text-sm text-slate-600">{statusMessage}</p> : null}
           </form>
@@ -515,3 +609,17 @@ export default function AdmissionSection({ institute = null, initialOpen = false
     </section>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

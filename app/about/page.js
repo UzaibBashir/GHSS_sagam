@@ -15,6 +15,9 @@ import { PAGE_MAIN } from "../lib/uiClasses";
 export default function AboutPage() {
   const { institute } = useInstituteData();
 
+  const controls = institute?.site_controls;
+  const aboutEnabled = controls?.about_page_enabled ?? true;
+
   const instituteName = institute?.name || "Government Girls Higher Secondary School, Sagam";
   const faculty = institute?.faculties || [];
   const staff = institute?.staff || [];
@@ -40,7 +43,13 @@ export default function AboutPage() {
             { label: "Contact Details", href: "/about#contact", variant: "secondary" },
           ]}
         />
-
+        {!aboutEnabled ? (
+          <section className="rounded-[2rem] border border-amber-300/70 bg-amber-50/90 p-6 text-amber-900 shadow-[0_18px_36px_rgba(217,119,6,0.12)]">
+            <h1 className="text-xl font-extrabold">About Page Disabled</h1>
+            <p className="mt-2 text-sm">This page is currently turned off by the administrator.</p>
+          </section>
+        ) : (
+          <>
         <section className="glass-panel grid gap-6 rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
             <p className="section-kicker">Institutional Overview</p>
@@ -135,7 +144,7 @@ export default function AboutPage() {
               {faculty.map((item) => (
                 <div key={item.name} className="rounded-[1.2rem] border border-slate-200/70 bg-white/82 p-4 text-sm text-slate-700">
                   <p className="m-0 font-bold text-slate-900">{item.name}</p>
-                  <p className="m-0 mt-1">{item.department}</p>
+                  <p className="m-0 mt-1">{item.designation || item.department}</p>
                   <p className="m-0 mt-1 text-xs text-slate-500">{item.qualification}</p>
                 </div>
               ))}
@@ -177,14 +186,11 @@ export default function AboutPage() {
 
         <AboutContactSection institute={institute} />
         <ContactSection institute={institute} />
+          </>
+        )}
       </main>
       <HomeFooter institute={institute} />
     </div>
   );
 }
-
-
-
-
-
 

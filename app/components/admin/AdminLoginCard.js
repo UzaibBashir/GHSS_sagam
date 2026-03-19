@@ -1,6 +1,5 @@
 import {
   ADMIN_BUTTON,
-  ADMIN_BUTTON_DANGER,
   ADMIN_INPUT,
   ADMIN_LABEL,
   ADMIN_SECTION,
@@ -18,7 +17,6 @@ export default function AdminLoginCard({
   onUsernameChange,
   onPasswordChange,
   onLogin,
-  onLogout,
 }) {
   return (
     <section className={ADMIN_SECTION} id="access">
@@ -64,12 +62,7 @@ export default function AdminLoginCard({
           </button>
         </form>
       ) : (
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button className={ADMIN_BUTTON_DANGER} onClick={onLogout}>
-            Sign out
-          </button>
-          <p className="text-sm text-slate-600">Use the sections below to update institute content.</p>
-        </div>
+        <p className="mt-4 text-sm text-slate-600">Use the sections below to update institute content.</p>
       )}
 
       {status ? (
