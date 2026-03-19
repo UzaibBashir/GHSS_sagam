@@ -138,11 +138,11 @@ function normalizeFaculties(items) {
   return items
     .map((item) => ({
       name: String(item?.name || "").trim(),
-      department: String(item?.department || "").trim(),
-      qualification: String(item?.qualification || "").trim(),
+      department: String(item?.department || "").trim() || "Faculty",
+      qualification: String(item?.qualification || "").trim() || "Not specified",
       photo: String(item?.photo || "").trim(),
     }))
-    .filter((item) => item.name && item.department && item.qualification);
+    .filter((item) => item.name);
 }
 
 function normalizeStreams(items) {
@@ -201,7 +201,7 @@ function normalizeHomeFrontDesk(payload) {
     throw new Error("Front desk content is required");
   }
   return {
-    title: assertNonEmpty("Front desk title", payload.title),
+    title: String(payload.title || "").trim() || "Visitor Essentials",
     items: normalizeStringList(payload.items || [], "Front desk item"),
   };
 }
@@ -251,7 +251,7 @@ function normalizeAdmissionContent(payload) {
     throw new Error("Admission content is required");
   }
   return {
-    sessionYear: assertNonEmpty("Admission session year", payload.sessionYear || "2026"),
+    sessionYear: String(payload.sessionYear || "").trim() || "2026",
     guidelines: normalizeStringList(payload.guidelines || [], "Admission guideline"),
     eligibility: normalizeStringList(payload.eligibility || [], "Admission eligibility"),
     requiredDocuments: normalizeStringList(payload.requiredDocuments || [], "Required document"),
@@ -467,6 +467,18 @@ export async function GET(request, context) {
     }
   }
 
+  if (path[0] === "health" && path[1] === "db-write" && path.length === 2) {
+    try {
+      const db = await getDb();
+      const collection = db.collection(process.env.MONGODB_STATE_COLLECTION || "app_state");
+      await collection.updateOne({ _id: "__write_test__" }, { $set: { at: new Date().toISOString() } }, { upsert: true });
+      const testDoc = await collection.findOne({ _id: "__write_test__" });
+      return json({ status: "ok", database: "writeable", write_test: Boolean(testDoc) });
+    } catch (err) {
+      return error(err instanceof Error ? `Database write failed: ${err.message}` : "Database write failed", 500);
+    }
+  }
+
   let store;
   try {
     store = await getStore();
@@ -624,7 +636,12 @@ export async function GET(request, context) {
 
 export async function POST(request, context) {
   const path = await getPath(context?.params);
-  const store = await getStore();
+  let store;
+  try {
+    store = await getStore();
+  } catch (err) {
+    return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
+  }
 
   if (path[0] === "admissions" && path.length === 1) {
     try {
@@ -843,7 +860,12 @@ export async function POST(request, context) {
 
 export async function PATCH(request, context) {
   const path = await getPath(context?.params);
-  const store = await getStore();
+  let store;
+  try {
+    store = await getStore();
+  } catch (err) {
+    return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
+  }
 
   const isControls = path[0] === "admin" && path[1] === "controls" && path.length === 2;
   const isInstitute = path[0] === "admin" && path[1] === "institute" && path.length === 2;
@@ -891,8 +913,8 @@ export async function PATCH(request, context) {
     if (isInstitute) {
       const data = store.instituteData;
 
-      if (payload.description !== undefined) data.description = assertNonEmpty("Description", payload.description);
-      if (payload.about_us !== undefined) data.about_us = assertNonEmpty("About", payload.about_us);
+      if (payload.description !== undefined) data.description = String(payload.description || "").trim();
+      if (payload.about_us !== undefined) data.about_us = String(payload.about_us || "").trim();
       if (payload.institute_details !== undefined) {
         data.institute_details = normalizeStringList(payload.institute_details, "Institute detail");
       }
@@ -948,7 +970,12 @@ export async function PATCH(request, context) {
 
 export async function PUT(request, context) {
   const path = await getPath(context?.params);
-  const store = await getStore();
+  let store;
+  try {
+    store = await getStore();
+  } catch (err) {
+    return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
+  }
 
   if (path[0] !== "admin") {
     return error("Not found", 404);
@@ -1074,7 +1101,12 @@ export async function PUT(request, context) {
 
 export async function DELETE(request, context) {
   const path = await getPath(context?.params);
-  const store = await getStore();
+  let store;
+  try {
+    store = await getStore();
+  } catch (err) {
+    return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
+  }
 
   if (path[0] !== "admin") {
     return error("Not found", 404);
@@ -1150,6 +1182,9 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
+
 
 
 

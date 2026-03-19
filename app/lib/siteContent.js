@@ -31,51 +31,6 @@ export const HOME_HIGHLIGHTS = {
   ],
 };
 
-export const FACULTY_FALLBACK = [
-  {
-    name: "Peer Nisar Ahmad",
-    department: "Faculty",
-    qualification: "M.A., B.Ed.",
-    photo: "/faculty/Peer_Nisar_Ahmad.jpeg",
-  },
-  {
-    name: "Sajad Ahmad Dar",
-    department: "Faculty",
-    qualification: "M.A. (Economics), B.Ed.",
-    photo: "/faculty/Sajad_Ahmad_Dar.jpeg",
-  },
-  {
-    name: "Mudassir Gulzar",
-    department: "Faculty",
-    qualification: "B.Ed., M.A., M.Phil.",
-    photo: "/faculty/Mudassir_Gulzar.jpeg",
-  },
-  {
-    name: "Aijaz Ahmad Rather",
-    department: "Faculty",
-    qualification: "M.Sc., B.Ed.",
-    photo: "/faculty/Aijaz_Ahmad_Rather.jpeg",
-  },
-  {
-    name: "Raies Ahmad Wani",
-    department: "Faculty",
-    qualification: "M.Sc. (EVS), M.A., M.Ed., NET, SET.",
-    photo: "/faculty/Raies_Ahmad_Wani.jpeg",
-  },
-  {
-    name: "Ashak Hussain Bhat",
-    department: "Faculty",
-    qualification: "MA, MPhil, BEd, NET, SET",
-    photo: "/faculty/Ashak_Hussain_Khan.jpeg",
-  },
-  {
-    name: "Muzafar Rashid Khan",
-    department: "Faculty",
-    qualification: "MSc Zoology, MA Political Science, BEd",
-    photo: "/faculty/Muzafar_Rashid_Khan.jpeg",
-  },
-];
-
 export const HOME_PROGRAMS = [
   {
     title: "Medical Stream",
@@ -382,6 +337,7 @@ export const ACADEMIC_MATERIALS = {
     },
   ],
 };
+
 
 
 

@@ -36,6 +36,15 @@ function toLines(items) {
   return (items || []).join("\n");
 }
 
+async function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Image read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function WebContentManager({ institute, onSave }) {
   const [draft, setDraft] = useState(EMPTY);
   const [reasonsText, setReasonsText] = useState("");
@@ -114,7 +123,7 @@ export default function WebContentManager({ institute, onSave }) {
             <div key={`slide-${index}`} className="rounded-xl border border-slate-200 p-3">
               <div className="grid gap-3">
                 <label className={ADMIN_LABEL}>
-                  Image URL or path
+                  Image URL or data
                   <input
                     className={ADMIN_INPUT}
                     value={item.src}
@@ -123,9 +132,28 @@ export default function WebContentManager({ institute, onSave }) {
                       slides[index] = { ...slides[index], src: event.target.value };
                       setDraft((prev) => ({ ...prev, hero_slides: slides }));
                     }}
-                    placeholder="/slideshow/slide1.jpeg"
+                    placeholder="https://.../slide-image.jpg"
                   />
                 </label>
+                <label className={ADMIN_LABEL}>
+                  Upload slide image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className={ADMIN_INPUT}
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      const dataUrl = await fileToDataUrl(file);
+                      const slides = [...(draft.hero_slides || [])];
+                      slides[index] = { ...slides[index], src: dataUrl };
+                      setDraft((prev) => ({ ...prev, hero_slides: slides }));
+                    }}
+                  />
+                </label>
+                {item.src ? (
+                  <img src={item.src} alt={item.title || `Slide ${index + 1}`} className="h-20 w-32 rounded-lg object-cover border border-slate-200" />
+                ) : null}
                 <label className={ADMIN_LABEL}>
                   Slide title
                   <input
@@ -406,3 +434,5 @@ export default function WebContentManager({ institute, onSave }) {
     </section>
   );
 }
+
+

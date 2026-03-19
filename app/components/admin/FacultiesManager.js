@@ -17,6 +17,15 @@ const EMPTY_FACULTY = {
   photo: "",
 };
 
+async function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Image read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function FacultyEditor({ item, onChange, onRemove }) {
   return (
     <article className={ADMIN_SUBCARD}>
@@ -47,14 +56,31 @@ function FacultyEditor({ item, onChange, onRemove }) {
         />
       </label>
       <label className={`${ADMIN_LABEL} mt-3`}>
-        Photo URL or path
+        Photo URL or data
         <input
           className={ADMIN_INPUT}
           value={item.photo}
           onChange={(event) => onChange({ ...item, photo: event.target.value })}
-          placeholder="/faculty/Photo.jpg"
+          placeholder="https://.../faculty-photo.jpg"
         />
       </label>
+      <label className={`${ADMIN_LABEL} mt-3`}>
+        Upload photo
+        <input
+          type="file"
+          accept="image/*"
+          className={ADMIN_INPUT}
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const dataUrl = await fileToDataUrl(file);
+            onChange({ ...item, photo: dataUrl });
+          }}
+        />
+      </label>
+      {item.photo ? (
+        <img src={item.photo} alt={item.name || "Faculty"} className="mt-3 h-20 w-20 rounded-lg object-cover border border-slate-200" />
+      ) : null}
       <button className={`${ADMIN_BUTTON_DANGER} mt-3`} onClick={onRemove}>
         Remove faculty
       </button>
@@ -106,18 +132,35 @@ export default function FacultiesManager({ faculties, onSave }) {
           />
         </label>
         <label className={`${ADMIN_LABEL} mt-3`}>
-          Photo URL or path
+          Photo URL or data
           <input
             className={ADMIN_INPUT}
             value={form.photo}
             onChange={(event) => setForm((prev) => ({ ...prev, photo: event.target.value }))}
-            placeholder="/faculty/Photo.jpg"
+            placeholder="https://.../faculty-photo.jpg"
           />
         </label>
+        <label className={`${ADMIN_LABEL} mt-3`}>
+          Upload photo
+          <input
+            type="file"
+            accept="image/*"
+            className={ADMIN_INPUT}
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const dataUrl = await fileToDataUrl(file);
+              setForm((prev) => ({ ...prev, photo: dataUrl }));
+            }}
+          />
+        </label>
+        {form.photo ? (
+          <img src={form.photo} alt={form.name || "Faculty"} className="mt-3 h-20 w-20 rounded-lg object-cover border border-slate-200" />
+        ) : null}
         <button
           className={`${ADMIN_BUTTON} mt-3`}
           onClick={() => {
-            if (!form.name.trim() || !form.department.trim() || !form.qualification.trim()) return;
+            if (!form.name.trim()) return;
             setItems((prev) => [{ ...form }, ...prev]);
             setForm(EMPTY_FACULTY);
           }}
@@ -143,3 +186,4 @@ export default function FacultiesManager({ faculties, onSave }) {
     </section>
   );
 }
+

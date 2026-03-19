@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AcademicsManager from "../components/admin/AcademicsManager";
 import AdmissionsManager from "../components/admin/AdmissionsManager";
 import AdminLoginCard from "../components/admin/AdminLoginCard";
@@ -113,12 +113,17 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
 
   const adminApi = useAdminApi(token);
+  const adminApiRef = useRef(adminApi);
+
+  useEffect(() => {
+    adminApiRef.current = adminApi;
+  }, [adminApi]);
 
   const refreshDashboard = useCallback(async () => {
     if (!token) return;
 
     try {
-      const data = await adminApi.loadDashboard();
+      const data = await adminApiRef.current.loadDashboard();
       setNotificationItems(data.notificationItems || []);
       setContacts(data.contacts || []);
       setStudents(data.students || []);
@@ -135,11 +140,15 @@ export default function AdminPage() {
       setConnected(true);
       setStatus("Secure portal ready.");
     } catch (error) {
-      setConnected(false);
-      localStorage.removeItem("admin_token");
+      if (error?.status === 401 || error?.status === 403) {
+        setConnected(false);
+        localStorage.removeItem("admin_token");
+      } else {
+        setConnected(true);
+      }
       setStatus(toErrorMessage(error));
     }
-  }, [adminApi, token]);
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
@@ -311,8 +320,8 @@ export default function AdminPage() {
 
   const handleSaveControls = async (payload) => {
     try {
-      const updated = await adminApi.updateControls(payload);
-      setControls({ ...defaultControls, ...(updated || {}) });
+      await adminApi.updateControls(payload);
+      await refreshDashboard();
       setStatus("Site controls updated.");
     } catch (error) {
       setStatus(toErrorMessage(error));
@@ -321,12 +330,8 @@ export default function AdminPage() {
 
   const handleSaveInstitute = async (payload) => {
     try {
-      const updated = await adminApi.updateInstitute(payload);
-      setInstitute({
-        ...defaultInstitute,
-        ...(updated?.institute || updated || {}),
-        contact: { ...defaultInstitute.contact, ...((updated?.institute || updated || {}).contact || {}) },
-      });
+      await adminApi.updateInstitute(payload);
+      await refreshDashboard();
       setStatus("Institute content updated.");
     } catch (error) {
       setStatus(toErrorMessage(error));
@@ -405,8 +410,8 @@ export default function AdminPage() {
 
   const handleSaveMaterials = async (materials) => {
     try {
-      const updated = await adminApi.updateMaterials(materials);
-      setAcademicContent((prev) => ({ ...prev, materials: updated.materials || materials }));
+      await adminApi.updateMaterials(materials);
+      await refreshDashboard();
       setStatus("Study materials updated.");
     } catch (error) {
       setStatus(toErrorMessage(error));
@@ -500,6 +505,7 @@ export default function AdminPage() {
   }, [
     activeSection,
     academicContent,
+    admissions,
     contacts,
     controls,
     downloads,
@@ -618,13 +624,3 @@ export default function AdminPage() {
     </main>
   );
 }
-
-
-
-
-
-
-
-
-
-

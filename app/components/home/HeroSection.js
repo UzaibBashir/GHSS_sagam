@@ -7,33 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 const AUTO_SLIDE_MS = 4500;
 
 export default function HeroSection({ institute }) {
-  const slides = useMemo(() => {
-    const dynamicSlides = Array.isArray(institute?.hero_slides) ? institute.hero_slides : [];
-
-    if (dynamicSlides.length) {
-      return dynamicSlides;
-    }
-
-    return [
-      {
-        src: "/slideshow/slide1.jpeg",
-        title: institute?.name || "Government Girls Higher Secondary School, Sagam",
-        subtitle: "A vibrant campus where students learn, grow, and lead.",
-      },
-      {
-        src: "/slideshow/slide2.jpeg",
-        title: "Admissions Open 2026",
-        subtitle: "Join a supportive academic environment focused on excellence and values.",
-      },
-      {
-        src: "/slideshow/slide3.jpeg",
-        title: institute?.tagline || "Educating Girls, Building Futures",
-        subtitle:
-          institute?.description ||
-          "Empowering young minds through quality education, discipline, and opportunity.",
-      },
-    ];
-  }, [institute]);
+  const slides = useMemo(() => (Array.isArray(institute?.hero_slides) ? institute.hero_slides : []), [institute]);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [failedSlides, setFailedSlides] = useState({});
@@ -127,3 +101,4 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
+

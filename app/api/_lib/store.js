@@ -32,50 +32,7 @@ const DEFAULT_INSTITUTE_DATA = {
       description: "Humanities education that strengthens expression, awareness, and higher study readiness.",
     },
   ],
-  faculties: [
-    {
-      name: "Peer Nisar Ahmad",
-      department: "Faculty",
-      qualification: "M.A., B.Ed.",
-      photo: "/faculty/Peer_Nisar_Ahmad.jpeg",
-    },
-    {
-      name: "Sajad Ahmad Dar",
-      department: "Faculty",
-      qualification: "M.A. (Economics), B.Ed.",
-      photo: "/faculty/Sajad_Ahmad_Dar.jpeg",
-    },
-    {
-      name: "Mudassir Gulzar",
-      department: "Faculty",
-      qualification: "B.Ed., M.A., M.Phil.",
-      photo: "/faculty/Mudassir_Gulzar.jpeg",
-    },
-    {
-      name: "Aijaz Ahmad Rather",
-      department: "Faculty",
-      qualification: "M.Sc., B.Ed.",
-      photo: "/faculty/Aijaz_Ahmad_Rather.jpeg",
-    },
-    {
-      name: "Raies Ahmad Wani",
-      department: "Faculty",
-      qualification: "M.Sc. (EVS), M.A., M.Ed., NET, SET.",
-      photo: "/faculty/Raies_Ahmad_Wani.jpeg",
-    },
-    {
-      name: "Ashak Hussain Bhat",
-      department: "Faculty",
-      qualification: "MA, MPhil, BEd, NET, SET",
-      photo: "/faculty/Ashak_Hussain_Khan.jpeg",
-    },
-    {
-      name: "Muzafar Rashid Khan",
-      department: "Faculty",
-      qualification: "MSc Zoology, MA Political Science, BEd",
-      photo: "/faculty/Muzafar_Rashid_Khan.jpeg",
-    },
-  ],
+  faculties: [],
   streams_subjects: [
     {
       stream: "Medical",
@@ -236,23 +193,7 @@ const DEFAULT_INSTITUTE_DATA = {
     phone: "+91-7000000000",
     address: "Government Girls Higher Secondary School, Sagam, Jammu and Kashmir, India",
   },
-  hero_slides: [
-    {
-      src: "/slideshow/slide1.jpeg",
-      title: "Government Girls Higher Secondary School, Sagam",
-      subtitle: "A vibrant campus where students learn, grow, and lead.",
-    },
-    {
-      src: "/slideshow/slide2.jpeg",
-      title: "Admissions Open 2026",
-      subtitle: "Join a supportive academic environment focused on excellence and values.",
-    },
-    {
-      src: "/slideshow/slide3.jpeg",
-      title: "Educating Girls, Building Futures",
-      subtitle: "Empowering young minds through quality education, discipline, and opportunity.",
-    },
-  ],
+  hero_slides: [],
   home_highlights: {
     stats: [
       { value: "1000+", label: "Girls Enrolled" },
@@ -433,7 +374,7 @@ function resetContentShape(store) {
 
 function resetFacultyShape(store) {
   if (!Array.isArray(store.instituteData.faculties)) {
-    store.instituteData.faculties = structuredClone(DEFAULT_INSTITUTE_DATA.faculties || []);
+    store.instituteData.faculties = [];
     return;
   }
 
@@ -607,6 +548,7 @@ export async function saveStore(store) {
     { upsert: true }
   );
 }
+
 
 
 

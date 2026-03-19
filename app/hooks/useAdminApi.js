@@ -10,11 +10,27 @@ export default function useAdminApi(token) {
   );
 
   const parseResponse = async (res, fallbackMessage) => {
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data?.detail || fallbackMessage);
+    let data = null;
+    let text = "";
+
+    try {
+      data = await res.json();
+    } catch {
+      try {
+        text = await res.text();
+      } catch {
+        text = "";
+      }
     }
-    return data;
+
+    if (!res.ok) {
+      const message = data?.detail || text || fallbackMessage;
+      const err = new Error(message);
+      err.status = res.status;
+      throw err;
+    }
+
+    return data || {};
   };
 
   const login = async (username, password) => {
@@ -27,51 +43,34 @@ export default function useAdminApi(token) {
   };
 
   const loadDashboard = async () => {
+    const endpointRequests = [
+      ["contacts", fetch(`${API_BASE}/admin/contacts`, { headers: withAuth(), cache: "no-store" })],
+      ["controls", fetch(`${API_BASE}/admin/controls`, { headers: withAuth(), cache: "no-store" })],
+      ["notification items", fetch(`${API_BASE}/admin/notification-items`, { headers: withAuth(), cache: "no-store" })],
+      ["academic content", fetch(`${API_BASE}/admin/academics/content`, { headers: withAuth(), cache: "no-store" })],
+      ["students", fetch(`${API_BASE}/admin/students`, { headers: withAuth(), cache: "no-store" })],
+      ["notices", fetch(`${API_BASE}/admin/notices`, { headers: withAuth(), cache: "no-store" })],
+      ["downloads", fetch(`${API_BASE}/admin/downloads`, { headers: withAuth(), cache: "no-store" })],
+      ["institute", fetch(`${API_BASE}/admin/institute`, { headers: withAuth(), cache: "no-store" })],
+      ["admissions", fetch(`${API_BASE}/admin/admissions`, { headers: withAuth(), cache: "no-store" })],
+    ];
+
+    const responses = await Promise.all(endpointRequests.map(([, request]) => request));
     const [
-      contactsRes,
-      controlsRes,
-      notificationRes,
-      academicsRes,
-      studentsRes,
-      noticesRes,
-      downloadsRes,
-      instituteRes,
-      admissionsRes,
-    ] = await Promise.all([
-      fetch(`${API_BASE}/admin/contacts`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/controls`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/notification-items`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/academics/content`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/students`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/notices`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/downloads`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/institute`, { headers: withAuth() }),
-      fetch(`${API_BASE}/admin/admissions`, { headers: withAuth() }),
-    ]);
-
-    if (
-      !contactsRes.ok ||
-      !controlsRes.ok ||
-      !notificationRes.ok ||
-      !academicsRes.ok ||
-      !studentsRes.ok ||
-      !noticesRes.ok ||
-      !downloadsRes.ok ||
-      !instituteRes.ok ||
-      !admissionsRes.ok
-    ) {
-      throw new Error("Session expired. Please login again.");
-    }
-
-    const contacts = await contactsRes.json();
-    const controls = await controlsRes.json();
-    const notificationItems = await notificationRes.json();
-    const academicContent = await academicsRes.json();
-    const students = await studentsRes.json();
-    const notices = await noticesRes.json();
-    const downloads = await downloadsRes.json();
-    const institute = await instituteRes.json();
-    const admissions = await admissionsRes.json();
+      contacts,
+      controls,
+      notificationItems,
+      academicContent,
+      students,
+      notices,
+      downloads,
+      institute,
+      admissions,
+    ] = await Promise.all(
+      responses.map((res, index) =>
+        parseResponse(res, `Could not load ${endpointRequests[index][0]}.`)
+      )
+    );
 
     return { contacts, controls, notificationItems, academicContent, students, notices, downloads, institute, admissions };
   };
