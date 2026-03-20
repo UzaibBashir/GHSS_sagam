@@ -82,7 +82,7 @@ export const HOME_RESOURCES = [
   {
     title: "Scholarship Information",
     description: "Important guidance for girls applying under scholarship and support schemes.",
-    href: "https://example.com/scholarships",
+    href: "https://scholarships.gov.in/",
     label: "View Scholarships",
   },
   {
@@ -144,7 +144,7 @@ export const NOTIFICATION_ITEMS = [
     summary: "Eligible students should complete scholarship document verification on time.",
     details:
       "Carry required originals and photocopies for scholarship verification. Students should contact the school office for assistance if needed.",
-    links: [{ label: "Scholarship Details", href: "https://example.com/scholarships" }],
+    links: [{ label: "Scholarship Details", href: "https://scholarships.gov.in/" }],
   },
   {
     id: "n-004",
@@ -223,7 +223,7 @@ export const ACADEMICS_CONTENT = {
   documents: [
     { label: "Academic Calendar", href: "https://example.com/academic-calendar.pdf" },
     { label: "Admission Form", href: "/admission" },
-    { label: "Scholarship Information", href: "https://example.com/scholarships" },
+    { label: "Scholarship Information", href: "https://scholarships.gov.in/" },
   ],
   events: [
     { month: "April", event: "Admissions and orientation for higher secondary classes" },
@@ -337,6 +337,7 @@ export const ACADEMIC_MATERIALS = {
     },
   ],
 };
+
 
 
 

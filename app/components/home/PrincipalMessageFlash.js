@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ACADEMICS_CONTENT, ABOUT_PAGE_CONTENT } from "../../lib/siteContent";
 
 export default function PrincipalMessageFlash({ institute }) {
@@ -8,13 +7,26 @@ export default function PrincipalMessageFlash({ institute }) {
     String(item.role || "").toLowerCase().includes("principal")
   );
 
+  const principalData = institute?.principal || {};
+
   const principalName =
-    principalFromStaff?.name || ACADEMICS_CONTENT.principal.name || "Principal";
+    principalData.name || principalFromStaff?.name || ACADEMICS_CONTENT.principal.name || "Principal";
+
+  const principalRole = principalData.role || principalFromStaff?.role || "Principal";
 
   const principalMessage =
+    principalData.message ||
     ABOUT_PAGE_CONTENT.principalDesk.message ||
     ACADEMICS_CONTENT.principal.message ||
     "Our school is committed to academic excellence, values, and the all-round growth of every student.";
+
+  const principalPhoto = principalData.photo || "";
+  const principalInitials = principalName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
 
   return (
     <section className="relative overflow-hidden rounded-[1.75rem] border border-amber-200/75 bg-[linear-gradient(120deg,#fff8e7_0%,#fff1c7_16%,#fff8e7_35%,#fff1c7_58%,#fff8e7_100%)] p-5 shadow-[0_14px_32px_rgba(180,120,10,0.12)] max-sm:rounded-[1.35rem] max-sm:p-4">
@@ -28,10 +40,17 @@ export default function PrincipalMessageFlash({ institute }) {
         </div>
         <div className="flex w-full flex-wrap items-center gap-4 max-sm:gap-3">
           <div className="relative h-16 w-16 overflow-hidden rounded-full border border-amber-300/70 bg-white shadow-[0_10px_22px_rgba(217,119,6,0.25)] max-sm:h-14 max-sm:w-14">
-            <Image src="/Principal.jpeg" alt={principalName} fill sizes="64px" className="object-cover" />
+            {principalPhoto ? (
+              <img src={principalPhoto} alt={principalName} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-amber-100 text-sm font-black text-amber-800">
+                {principalInitials || "PR"}
+              </div>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-lg font-black text-slate-900 max-md:text-base max-sm:text-[0.95rem]">{principalName}</p>
+            <p className="mt-1 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-amber-800">{principalRole}</p>
             <p className="mt-2 text-sm leading-7 text-slate-700 max-md:leading-6 max-sm:text-[0.82rem] max-sm:leading-5">{principalMessage}</p>
           </div>
         </div>
@@ -39,10 +58,3 @@ export default function PrincipalMessageFlash({ institute }) {
     </section>
   );
 }
-
-
-
-
-
-
-

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ADMISSION_CONTENT } from "../../lib/siteContent";
 import { API_BASE } from "../../lib/api";
 import { INPUT, PRIMARY_BUTTON } from "../../lib/uiClasses";
@@ -100,78 +101,6 @@ function FileInput({ label, required, accept, onChange }) {
   );
 }
 
-function downloadAutoReceipt(submission, details = {}) {
-  const now = new Date().toLocaleString();
-  const safe = (value) => {
-    const text = String(value ?? "").trim();
-    return text || "-";
-  };
-
-  const rows = [
-    ["Application ID", submission.application_id],
-    ["Status", (submission.status || "pending").toUpperCase()],
-    ["Submitted At", submission.submitted_at || now],
-    ["Applicant Name", details.applicantName || submission.name],
-    ["Father Name", details.fatherName],
-    ["Mother Name", details.motherName],
-    ["DOB", details.dob || submission.dob],
-    ["Present Address", details.presentAddress],
-    ["Permanent Address", details.permanentAddress],
-    ["WhatsApp Contact", details.parentCell],
-    ["Email", details.email],
-    ["Aadhar No", details.aadharNo],
-    ["Blood Group", details.bloodGroup],
-    ["Family Income", details.familyIncome],
-    ["Category", details.category],
-    ["Sub-Category", details.subCategory],
-    ["Class for Admission", details.classForAdmission || submission.class_for_admission],
-    ["Stream", details.stream || submission.stream],
-    ["Subjects", Array.isArray(details.subjects) ? details.subjects.join(", ") : ""],
-    ["Bank Account No", details.bankAccountNo],
-    ["IFSC Code", details.ifscCode],
-    ["Fees Paid Via", details.feesPaidVia || submission.fees_paid_via],
-    ["Reference No", details.referenceNo],
-    ["Fees Proof File", details.feesProofName],
-    ["Aadhar File", details.aadharFileName],
-    ["Ration Card File", details.rationCardFileName],
-    ["Bank Copy File", details.bankCopyFileName],
-    ["Applicant Photo File", details.applicantPhotoName],
-  ]
-    .map(([label, value]) => `<tr><td class="label">${label}</td><td class="value">${safe(value)}</td></tr>`)
-    .join("");
-
-  const html = `
-  <html>
-    <head>
-      <title>Admission Receipt</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
-        h1 { font-size: 20px; margin-bottom: 8px; }
-        .meta { margin-bottom: 16px; font-size: 12px; color: #475569; }
-        table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-        td { border-bottom: 1px solid #e2e8f0; padding: 10px 12px; vertical-align: top; }
-        tr:last-child td { border-bottom: none; }
-        .label { width: 35%; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; background: #f8fafc; }
-        .value { font-size: 14px; font-weight: 600; }
-      </style>
-    </head>
-    <body>
-      <h1>Admission Receipt</h1>
-      <div class="meta">Auto generated after form submission</div>
-      <table>${rows}</table>
-    </body>
-  </html>`;
-
-  const blob = new Blob([html], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `admission-receipt-${submission.application_id || "pending"}.html`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
 export default function AdmissionSection({ institute = null, initialOpen = false, compact = false }) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [showApplyForm, setShowApplyForm] = useState(initialOpen || compact);
@@ -185,8 +114,12 @@ export default function AdmissionSection({ institute = null, initialOpen = false
   });
   const [submission, setSubmission] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingSubmission, setPendingSubmission] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [statusLookup, setStatusLookup] = useState({ applicationId: "", name: "", dob: "" });
+  const [statusLookup, setStatusLookup] = useState({ applicationId: "", dob: "" });
+  const router = useRouter();
   const [statusData, setStatusData] = useState(null);
   const [statusError, setStatusError] = useState("");
 
@@ -277,6 +210,25 @@ export default function AdmissionSection({ institute = null, initialOpen = false
       return;
     }
 
+    setPendingSubmission({
+      ...form,
+      selectedSubjects: [...selectedSubjects],
+      feesProofName: files.feesProof?.name || "",
+      aadharFileName: files.aadharFile?.name || "",
+      rationCardFileName: files.rationCardFile?.name || "",
+      bankCopyFileName: files.bankCopyFile?.name || "",
+      applicantPhotoName: files.applicantPhoto?.name || "",
+      sessionYear: admissionContent.sessionYear || "2026",
+    });
+    setShowConfirmation(true);
+  };
+
+  const finalSubmitApplication = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setStatusMessage("");
+
     try {
       const formData = new FormData();
       formData.append("session_year", admissionContent.sessionYear || "2026");
@@ -346,17 +298,62 @@ export default function AdmissionSection({ institute = null, initialOpen = false
       };
 
       setSubmission(data);
-      setStatusLookup({ applicationId: data.application_id || "", name: data.name || "", dob: data.dob || "" });
+      setStatusLookup({ applicationId: data.application_id || "", dob: data.dob || "" });
       setForm(DEFAULT_FORM);
       setSelectedSubjects([]);
       setFiles({ feesProof: null, aadharFile: null, rationCardFile: null, bankCopyFile: null, applicantPhoto: null });
-      setStatusMessage("Application submitted. Receipt generated automatically.");
-      downloadAutoReceipt(data, receiptDetails);
+      setShowConfirmation(false);
+      setPendingSubmission(null);
+      setStatusMessage("Application submitted successfully. Redirecting to receipt...");
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(
+          "latest_admission_receipt",
+          JSON.stringify({ submission: data, details: receiptDetails })
+        );
+      }
+
+      router.push("/admission/receipt");
     } catch (error) {
       setStatusMessage(error.message || "Submission failed.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const reviewRows = pendingSubmission
+    ? [
+        ["Session Year", pendingSubmission.sessionYear],
+        ["Applicant Name", pendingSubmission.applicantName],
+        ["Father Name", pendingSubmission.fatherName],
+        ["Mother Name", pendingSubmission.motherName],
+        ["DOB", pendingSubmission.dob],
+        ["Permanent Address", pendingSubmission.permanentAddress],
+        ["Present Address", pendingSubmission.presentAddress],
+        ["WhatsApp Contact", pendingSubmission.parentCell],
+        ["Email", pendingSubmission.email],
+        ["Aadhar No", pendingSubmission.aadharNo],
+        ["Blood Group", pendingSubmission.bloodGroup],
+        ["Height", pendingSubmission.height],
+        ["Weight", pendingSubmission.weight],
+        ["Parents Occupation", pendingSubmission.parentsOccupation],
+        ["Family Income", pendingSubmission.familyIncome],
+        ["Category", pendingSubmission.category],
+        ["Sub-Category", pendingSubmission.subCategory],
+        ["Bank Account No", pendingSubmission.bankAccountNo],
+        ["IFSC Code", pendingSubmission.ifscCode],
+        ["Class for Admission", pendingSubmission.classForAdmission],
+        ["Stream", pendingSubmission.stream],
+        ["Subjects", (pendingSubmission.selectedSubjects || []).join(", ")],
+        ["Fees Paid Via", pendingSubmission.feesPaidVia],
+        ["Reference No", pendingSubmission.referenceNo],
+        ["Fees Proof File", pendingSubmission.feesProofName],
+        ["Aadhar File", pendingSubmission.aadharFileName],
+        ["Ration Card File", pendingSubmission.rationCardFileName],
+        ["Bank Copy File", pendingSubmission.bankCopyFileName],
+        ["Applicant Photo File", pendingSubmission.applicantPhotoName],
+      ]
+    : [];
   const checkStatus = async (event) => {
     event.preventDefault();
     setStatusError("");
@@ -365,7 +362,6 @@ export default function AdmissionSection({ institute = null, initialOpen = false
     try {
       const params = new URLSearchParams({
         application_id: statusLookup.applicationId.trim(),
-        name: statusLookup.name.trim(),
         dob: statusLookup.dob.trim(),
       });
       const res = await fetch(`${API_BASE}/admissions/status?${params.toString()}`);
@@ -381,6 +377,9 @@ export default function AdmissionSection({ institute = null, initialOpen = false
 
   const openApplyForm = () => {
     setShowApplyForm(true);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("ghhs:hide-navbar"));
+    }
     requestAnimationFrame(() => {
       const formElement = document.getElementById("admission-apply-form");
       formElement?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -390,6 +389,7 @@ export default function AdmissionSection({ institute = null, initialOpen = false
   return (
     <section id="admission" className="grid gap-6">
       <div className={`grid gap-6 ${compact ? "" : "lg:grid-cols-[0.95fr_1.05fr]"}`}>
+        {!compact ? (
         <article className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.14)] max-md:p-4">
           <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-amber-300 uppercase">Admission Journey</p>
           <h2 className="font-display mt-4 text-3xl font-semibold max-md:text-2xl">Start with clear guidance and complete documents</h2>
@@ -407,6 +407,7 @@ export default function AdmissionSection({ institute = null, initialOpen = false
             ))}
           </ul>
         </article>
+      ) : null}
 
         {!compact ? (
           <article className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
@@ -447,6 +448,21 @@ export default function AdmissionSection({ institute = null, initialOpen = false
             <p className="mt-3 text-sm leading-7 text-slate-600">
               Read instructions completely before filling. Please fill out this form completely for admission to GOVT GIRLS HIGHER SECONDARY SCHOOL, SAGAM KOKERNAG ANANTNAG KMR.
             </p>
+            {compact ? (
+              <div className="mt-5 rounded-[1.3rem] border border-slate-200/80 bg-slate-50/80 p-4">
+                <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-amber-700 uppercase">Admissions & Admission Journey</p>
+                <ul className="mt-3 grid gap-2">
+                  {admissionContent.guidelines.map((item, index) => (
+                    <li key={`compact-guideline-${index}`} className="flex gap-2 rounded-xl border border-slate-200/70 bg-white px-3 py-2 text-sm text-slate-700">
+                      <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-slate-950">
+                        {index + 1}
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             {!compact ? (
               <button
                 type="button"
@@ -563,22 +579,62 @@ export default function AdmissionSection({ institute = null, initialOpen = false
               <input className={INPUT} value={form.referenceNo} onChange={(e) => updateField("referenceNo", e.target.value)} placeholder="Reference No (receipt id / transaction ref) *" required />
               <input className={INPUT} value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="Email" type="email" />
               <input className={INPUT} value={form.parentCell} onChange={(e) => updateField("parentCell", e.target.value)} placeholder="WhatsApp Contact *" required />
-              <button type="submit" className={PRIMARY_BUTTON}>Submit</button>
+              <button type="submit" className={PRIMARY_BUTTON}>Review & Confirm</button>
             </div>
             {statusMessage ? <p className="mt-3 text-sm text-slate-600">{statusMessage}</p> : null}
           </form>
         </div>
       </article>
 
+      {showConfirmation && pendingSubmission ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-8">
+          <div className="max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.35)]">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <p className="text-xs font-extrabold tracking-[0.14em] text-teal-700 uppercase">Confirm Submission</p>
+              <h3 className="mt-1 text-xl font-bold text-slate-900">Please review all entered details</h3>
+            </div>
+            <div className="max-h-[58vh] overflow-y-auto px-5 py-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {reviewRows.map(([label, value]) => (
+                  <div key={label} className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700">
+                    <p className="text-[0.68rem] font-extrabold tracking-[0.12em] text-slate-500 uppercase">{label}</p>
+                    <p className="mt-1 font-semibold text-slate-900">{String(value || "-")}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                Warning: After final submission, details cannot be changed.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 px-5 py-4">
+              <button
+                type="button"
+                className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700"
+                onClick={() => setShowConfirmation(false)}
+                disabled={isSubmitting}
+              >
+                Back to Edit
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white"
+                onClick={finalSubmitApplication}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Final Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {!compact ? (
         <article id="check-status" className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
           <p className="section-kicker">Check Status</p>
           <h3 className="font-display mt-4 text-2xl font-semibold text-slate-950">Check Admission Status</h3>
-          <form onSubmit={checkStatus} className="mt-4 grid gap-3 md:grid-cols-3">
+          <form onSubmit={checkStatus} className="mt-4 grid gap-3 md:grid-cols-2">
             <input className={INPUT} placeholder="Application ID" value={statusLookup.applicationId} onChange={(e) => setStatusLookup((p) => ({ ...p, applicationId: e.target.value }))} required />
-            <input className={INPUT} placeholder="Applicant Name" value={statusLookup.name} onChange={(e) => setStatusLookup((p) => ({ ...p, name: e.target.value }))} required />
             <input className={INPUT} type="date" value={statusLookup.dob} onChange={(e) => setStatusLookup((p) => ({ ...p, dob: e.target.value }))} required />
-            <button type="submit" className={`${PRIMARY_BUTTON} md:col-span-3`}>Check Status</button>
+            <button type="submit" className={`${PRIMARY_BUTTON} md:col-span-2`}>Check Status</button>
           </form>
           {statusError ? <p className="mt-3 text-sm text-rose-700">{statusError}</p> : null}
           {statusData ? (
@@ -609,14 +665,6 @@ export default function AdmissionSection({ institute = null, initialOpen = false
     </section>
   );
 }
-
-
-
-
-
-
-
-
 
 
 

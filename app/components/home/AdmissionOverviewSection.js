@@ -11,7 +11,7 @@ export default function AdmissionOverviewSection() {
           Open the dedicated admission form page
         </h2>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          Click Apply Now to open the full admission form page. You can also check admission status from there.
+          Click Apply Now to open the full admission form page. Use the dedicated status page to track your application.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link
@@ -21,7 +21,7 @@ export default function AdmissionOverviewSection() {
             Apply Now
           </Link>
           <Link
-            href="/admission/apply#check-status"
+            href="/admission/status"
             className="inline-flex rounded-full border border-slate-300/80 bg-white/90 px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
           >
             Check Admission Status

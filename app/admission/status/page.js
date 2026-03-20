@@ -20,7 +20,6 @@ export default function AdmissionStatusPage() {
   const admissionStatusEnabled = controls?.admission_status_page_enabled ?? true;
 
   const [applicationId, setApplicationId] = useState("");
-  const [name, setName] = useState("");
   const [dob, setDob] = useState("");
   const [statusData, setStatusData] = useState(null);
   const [error, setError] = useState("");
@@ -33,7 +32,6 @@ export default function AdmissionStatusPage() {
     try {
       const params = new URLSearchParams({
         application_id: applicationId.trim(),
-        name: name.trim(),
         dob: dob.trim(),
       });
       const res = await fetch(`${API_BASE}/admissions/status?${params.toString()}`);
@@ -112,7 +110,7 @@ export default function AdmissionStatusPage() {
         <PageHero
           eyebrow="Admissions"
           title="Check your admission status"
-          description="Enter your application ID, name, and date of birth to view approval status and download your receipt once approved."
+          description="Enter your application ID and date of birth to view approval status and download your receipt once approved."
           stats={[
             { value: "Pending", label: "Verification" },
             { value: "Approved", label: "Receipt Ready" },
@@ -129,7 +127,7 @@ export default function AdmissionStatusPage() {
         ) : (
           <>
             <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4">
-              <form onSubmit={checkStatus} className="grid gap-3 md:grid-cols-3">
+              <form onSubmit={checkStatus} className="grid gap-3 md:grid-cols-2">
                 <input
                   value={applicationId}
                   onChange={(event) => setApplicationId(event.target.value)}
@@ -137,13 +135,7 @@ export default function AdmissionStatusPage() {
                   className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none"
                   required
                 />
-                <input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="Student Name"
-                  className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none"
-                  required
-                />
+                
                 <input
                   value={dob}
                   onChange={(event) => setDob(event.target.value)}
@@ -153,7 +145,7 @@ export default function AdmissionStatusPage() {
                 />
                 <button
                   type="submit"
-                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(15,23,42,0.18)] md:col-span-3"
+                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(15,23,42,0.18)] md:col-span-2"
                 >
                   Check Status
                 </button>
@@ -223,3 +215,4 @@ export default function AdmissionStatusPage() {
     </div>
   );
 }
+

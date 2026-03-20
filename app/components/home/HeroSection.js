@@ -6,11 +6,42 @@ import { useEffect, useMemo, useState } from "react";
 
 const AUTO_SLIDE_MS = 4500;
 
+const FALLBACK_SLIDES = [
+  {
+    src: "",
+    title: "Empowering Girls Through Education and Opportunity",
+    subtitle: "Admissions open for Medical, Non-Medical, and Arts streams.",
+  },
+  {
+    src: "",
+    title: "Disciplined Learning with Dedicated Faculty Support",
+    subtitle: "A focused higher-secondary environment for academic growth.",
+  },
+  {
+    src: "",
+    title: "Build Your Future with Confidence at GGHSS Sagam",
+    subtitle: "Apply online and track your application status easily.",
+  },
+];
+
 export default function HeroSection({ institute }) {
-  const slides = useMemo(() => (Array.isArray(institute?.hero_slides) ? institute.hero_slides : []), [institute]);
+  const slides = useMemo(() => {
+    const rawSlides = Array.isArray(institute?.hero_slides) ? institute.hero_slides : [];
+
+    const normalized = rawSlides
+      .map((slide) => ({
+        src: String(slide?.src || "").trim(),
+        title: String(slide?.title || "").trim(),
+        subtitle: String(slide?.subtitle || "").trim(),
+      }))
+      .filter((slide) => slide.title && slide.subtitle);
+
+    return normalized.length ? normalized : FALLBACK_SLIDES;
+  }, [institute]);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [failedSlides, setFailedSlides] = useState({});
+  const [loadedSlides, setLoadedSlides] = useState({});
 
   useEffect(() => {
     if (!slides.length) return undefined;
@@ -28,34 +59,44 @@ export default function HeroSection({ institute }) {
     }
   }, [activeSlide, slides.length]);
 
-  if (!slides.length) return null;
-
   return (
     <section
       className="relative h-[clamp(16rem,50vw,26rem)] overflow-hidden rounded-3xl border border-slate-200/30 bg-slate-900 shadow-[0_18px_40px_rgba(2,6,23,0.2)]"
       id="home"
     >
-      {slides.map((slide, index) => (
-        <div
-          key={`${slide.src}-${index}`}
-          className={`absolute inset-0 transition-all duration-700 ${
-            activeSlide === index ? "scale-100 opacity-100" : "scale-105 opacity-0"
-          }`}
-        >
-          <Image
-            src={failedSlides[index] ? "/logo.svg" : slide.src}
-            alt={slide.title}
-            fill
-            priority={index === 0}
-            quality={100}
-            sizes="100vw"
-            className="object-cover"
-            onError={() => {
-              setFailedSlides((prev) => ({ ...prev, [index]: true }));
-            }}
-          />
-        </div>
-      ))}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.2),transparent_45%),radial-gradient(circle_at_80%_15%,rgba(14,165,233,0.18),transparent_40%),linear-gradient(160deg,rgba(2,6,23,0.9),rgba(15,23,42,0.75))]" />
+
+      {slides.map((slide, index) => {
+        const hasImage = Boolean(slide.src) && !failedSlides[index];
+        const isLoaded = Boolean(loadedSlides[index]);
+
+        return (
+          <div
+            key={`${slide.src || "fallback"}-${index}`}
+            className={`absolute inset-0 transition-all duration-700 ${
+              activeSlide === index ? "scale-100 opacity-100" : "scale-105 opacity-0"
+            }`}
+          >
+            {hasImage ? (
+              <Image
+                src={slide.src}
+                alt={slide.title}
+                fill
+                priority={index === 0}
+                quality={100}
+                sizes="100vw"
+                className={`object-cover transition-opacity duration-500 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+                onLoadingComplete={() => {
+                  setLoadedSlides((prev) => ({ ...prev, [index]: true }));
+                }}
+                onError={() => {
+                  setFailedSlides((prev) => ({ ...prev, [index]: true }));
+                }}
+              />
+            ) : null}
+          </div>
+        );
+      })}
 
       <div className="relative flex h-full items-end p-8 max-md:p-4 max-sm:p-3">
         <div className="h-auto w-full max-w-full overflow-hidden rounded-2xl border border-white/20 bg-slate-950/45 px-1 py-1 pb-0 text-white shadow-[0_10px_30px_rgba(2,6,23,0.25)] sm:max-w-[24rem] md:h-auto md:px-2.5 md:py-2 md:pb-1.5">
@@ -88,7 +129,7 @@ export default function HeroSection({ institute }) {
       <div className="absolute right-6 bottom-5 flex gap-2.5 max-sm:right-4 max-sm:bottom-4">
         {slides.map((slide, index) => (
           <button
-            key={`${slide.src}-${index}-dot`}
+            key={`${slide.src || "fallback"}-${index}-dot`}
             onClick={() => setActiveSlide(index)}
             aria-label={`Show slide ${index + 1}`}
             className={`h-2.5 rounded-full transition-all ${
@@ -101,4 +142,3 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
-

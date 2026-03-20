@@ -5,7 +5,6 @@ import CallToActionBanner from "../components/common/CallToActionBanner";
 import PageHero from "../components/common/PageHero";
 import ContactSection from "../components/home/ContactSection";
 import HomeHighlightsSection from "../components/home/HomeHighlightsSection";
-import TestimonialsSection from "../components/home/TestimonialsSection";
 import HomeFooter from "../components/layout/HomeFooter";
 import Navbar from "../components/layout/Navbar";
 import useInstituteData from "../hooks/useInstituteData";
@@ -175,7 +174,6 @@ export default function AboutPage() {
           </ul>
         </section>
 
-        <TestimonialsSection />
 
         <CallToActionBanner
           title="Visit the school, explore streams, and speak with the front desk"

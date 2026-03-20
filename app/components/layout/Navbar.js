@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+const APP_DOWNLOAD_URL = process.env.NEXT_PUBLIC_APP_DOWNLOAD_URL || "https://play.google.com/store";
+
 const links = [
   { label: "Home", href: "/" },
   { label: "Notifications", href: "/notifications" },
@@ -19,7 +21,7 @@ export default function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-20 overflow-visible border-b border-slate-200/20 bg-linear-to-r from-slate-950/95 via-slate-900/94 to-blue-950/93 text-slate-50 shadow-[0_14px_30px_rgba(2,6,23,0.28)] backdrop-blur-md"
+      className="sticky top-0 z-50 overflow-visible border-b border-slate-200/20 bg-linear-to-r from-slate-950/95 via-slate-900/94 to-blue-950/93 text-slate-50 shadow-[0_14px_30px_rgba(2,6,23,0.28)] backdrop-blur-md"
       id="home"
     >
       <div
@@ -103,15 +105,32 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/academics#student-login"
+          <a
+            href={APP_DOWNLOAD_URL}
+            target="_blank"
+            rel="noreferrer"
             onClick={closeMenu}
             className="mt-1 inline-flex items-center justify-center rounded-full border border-amber-300/40 bg-amber-300/90 px-3.5 py-1.6 font-bold text-slate-900 shadow-[0_10px_18px_rgba(212,166,70,0.3)] transition hover:-translate-y-px hover:bg-amber-300/95 max-[900px]:rounded-xl max-[900px]:border-amber-200/40 max-[900px]:px-3.5 max-[900px]:py-2 max-[900px]:text-left"
           >
-            Login
-          </Link>
+            <span>App</span>
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="ml-1.5 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+          </a>
         </div>
       </div>
     </header>
   );
 }
+

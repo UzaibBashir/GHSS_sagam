@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import CallToActionBanner from "../components/common/CallToActionBanner";
-import Navbar from "../components/layout/Navbar";
 import useInstituteData from "../hooks/useInstituteData";
 import { PAGE_MAIN } from "../lib/uiClasses";
 
@@ -35,8 +35,12 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
       <main className={PAGE_MAIN}>
+        <div className="flex items-center">
+          <Link href="/" className="inline-flex rounded-full border border-slate-300/80 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+            Back
+          </Link>
+        </div>
         {!notificationsEnabled ? (
           <section className="rounded-[2rem] border border-amber-300/70 bg-amber-50/90 p-6 text-amber-900 shadow-[0_18px_36px_rgba(217,119,6,0.12)]">
             <h1 className="text-xl font-extrabold">Notifications Page Disabled</h1>
@@ -154,3 +158,5 @@ export default function NotificationsPage() {
     </div>
   );
 }
+
+

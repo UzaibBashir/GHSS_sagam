@@ -17,6 +17,7 @@ export default function FacultySliderSection({ institute }) {
   const faculties = Array.isArray(institute?.faculties) ? institute.faculties : [];
   const trackRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState({});
 
   if (!faculties.length) {
     return null;
@@ -76,7 +77,7 @@ export default function FacultySliderSection({ institute }) {
           >
             <div className="relative overflow-hidden rounded-[1.3rem] bg-[radial-gradient(circle_at_top,#cfefff_0%,#8fd0ef_45%,#0f172a_100%)] p-4">
               <div className="mx-auto flex h-44 w-44 items-end justify-center overflow-hidden rounded-[1.6rem] border-4 border-white/70 bg-slate-200 shadow-[0_12px_24px_rgba(15,23,42,0.18)]">
-                {faculty.photo ? (
+                {faculty.photo && !failedImages[index] ? (
                   <div className="relative h-full w-full">
                     <Image
                       src={faculty.photo}
@@ -84,6 +85,7 @@ export default function FacultySliderSection({ institute }) {
                       fill
                       sizes="176px"
                       className="object-cover"
+                      onError={() => setFailedImages((prev) => ({ ...prev, [index]: true }))}
                     />
                   </div>
                 ) : (
@@ -121,4 +123,3 @@ export default function FacultySliderSection({ institute }) {
     </section>
   );
 }
-

@@ -17,14 +17,12 @@ const EMPTY = {
   home_achievements: [],
   home_student_achievements: [],
   home_resources: [],
-  home_testimonials: [],
   admission_content: { sessionYear: "2026", guidelines: [], eligibility: [], requiredDocuments: [] },
 };
 
 const EMPTY_SLIDE = { src: "", title: "", subtitle: "" };
 const EMPTY_STAT = { value: "", label: "" };
 const EMPTY_RESOURCE = { title: "", description: "", href: "", label: "" };
-const EMPTY_TESTIMONIAL = { name: "", role: "", quote: "" };
 const EMPTY_STUDENT_ACHIEVEMENT = { name: "", className: "", title: "", description: "", photo: "" };
 
 function parseLines(text) {
@@ -84,7 +82,6 @@ export default function WebContentManager({ institute, onSave }) {
       home_achievements: institute?.home_achievements || [],
       home_student_achievements: institute?.home_student_achievements || [],
       home_resources: institute?.home_resources || [],
-      home_testimonials: institute?.home_testimonials || [],
       admission_content: {
         sessionYear: institute?.admission_content?.sessionYear || "2026",
         guidelines: institute?.admission_content?.guidelines || [],
@@ -116,7 +113,6 @@ export default function WebContentManager({ institute, onSave }) {
       home_achievements: parseLines(achievementsText),
       home_student_achievements: normalizeStudentAchievements(draft.home_student_achievements),
       home_resources: draft.home_resources,
-      home_testimonials: draft.home_testimonials,
       admission_content: {
         ...draft.admission_content,
         guidelines: parseLines(guidelinesText),
@@ -495,55 +491,6 @@ export default function WebContentManager({ institute, onSave }) {
       </article>
 
       <article className={`${ADMIN_SUBCARD} mt-4`}>
-        <h3 className="text-base font-semibold text-slate-900">Testimonials</h3>
-        <div className="mt-3 grid gap-3">
-          {(draft.home_testimonials || []).map((item, index) => (
-            <div key={`testimonial-${index}`} className="rounded-xl border border-slate-200 bg-white p-3">
-              <div className="grid gap-3">
-                <label className={ADMIN_LABEL}>
-                  Name
-                  <input className={ADMIN_INPUT} value={item.name} onChange={(e) => {
-                    const items = [...draft.home_testimonials];
-                    items[index] = { ...items[index], name: e.target.value };
-                    setDraft((prev) => ({ ...prev, home_testimonials: items }));
-                  }} />
-                </label>
-                <label className={ADMIN_LABEL}>
-                  Role
-                  <input className={ADMIN_INPUT} value={item.role} onChange={(e) => {
-                    const items = [...draft.home_testimonials];
-                    items[index] = { ...items[index], role: e.target.value };
-                    setDraft((prev) => ({ ...prev, home_testimonials: items }));
-                  }} />
-                </label>
-                <label className={ADMIN_LABEL}>
-                  Quote
-                  <textarea rows={3} className={ADMIN_TEXTAREA} value={item.quote} onChange={(e) => {
-                    const items = [...draft.home_testimonials];
-                    items[index] = { ...items[index], quote: e.target.value };
-                    setDraft((prev) => ({ ...prev, home_testimonials: items }));
-                  }} />
-                </label>
-                <button
-                  type="button"
-                  className="rounded-lg border border-rose-300 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
-                  onClick={() => {
-                    const items = (draft.home_testimonials || []).filter((_, testimonialIndex) => testimonialIndex !== index);
-                    setDraft((prev) => ({ ...prev, home_testimonials: items }));
-                  }}
-                >
-                  Remove testimonial
-                </button>
-              </div>
-            </div>
-          ))}
-          <button type="button" className={ADMIN_BUTTON} onClick={() => setDraft((prev) => ({ ...prev, home_testimonials: [...(prev.home_testimonials || []), EMPTY_TESTIMONIAL] }))}>
-            Add testimonial
-          </button>
-        </div>
-      </article>
-
-      <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Admission page content</h3>
         <label className={ADMIN_LABEL}>
           Session year
@@ -578,5 +525,4 @@ export default function WebContentManager({ institute, onSave }) {
     </section>
   );
 }
-
 

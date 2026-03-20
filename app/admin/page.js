@@ -59,6 +59,7 @@ const defaultInstitute = {
   faculties: [],
   streams_subjects: [],
   staff: [],
+  principal: { name: "", role: "Principal", message: "", photo: "" },
   facilities: [],
   contact: {
     email: "",
@@ -77,7 +78,7 @@ const defaultInstitute = {
 
 const SECTIONS = [
   { id: "controls", label: "Site controls" },
-  { id: "admissions", label: "Admissions & enquiries" },
+  { id: "admissions", label: "Admissions" },
   { id: "institute", label: "Institute content" },
   { id: "announcements", label: "Notices & notifications" },
   { id: "academic-noticeboard", label: "Academic noticeboard" },
@@ -412,6 +413,16 @@ export default function AdminPage() {
     }
   };
 
+
+  const handleDeleteAdmission = async (applicationId) => {
+    try {
+      await adminApi.removeAdmission(applicationId);
+      setStatus("Admission form deleted.");
+      await refreshDashboard();
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
   const handleSaveMaterials = async (materials) => {
     try {
       await adminApi.updateMaterials(materials);
@@ -427,7 +438,7 @@ export default function AdminPage() {
       case "controls":
         return <ControlsManager controls={controls} onSave={handleSaveControls} />;
       case "admissions":
-        return <AdmissionsManager admissions={admissions} onUpdate={handleUpdateAdmission} enquiries={contacts} onClearEnquiries={handleClearContacts} />;
+        return <AdmissionsManager admissions={admissions} onUpdate={handleUpdateAdmission} onDelete={handleDeleteAdmission} />;
       case "institute":
         return (
           <div className="grid gap-6">
@@ -471,6 +482,8 @@ export default function AdminPage() {
                 onSave={(items) => handleSaveInstitute({ faculties: items })}
                 staff={institute.staff}
                 onSaveStaff={(items) => handleSaveInstitute({ staff: items })}
+                principal={institute.principal}
+                onSavePrincipal={(item) => handleSaveInstitute({ principal: item })}
               />
             ) : null}
             {activeInstituteSubsection === "web-content" ? (
@@ -544,6 +557,7 @@ export default function AdminPage() {
     handleSaveInstitute,
     handleSaveMaterials,
     handleUpdateAdmission,
+    handleDeleteAdmission,
     handleSaveNotice,
     handleSaveNoticeboard,
     handleSaveNotification,
@@ -628,13 +642,6 @@ export default function AdminPage() {
     </main>
   );
 }
-
-
-
-
-
-
-
 
 
 

@@ -22,6 +22,13 @@ const EMPTY_STAFF = {
   role: "",
 };
 
+const EMPTY_PRINCIPAL = {
+  name: "",
+  role: "Principal",
+  message: "",
+  photo: "",
+};
+
 async function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -112,11 +119,19 @@ function StaffEditor({ item, onChange, onRemove }) {
   );
 }
 
-export default function FacultiesManager({ faculties, onSave, staff, onSaveStaff }) {
+export default function FacultiesManager({
+  faculties,
+  onSave,
+  staff,
+  onSaveStaff,
+  principal,
+  onSavePrincipal,
+}) {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(EMPTY_FACULTY);
   const [staffItems, setStaffItems] = useState([]);
   const [staffForm, setStaffForm] = useState(EMPTY_STAFF);
+  const [principalForm, setPrincipalForm] = useState(EMPTY_PRINCIPAL);
 
   useEffect(() => {
     setItems(faculties || []);
@@ -126,6 +141,10 @@ export default function FacultiesManager({ faculties, onSave, staff, onSaveStaff
     setStaffItems(staff || []);
   }, [staff]);
 
+  useEffect(() => {
+    setPrincipalForm({ ...EMPTY_PRINCIPAL, ...(principal || {}) });
+  }, [principal]);
+
   const saveAll = async () => {
     if (typeof onSave === "function") {
       await onSave(items);
@@ -133,14 +152,64 @@ export default function FacultiesManager({ faculties, onSave, staff, onSaveStaff
     if (typeof onSaveStaff === "function") {
       await onSaveStaff(staffItems);
     }
+    if (typeof onSavePrincipal === "function") {
+      await onSavePrincipal(principalForm);
+    }
   };
 
   return (
     <section className={ADMIN_SECTION} id="faculty">
       <div>
         <h2 className={ADMIN_SECTION_TITLE}>Faculty & Staff Directory</h2>
-        <p className={ADMIN_SECTION_DESC}>Update faculty designations, qualifications, photos, and staff roles in one place.</p>
+        <p className={ADMIN_SECTION_DESC}>Update principal details, faculty designations, qualifications, photos, and staff roles in one place.</p>
       </div>
+
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <h3 className="text-base font-semibold text-slate-900">Principal details</h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className={ADMIN_LABEL}>
+            Name
+            <input
+              className={ADMIN_INPUT}
+              value={principalForm.name}
+              onChange={(event) => setPrincipalForm((prev) => ({ ...prev, name: event.target.value }))}
+            />
+          </label>
+          <label className={ADMIN_LABEL}>
+            Role
+            <input
+              className={ADMIN_INPUT}
+              value={principalForm.role}
+              onChange={(event) => setPrincipalForm((prev) => ({ ...prev, role: event.target.value }))}
+            />
+          </label>
+        </div>
+        <label className={`${ADMIN_LABEL} mt-3`}>
+          Message
+          <textarea
+            className={`${ADMIN_INPUT} min-h-24`}
+            value={principalForm.message}
+            onChange={(event) => setPrincipalForm((prev) => ({ ...prev, message: event.target.value }))}
+          />
+        </label>
+        <label className={`${ADMIN_LABEL} mt-3`}>
+          Upload photo
+          <input
+            type="file"
+            accept="image/*"
+            className={ADMIN_INPUT}
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const dataUrl = await fileToDataUrl(file);
+              setPrincipalForm((prev) => ({ ...prev, photo: dataUrl }));
+            }}
+          />
+        </label>
+        {principalForm.photo ? (
+          <img src={principalForm.photo} alt={principalForm.name || "Principal"} className="mt-3 h-20 w-20 rounded-lg object-cover border border-slate-200" />
+        ) : null}
+      </article>
 
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Add new faculty member</h3>

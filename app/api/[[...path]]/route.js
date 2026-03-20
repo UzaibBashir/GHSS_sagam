@@ -69,6 +69,7 @@ function getAdminInstituteData(store) {
     faculties: data.faculties || [],
     streams_subjects: data.streams_subjects || [],
     staff: data.staff || [],
+    principal: data.principal || { name: "", role: "Principal", message: "", photo: "" },
     facilities: data.facilities || [],
     contact: data.contact || {},
     hero_slides: data.hero_slides || [],
@@ -181,6 +182,18 @@ function normalizeStaff(items) {
     .filter((item) => item.name && item.role);
 }
 
+
+function normalizePrincipal(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Principal details are required");
+  }
+  return {
+    name: String(payload.name || "").trim(),
+    role: String(payload.role || "Principal").trim() || "Principal",
+    message: String(payload.message || "").trim(),
+    photo: String(payload.photo || "").trim(),
+  };
+}
 function normalizeContact(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("Contact details are required");
@@ -296,6 +309,53 @@ function normalizeAdmissionPayload(payload) {
   };
 }
 
+
+function getClassGroupCode(classForAdmission) {
+  const normalizedClass = String(classForAdmission || "").trim().toLowerCase();
+  return normalizedClass === "11th" || normalizedClass === "12th" ? "1" : "0";
+}
+
+function getStreamCode(classForAdmission, stream) {
+  if (getClassGroupCode(classForAdmission) === "0") {
+    return "0";
+  }
+
+  const normalizedStream = String(stream || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+
+  if (normalizedStream === "medical") return "1";
+  if (normalizedStream === "non-medical" || normalizedStream === "nonmedical") return "2";
+  if (normalizedStream === "arts") return "3";
+  return "0";
+}
+
+function getNextAdmissionSequence(store) {
+  const maxSequence = (Array.isArray(store?.admissions) ? store.admissions : []).reduce((max, item) => {
+    const currentId = String(item?.application_id || "").trim();
+    const match = currentId.match(/^\d{2}-\d{2}-(\d{4})$/);
+    if (!match) return max;
+
+    const numeric = Number(match[1]);
+    if (!Number.isInteger(numeric)) return max;
+    return Math.max(max, numeric);
+  }, 0);
+
+  if (maxSequence >= 9999) {
+    throw new Error("Application ID capacity reached. Contact admin.");
+  }
+
+  return String(maxSequence + 1).padStart(4, "0");
+}
+
+function createAdmissionApplicationId(store, applicant) {
+  const yearCode = new Date().getFullYear().toString().slice(-2);
+  const classCode = getClassGroupCode(applicant?.form_data?.class_for_admission);
+  const streamCode = getStreamCode(applicant?.form_data?.class_for_admission, applicant?.form_data?.stream);
+  const sequence = getNextAdmissionSequence(store);
+  return `${yearCode}-${classCode}${streamCode}-${sequence}`;
+}
 
 function getFormText(formData, key) {
   return String(formData.get(key) || "").trim();
@@ -438,9 +498,10 @@ function sanitizeAdmissionForAdmin(admission) {
     files,
   };
 }
-function matchesAdmissionIdentity(admission, name, dob) {
-  return admission.name.toLowerCase() === name.toLowerCase() && admission.dob === dob;
+function matchesAdmissionDob(admission, dob) {
+  return admission.dob === dob;
 }
+
 
 function ensureUniqueRollNumber(students, rollNumber, currentRollNumber = "") {
   const duplicate = students.find(
@@ -545,15 +606,14 @@ export async function GET(request, context) {
   if (path[0] === "admissions" && path[1] === "status" && path.length === 2) {
     const url = new URL(request.url);
     const applicationId = String(url.searchParams.get("application_id") || "").trim();
-    const name = String(url.searchParams.get("name") || "").trim();
     const dob = String(url.searchParams.get("dob") || "").trim();
 
-    if (!applicationId || !name || !dob) {
-      return error("Application ID, name, and date of birth are required", 400);
+    if (!applicationId || !dob) {
+      return error("Application ID and date of birth are required", 400);
     }
 
     const admission = store.admissions.find((item) => item.application_id === applicationId);
-    if (!admission || !matchesAdmissionIdentity(admission, name, dob)) {
+    if (!admission || !matchesAdmissionDob(admission, dob)) {
       return error("Application not found", 404);
     }
 
@@ -707,7 +767,7 @@ export async function POST(request, context) {
     try {
       const applicant = await normalizeAdmissionSubmission(request);
       const admission = {
-        application_id: createId("app"),
+        application_id: createAdmissionApplicationId(store, applicant),
         name: applicant.name,
         dob: applicant.dob,
         status: "pending",
@@ -982,6 +1042,7 @@ export async function PATCH(request, context) {
       if (payload.faculties !== undefined) data.faculties = normalizeFaculties(payload.faculties);
       if (payload.streams_subjects !== undefined) data.streams_subjects = normalizeStreams(payload.streams_subjects);
       if (payload.staff !== undefined) data.staff = normalizeStaff(payload.staff);
+      if (payload.principal !== undefined) data.principal = normalizePrincipal(payload.principal);
       if (payload.facilities !== undefined) data.facilities = normalizeStringList(payload.facilities, "Facility");
       if (payload.contact !== undefined) data.contact = normalizeContact(payload.contact);
       if (payload.home_highlights !== undefined) data.home_highlights = normalizeHomeHighlights(payload.home_highlights);
@@ -1234,6 +1295,14 @@ export async function DELETE(request, context) {
       return persistAndJson(store, { success: true, message: "Download item removed." });
     }
 
+    if (path[1] === "admissions" && path.length === 3) {
+      const index = store.admissions.findIndex((item) => item.application_id === path[2]);
+      if (index === -1) {
+        return error("Application not found", 404);
+      }
+      store.admissions.splice(index, 1);
+      return persistAndJson(store, { success: true, message: "Admission form deleted." });
+    }
     if (path[1] === "contacts" && path.length === 2) {
       store.contacts = [];
       return persistAndJson(store, { success: true, message: "All enquiries cleared." });
@@ -1265,3 +1334,7 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
+
+

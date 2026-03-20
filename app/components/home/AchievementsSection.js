@@ -74,6 +74,7 @@ export default function AchievementsSection({ institute }) {
   const items = normalizeAchievementItems(sourceItems);
   const trackRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState({});
 
   const slideToIndex = (nextIndex) => {
     const track = trackRef.current;
@@ -127,7 +128,7 @@ export default function AchievementsSection({ institute }) {
           >
             <div className="relative overflow-hidden rounded-[1.2rem] bg-[radial-gradient(circle_at_top,#ffe7b3_0%,#ffd075_40%,#b45309_100%)] p-4">
               <div className="mx-auto flex h-32 w-32 items-end justify-center overflow-hidden rounded-[1.3rem] border-4 border-white/70 bg-amber-100 shadow-[0_10px_18px_rgba(120,53,15,0.2)]">
-                {item.photo ? (
+                {item.photo && !failedImages[index] ? (
                   <div className="relative h-full w-full">
                     <Image
                       src={item.photo}
@@ -135,6 +136,7 @@ export default function AchievementsSection({ institute }) {
                       fill
                       sizes="128px"
                       className="object-cover"
+                      onError={() => setFailedImages((prev) => ({ ...prev, [index]: true }))}
                     />
                   </div>
                 ) : (

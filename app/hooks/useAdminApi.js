@@ -136,6 +136,14 @@ export default function useAdminApi(token) {
     return parseResponse(res, "Could not update admission status.");
   };
 
+
+  const removeAdmission = async (applicationId) => {
+    const res = await fetch(`${API_BASE}/admin/admissions/${applicationId}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete admission form.");
+  };
   const addNotificationItem = async (payload) => {
     const res = await fetch(`${API_BASE}/admin/notification-items`, {
       method: "POST",
@@ -285,6 +293,7 @@ export default function useAdminApi(token) {
     updateControls,
     updateInstitute,
     updateAdmission,
+    removeAdmission,
     addNotificationItem,
     updateNotificationItem,
     removeNotificationItem,
@@ -303,3 +312,5 @@ export default function useAdminApi(token) {
     removeDownload,
   };
 }
+
+

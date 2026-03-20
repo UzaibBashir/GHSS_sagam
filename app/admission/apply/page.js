@@ -1,7 +1,6 @@
 "use client";
 
 import AdmissionSection from "../../components/home/AdmissionSection";
-import Navbar from "../../components/layout/Navbar";
 import PageHero from "../../components/common/PageHero";
 import useInstituteData from "../../hooks/useInstituteData";
 import { PAGE_MAIN } from "../../lib/uiClasses";
@@ -14,7 +13,6 @@ export default function AdmissionApplyPage() {
 
   return (
     <div className="min-h-screen">
-      
       <main className={PAGE_MAIN}>
         <PageHero
           eyebrow="Admissions"
@@ -45,3 +43,4 @@ export default function AdmissionApplyPage() {
     </div>
   );
 }
+
