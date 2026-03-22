@@ -1,7 +1,27 @@
 "use client";
 
-import Image from "next/image";
 import { useRef, useState } from "react";
+
+const DEFAULT_FACULTIES = [
+  {
+    name: "Faculty Member",
+    designation: "Faculty",
+    qualification: "Higher Secondary Department",
+    photo: "",
+  },
+  {
+    name: "Academic Mentor",
+    designation: "Faculty",
+    qualification: "Student Guidance and Support",
+    photo: "",
+  },
+  {
+    name: "Subject Teacher",
+    designation: "Faculty",
+    qualification: "Core Subject Instruction",
+    photo: "",
+  },
+];
 
 function initialsFor(name) {
   return String(name || "")
@@ -14,14 +34,21 @@ function initialsFor(name) {
 }
 
 export default function FacultySliderSection({ institute }) {
-  const faculties = Array.isArray(institute?.faculties) ? institute.faculties : [];
+  const rawFaculties = Array.isArray(institute?.faculties) ? institute.faculties : [];
+  const faculties = rawFaculties.length
+    ? rawFaculties
+        .map((item) => ({
+          name: String(item?.name || "").trim(),
+          designation: String(item?.designation || item?.department || "Faculty").trim() || "Faculty",
+          qualification: String(item?.qualification || "Not specified").trim() || "Not specified",
+          photo: String(item?.photo || "").trim(),
+        }))
+        .filter((item) => item.name)
+    : DEFAULT_FACULTIES;
+
   const trackRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [failedImages, setFailedImages] = useState({});
-
-  if (!faculties.length) {
-    return null;
-  }
 
   const slideToIndex = (nextIndex) => {
     const track = trackRef.current;
@@ -78,16 +105,13 @@ export default function FacultySliderSection({ institute }) {
             <div className="relative overflow-hidden rounded-[1.3rem] bg-[radial-gradient(circle_at_top,#cfefff_0%,#8fd0ef_45%,#0f172a_100%)] p-4">
               <div className="mx-auto flex h-44 w-44 items-end justify-center overflow-hidden rounded-[1.6rem] border-4 border-white/70 bg-slate-200 shadow-[0_12px_24px_rgba(15,23,42,0.18)]">
                 {faculty.photo && !failedImages[index] ? (
-                  <div className="relative h-full w-full">
-                    <Image
-                      src={faculty.photo}
-                      alt={faculty.name}
-                      fill
-                      sizes="176px"
-                      className="object-cover"
-                      onError={() => setFailedImages((prev) => ({ ...prev, [index]: true }))}
-                    />
-                  </div>
+                  <img
+                    src={faculty.photo}
+                    alt={faculty.name}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                    onError={() => setFailedImages((prev) => ({ ...prev, [index]: true }))}
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-slate-800 text-4xl font-black text-white">
                     {initialsFor(faculty.name)}

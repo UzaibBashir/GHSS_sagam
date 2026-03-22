@@ -46,17 +46,17 @@ function hostAllowed(hostname, allowlist) {
 
 export function proxy(request) {
   const response = NextResponse.next();
+  const environment = (process.env.ENVIRONMENT || process.env.NODE_ENV || "").toLowerCase();
+  const isProduction = environment === "production" || process.env.VERCEL_ENV === "production";
 
   const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
   const hostName = normalizeHost(hostHeader);
   const allowedHosts = parseAllowedHosts();
 
-  if (hostName && !hostAllowed(hostName, allowedHosts)) {
+  // Keep strict host checks in production, but avoid blocking local/dev setups.
+  if (isProduction && hostName && !hostAllowed(hostName, allowedHosts)) {
     return new NextResponse("Invalid host header", { status: 400 });
   }
-
-  const environment = (process.env.ENVIRONMENT || process.env.NODE_ENV || "").toLowerCase();
-  const isProduction = environment === "production" || process.env.VERCEL_ENV === "production";
 
   if (isProduction) {
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
@@ -68,4 +68,3 @@ export function proxy(request) {
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
-

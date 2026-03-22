@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -53,11 +52,6 @@ export default function HeroSection({ institute }) {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  useEffect(() => {
-    if (activeSlide >= slides.length) {
-      setActiveSlide(0);
-    }
-  }, [activeSlide, slides.length]);
 
   return (
     <section
@@ -78,15 +72,12 @@ export default function HeroSection({ institute }) {
             }`}
           >
             {hasImage ? (
-              <Image
+              <img
                 src={slide.src}
                 alt={slide.title}
-                fill
-                priority={index === 0}
-                quality={100}
-                sizes="100vw"
-                className={`object-cover transition-opacity duration-500 ${isLoaded ? "opacity-100" : "opacity-0"}`}
-                onLoadingComplete={() => {
+                loading={index === 0 ? "eager" : "lazy"}
+                className={`h-full w-full object-cover transition-opacity duration-500 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+                onLoad={() => {
                   setLoadedSlides((prev) => ({ ...prev, [index]: true }));
                 }}
                 onError={() => {
@@ -104,10 +95,10 @@ export default function HeroSection({ institute }) {
             Admissions Open 2026
           </p>
           <h1 className="mt-0.5 text-[0.56rem] leading-tight font-extrabold sm:mt-1 sm:text-lg md:text-base">
-            {slides[activeSlide].title}
+            {(slides[activeSlide] || slides[0]).title}
           </h1>
           <p className="mt-0.5 text-[0.5rem] leading-tight text-slate-100/95 sm:mt-1 sm:text-xs md:text-[0.72rem]">
-            {slides[activeSlide].subtitle}
+            {(slides[activeSlide] || slides[0]).subtitle}
           </p>
           <div className="mt-0.5 flex flex-wrap gap-1">
             <Link
@@ -142,3 +133,4 @@ export default function HeroSection({ institute }) {
     </section>
   );
 }
+

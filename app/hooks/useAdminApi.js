@@ -37,7 +37,7 @@ export default function useAdminApi(token) {
     const res = await fetch(`${API_BASE}/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username: String(username || "").trim(), password: String(password || "").trim() }),
     });
     return parseResponse(res, "Login failed");
   };
@@ -312,5 +312,6 @@ export default function useAdminApi(token) {
     removeDownload,
   };
 }
+
 
 
