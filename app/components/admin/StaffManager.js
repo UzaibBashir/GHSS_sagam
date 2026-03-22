@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -41,12 +41,8 @@ function StaffEditor({ item, onChange, onRemove }) {
 }
 
 export default function StaffManager({ staff, onSave }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => staff || []);
   const [form, setForm] = useState(EMPTY_STAFF);
-
-  useEffect(() => {
-    setItems(staff || []);
-  }, [staff]);
 
   return (
     <section className={ADMIN_SECTION} id="staff">

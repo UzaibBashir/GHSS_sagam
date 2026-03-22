@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_INPUT,
@@ -58,47 +58,39 @@ async function fileToDataUrl(file) {
   });
 }
 
+function buildDraft(institute) {
+  return {
+    ...EMPTY,
+    hero_slides: institute?.hero_slides || [],
+    home_highlights: {
+      stats: institute?.home_highlights?.stats || [],
+      reasons: institute?.home_highlights?.reasons || [],
+    },
+    home_front_desk: {
+      title: institute?.home_front_desk?.title || "",
+      items: institute?.home_front_desk?.items || [],
+    },
+    home_achievements: institute?.home_achievements || [],
+    home_student_achievements: institute?.home_student_achievements || [],
+    home_resources: institute?.home_resources || [],
+    admission_content: {
+      sessionYear: institute?.admission_content?.sessionYear || "2026",
+      guidelines: institute?.admission_content?.guidelines || [],
+      eligibility: institute?.admission_content?.eligibility || [],
+      requiredDocuments: institute?.admission_content?.requiredDocuments || [],
+    },
+  };
+}
+
 export default function WebContentManager({ institute, onSave }) {
-  const [draft, setDraft] = useState(EMPTY);
-  const [reasonsText, setReasonsText] = useState("");
-  const [frontDeskItemsText, setFrontDeskItemsText] = useState("");
-  const [achievementsText, setAchievementsText] = useState("");
-  const [guidelinesText, setGuidelinesText] = useState("");
-  const [eligibilityText, setEligibilityText] = useState("");
-  const [documentsText, setDocumentsText] = useState("");
-
-  useEffect(() => {
-    const next = {
-      ...EMPTY,
-      hero_slides: institute?.hero_slides || [],
-      home_highlights: {
-        stats: institute?.home_highlights?.stats || [],
-        reasons: institute?.home_highlights?.reasons || [],
-      },
-      home_front_desk: {
-        title: institute?.home_front_desk?.title || "",
-        items: institute?.home_front_desk?.items || [],
-      },
-      home_achievements: institute?.home_achievements || [],
-      home_student_achievements: institute?.home_student_achievements || [],
-      home_resources: institute?.home_resources || [],
-      admission_content: {
-        sessionYear: institute?.admission_content?.sessionYear || "2026",
-        guidelines: institute?.admission_content?.guidelines || [],
-        eligibility: institute?.admission_content?.eligibility || [],
-        requiredDocuments: institute?.admission_content?.requiredDocuments || [],
-      },
-    };
-
-    setDraft(next);
-    setReasonsText(toLines(next.home_highlights.reasons));
-    setFrontDeskItemsText(toLines(next.home_front_desk.items));
-    setAchievementsText(toLines(next.home_achievements));
-    setGuidelinesText(toLines(next.admission_content.guidelines));
-    setEligibilityText(toLines(next.admission_content.eligibility));
-    setDocumentsText(toLines(next.admission_content.requiredDocuments));
-  }, [institute]);
-
+  const initialDraft = buildDraft(institute);
+  const [draft, setDraft] = useState(() => initialDraft);
+  const [reasonsText, setReasonsText] = useState(() => toLines(initialDraft.home_highlights.reasons));
+  const [frontDeskItemsText, setFrontDeskItemsText] = useState(() => toLines(initialDraft.home_front_desk.items));
+  const [achievementsText, setAchievementsText] = useState(() => toLines(initialDraft.home_achievements));
+  const [guidelinesText, setGuidelinesText] = useState(() => toLines(initialDraft.admission_content.guidelines));
+  const [eligibilityText, setEligibilityText] = useState(() => toLines(initialDraft.admission_content.eligibility));
+  const [documentsText, setDocumentsText] = useState(() => toLines(initialDraft.admission_content.requiredDocuments));
   const saveAll = () => {
     onSave({
       hero_slides: draft.hero_slides,
@@ -525,4 +517,6 @@ export default function WebContentManager({ institute, onSave }) {
     </section>
   );
 }
+
+
 

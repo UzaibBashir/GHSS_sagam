@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_SECTION,
@@ -19,11 +19,7 @@ const DEFAULT_CONTROLS = {
 };
 
 export default function ControlsManager({ controls, onSave }) {
-  const [draft, setDraft] = useState(DEFAULT_CONTROLS);
-
-  useEffect(() => {
-    setDraft({ ...DEFAULT_CONTROLS, ...(controls || {}) });
-  }, [controls]);
+  const [draft, setDraft] = useState(() => ({ ...DEFAULT_CONTROLS, ...(controls || {}) }));
 
   return (
     <section className={ADMIN_SECTION} id="controls">
@@ -121,4 +117,3 @@ export default function ControlsManager({ controls, onSave }) {
     </section>
   );
 }
-

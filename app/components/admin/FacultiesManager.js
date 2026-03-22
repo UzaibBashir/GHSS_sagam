@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -127,23 +127,11 @@ export default function FacultiesManager({
   principal,
   onSavePrincipal,
 }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => faculties || []);
   const [form, setForm] = useState(EMPTY_FACULTY);
-  const [staffItems, setStaffItems] = useState([]);
+  const [staffItems, setStaffItems] = useState(() => staff || []);
   const [staffForm, setStaffForm] = useState(EMPTY_STAFF);
-  const [principalForm, setPrincipalForm] = useState(EMPTY_PRINCIPAL);
-
-  useEffect(() => {
-    setItems(faculties || []);
-  }, [faculties]);
-
-  useEffect(() => {
-    setStaffItems(staff || []);
-  }, [staff]);
-
-  useEffect(() => {
-    setPrincipalForm({ ...EMPTY_PRINCIPAL, ...(principal || {}) });
-  }, [principal]);
+  const [principalForm, setPrincipalForm] = useState(() => ({ ...EMPTY_PRINCIPAL, ...(principal || {}) }));
 
   const saveAll = async () => {
     if (typeof onSave === "function") {
@@ -328,4 +316,3 @@ export default function FacultiesManager({
     </section>
   );
 }
-

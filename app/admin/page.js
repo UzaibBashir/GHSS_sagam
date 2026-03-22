@@ -121,8 +121,41 @@ export default function AdminPage() {
   const adminApiRef = useRef(adminApi);
 
   useEffect(() => {
-    adminApiRef.current = adminApi;
-  }, [adminApi]);
+    adminApiRef.current = adminApi;  }, [
+    activeSection,
+    activeInstituteSubsection,
+    academicContent,
+    admissions,
+    controls,
+    downloads,
+    handleAddDownload,
+    handleAddNotice,
+    handleAddNoticeboard,
+    handleAddNotification,
+    handleAddStudent,
+    handleAddTimetable,
+    handleRemoveDownload,
+    handleRemoveNotice,
+    handleRemoveNoticeboard,
+    handleRemoveNotification,
+    handleRemoveStudent,
+    handleRemoveTimetable,
+    handleSaveControls,
+    handleSaveDownload,
+    handleSaveInstitute,
+    handleSaveMaterials,
+    handleUpdateAdmission,
+    handleDeleteAdmission,
+    handleSaveNotice,
+    handleSaveNoticeboard,
+    handleSaveNotification,
+    handleSaveStudent,
+    handleSaveTimetable,
+    institute,
+    notices,
+    notificationItems,
+    students,
+  ]);
 
   const refreshDashboard = useCallback(async () => {
     if (!token) return;
@@ -152,16 +185,82 @@ export default function AdminPage() {
         setConnected(true);
       }
       setStatus(toErrorMessage(error));
-    }
-  }, [token]);
+    }  }, [
+    activeSection,
+    activeInstituteSubsection,
+    academicContent,
+    admissions,
+    controls,
+    downloads,
+    handleAddDownload,
+    handleAddNotice,
+    handleAddNoticeboard,
+    handleAddNotification,
+    handleAddStudent,
+    handleAddTimetable,
+    handleRemoveDownload,
+    handleRemoveNotice,
+    handleRemoveNoticeboard,
+    handleRemoveNotification,
+    handleRemoveStudent,
+    handleRemoveTimetable,
+    handleSaveControls,
+    handleSaveDownload,
+    handleSaveInstitute,
+    handleSaveMaterials,
+    handleUpdateAdmission,
+    handleDeleteAdmission,
+    handleSaveNotice,
+    handleSaveNoticeboard,
+    handleSaveNotification,
+    handleSaveStudent,
+    handleSaveTimetable,
+    institute,
+    notices,
+    notificationItems,
+    students,
+  ]);
 
   useEffect(() => {
     if (!token) return;
     const timer = setTimeout(() => {
       refreshDashboard();
     }, 0);
-    return () => clearTimeout(timer);
-  }, [token, refreshDashboard]);
+    return () => clearTimeout(timer);  }, [
+    activeSection,
+    activeInstituteSubsection,
+    academicContent,
+    admissions,
+    controls,
+    downloads,
+    handleAddDownload,
+    handleAddNotice,
+    handleAddNoticeboard,
+    handleAddNotification,
+    handleAddStudent,
+    handleAddTimetable,
+    handleRemoveDownload,
+    handleRemoveNotice,
+    handleRemoveNoticeboard,
+    handleRemoveNotification,
+    handleRemoveStudent,
+    handleRemoveTimetable,
+    handleSaveControls,
+    handleSaveDownload,
+    handleSaveInstitute,
+    handleSaveMaterials,
+    handleUpdateAdmission,
+    handleDeleteAdmission,
+    handleSaveNotice,
+    handleSaveNoticeboard,
+    handleSaveNotification,
+    handleSaveStudent,
+    handleSaveTimetable,
+    institute,
+    notices,
+    notificationItems,
+    students,
+  ]);
 
   const login = async () => {
     setStatus("Logging in...");
@@ -436,7 +535,7 @@ export default function AdminPage() {
   const activePane = useMemo(() => {
     switch (activeSection) {
       case "controls":
-        return <ControlsManager controls={controls} onSave={handleSaveControls} />;
+        return <ControlsManager key={JSON.stringify(controls)} controls={controls} onSave={handleSaveControls} />;
       case "admissions":
         return <AdmissionsManager admissions={admissions} onUpdate={handleUpdateAdmission} onDelete={handleDeleteAdmission} />;
       case "institute":
@@ -460,16 +559,18 @@ export default function AdminPage() {
               </div>
             </article>
             {activeInstituteSubsection === "profile" ? (
-              <InstituteProfileManager institute={institute} onSave={handleSaveInstitute} />
+              <InstituteProfileManager key={JSON.stringify({ description: institute.description, about_us: institute.about_us, facilities: institute.facilities, contact: institute.contact })} institute={institute} onSave={handleSaveInstitute} />
             ) : null}
             {activeInstituteSubsection === "highlights" ? (
               <InstituteDetailsManager
+                key={JSON.stringify(institute.institute_details || [])}
                 details={institute.institute_details}
                 onSave={(items) => handleSaveInstitute({ institute_details: items })}
               />
             ) : null}
             {activeInstituteSubsection === "streams" ? (
               <StreamsSubjectsManager
+                key={JSON.stringify({ programs: institute.academics || [], streams: institute.streams_subjects || [] })}
                 programs={institute.academics}
                 onSavePrograms={(items) => handleSaveInstitute({ academics: items })}
                 streams={institute.streams_subjects}
@@ -478,6 +579,7 @@ export default function AdminPage() {
             ) : null}
             {activeInstituteSubsection === "faculty" ? (
               <FacultiesManager
+                key={JSON.stringify({ faculties: institute.faculties || [], staff: institute.staff || [], principal: institute.principal || {} })}
                 faculties={institute.faculties}
                 onSave={(items) => handleSaveInstitute({ faculties: items })}
                 staff={institute.staff}
@@ -487,7 +589,7 @@ export default function AdminPage() {
               />
             ) : null}
             {activeInstituteSubsection === "web-content" ? (
-              <WebContentManager institute={institute} onSave={handleSaveInstitute} />
+              <WebContentManager key={JSON.stringify({ hero_slides: institute.hero_slides || [], home_highlights: institute.home_highlights || {}, home_front_desk: institute.home_front_desk || {}, home_achievements: institute.home_achievements || [], home_student_achievements: institute.home_student_achievements || [], home_resources: institute.home_resources || [], admission_content: institute.admission_content || {} })} institute={institute} onSave={handleSaveInstitute} />
             ) : null}
           </div>
         );
@@ -530,13 +632,11 @@ export default function AdminPage() {
         );
       default:
         return null;
-    }
-  }, [
+    }  }, [
     activeSection,
     activeInstituteSubsection,
     academicContent,
     admissions,
-    contacts,
     controls,
     downloads,
     handleAddDownload,
@@ -545,7 +645,6 @@ export default function AdminPage() {
     handleAddNotification,
     handleAddStudent,
     handleAddTimetable,
-    handleClearContacts,
     handleRemoveDownload,
     handleRemoveNotice,
     handleRemoveNoticeboard,
@@ -642,6 +741,9 @@ export default function AdminPage() {
     </main>
   );
 }
+
+
+
 
 
 

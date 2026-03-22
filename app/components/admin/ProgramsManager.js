@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -41,12 +41,8 @@ function ProgramEditor({ item, onChange, onRemove }) {
 }
 
 export default function ProgramsManager({ programs, onSave }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => programs || []);
   const [form, setForm] = useState(EMPTY_PROGRAM);
-
-  useEffect(() => {
-    setItems(programs || []);
-  }, [programs]);
 
   return (
     <section className={ADMIN_SECTION} id="programs">

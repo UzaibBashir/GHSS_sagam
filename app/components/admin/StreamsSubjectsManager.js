@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -78,19 +78,10 @@ function SubjectsEditor({ item, onChange, onRemove }) {
 }
 
 export default function StreamsSubjectsManager({ streams, onSave, programs, onSavePrograms }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => streams || []);
   const [form, setForm] = useState(EMPTY_STREAM);
-  const [programItems, setProgramItems] = useState([]);
-  const [programForm, setProgramForm] = useState(EMPTY_PROGRAM);
-
-  useEffect(() => {
-    setItems(streams || []);
-  }, [streams]);
-
-  useEffect(() => {
-    setProgramItems(programs || []);
-  }, [programs]);
-
+  const [programItems, setProgramItems] = useState(() => programs || []);
+  const [programForm, setProgramForm] = useState(EMPTY_PROGRAM);
   const saveAll = async () => {
     if (typeof onSavePrograms === "function") {
       await onSavePrograms(programItems);
@@ -208,3 +199,5 @@ export default function StreamsSubjectsManager({ streams, onSave, programs, onSa
     </section>
   );
 }
+
+

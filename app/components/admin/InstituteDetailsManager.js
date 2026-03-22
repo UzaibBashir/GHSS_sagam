@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -11,12 +11,8 @@ import {
 } from "./adminStyles";
 
 export default function InstituteDetailsManager({ details, onSave }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => details || []);
   const [newItem, setNewItem] = useState("");
-
-  useEffect(() => {
-    setItems(details || []);
-  }, [details]);
 
   return (
     <section className={ADMIN_SECTION} id="highlights">

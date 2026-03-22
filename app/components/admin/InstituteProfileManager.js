@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -23,22 +23,17 @@ const EMPTY_PROFILE = {
 };
 
 export default function InstituteProfileManager({ institute, onSave }) {
-  const [draft, setDraft] = useState(EMPTY_PROFILE);
-  const [newFacility, setNewFacility] = useState("");
-
-  useEffect(() => {
-    setDraft({
-      description: String(institute?.description || ""),
-      about_us: String(institute?.about_us || ""),
-      facilities: Array.isArray(institute?.facilities) ? institute.facilities : [],
-      contact: {
-        email: String(institute?.contact?.email || ""),
-        phone: String(institute?.contact?.phone || ""),
-        address: String(institute?.contact?.address || ""),
-      },
-    });
-  }, [institute]);
-
+  const [draft, setDraft] = useState(() => ({
+    description: String(institute?.description || ""),
+    about_us: String(institute?.about_us || ""),
+    facilities: Array.isArray(institute?.facilities) ? institute.facilities : [],
+    contact: {
+      email: String(institute?.contact?.email || ""),
+      phone: String(institute?.contact?.phone || ""),
+      address: String(institute?.contact?.address || ""),
+    },
+  }));
+  const [newFacility, setNewFacility] = useState("");
   return (
     <section className={ADMIN_SECTION} id="profile">
       <div>
@@ -179,3 +174,5 @@ export default function InstituteProfileManager({ institute, onSave }) {
     </section>
   );
 }
+
+
