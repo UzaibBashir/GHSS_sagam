@@ -116,46 +116,12 @@ export default function AdminPage() {
   const [activeInstituteSubsection, setActiveInstituteSubsection] = useState(
     INSTITUTE_SUBSECTIONS[0].id
   );
-
   const adminApi = useAdminApi(token);
   const adminApiRef = useRef(adminApi);
 
   useEffect(() => {
-    adminApiRef.current = adminApi;  }, [
-    activeSection,
-    activeInstituteSubsection,
-    academicContent,
-    admissions,
-    controls,
-    downloads,
-    handleAddDownload,
-    handleAddNotice,
-    handleAddNoticeboard,
-    handleAddNotification,
-    handleAddStudent,
-    handleAddTimetable,
-    handleRemoveDownload,
-    handleRemoveNotice,
-    handleRemoveNoticeboard,
-    handleRemoveNotification,
-    handleRemoveStudent,
-    handleRemoveTimetable,
-    handleSaveControls,
-    handleSaveDownload,
-    handleSaveInstitute,
-    handleSaveMaterials,
-    handleUpdateAdmission,
-    handleDeleteAdmission,
-    handleSaveNotice,
-    handleSaveNoticeboard,
-    handleSaveNotification,
-    handleSaveStudent,
-    handleSaveTimetable,
-    institute,
-    notices,
-    notificationItems,
-    students,
-  ]);
+    adminApiRef.current = adminApi;
+  }, [adminApi]);
 
   const refreshDashboard = useCallback(async () => {
     if (!token) return;
@@ -185,83 +151,16 @@ export default function AdminPage() {
         setConnected(true);
       }
       setStatus(toErrorMessage(error));
-    }  }, [
-    activeSection,
-    activeInstituteSubsection,
-    academicContent,
-    admissions,
-    controls,
-    downloads,
-    handleAddDownload,
-    handleAddNotice,
-    handleAddNoticeboard,
-    handleAddNotification,
-    handleAddStudent,
-    handleAddTimetable,
-    handleRemoveDownload,
-    handleRemoveNotice,
-    handleRemoveNoticeboard,
-    handleRemoveNotification,
-    handleRemoveStudent,
-    handleRemoveTimetable,
-    handleSaveControls,
-    handleSaveDownload,
-    handleSaveInstitute,
-    handleSaveMaterials,
-    handleUpdateAdmission,
-    handleDeleteAdmission,
-    handleSaveNotice,
-    handleSaveNoticeboard,
-    handleSaveNotification,
-    handleSaveStudent,
-    handleSaveTimetable,
-    institute,
-    notices,
-    notificationItems,
-    students,
-  ]);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
     const timer = setTimeout(() => {
       refreshDashboard();
     }, 0);
-    return () => clearTimeout(timer);  }, [
-    activeSection,
-    activeInstituteSubsection,
-    academicContent,
-    admissions,
-    controls,
-    downloads,
-    handleAddDownload,
-    handleAddNotice,
-    handleAddNoticeboard,
-    handleAddNotification,
-    handleAddStudent,
-    handleAddTimetable,
-    handleRemoveDownload,
-    handleRemoveNotice,
-    handleRemoveNoticeboard,
-    handleRemoveNotification,
-    handleRemoveStudent,
-    handleRemoveTimetable,
-    handleSaveControls,
-    handleSaveDownload,
-    handleSaveInstitute,
-    handleSaveMaterials,
-    handleUpdateAdmission,
-    handleDeleteAdmission,
-    handleSaveNotice,
-    handleSaveNoticeboard,
-    handleSaveNotification,
-    handleSaveStudent,
-    handleSaveTimetable,
-    institute,
-    notices,
-    notificationItems,
-    students,
-  ]);
-
+    return () => clearTimeout(timer);
+  }, [token, refreshDashboard]);
   const login = async () => {
     setStatus("Logging in...");
     try {
@@ -741,6 +640,7 @@ export default function AdminPage() {
     </main>
   );
 }
+
 
 
 
