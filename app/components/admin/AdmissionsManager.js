@@ -30,6 +30,7 @@ const FILE_LABELS = {
   bank_copy_file: "Bank Copy File",
   applicant_photo: "Applicant Photo",
 };
+const PAGE_SIZE = 8;
 
 function formatFieldValue(value) {
   if (Array.isArray(value)) {
@@ -430,20 +431,27 @@ function AdmissionTable({
   title,
   section,
   items,
+  page,
+  onPageChange,
   onView,
   onApprove,
   onReject,
   onMovePending,
   onDelete,
 }) {
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   return (
     <div className="mt-6">
       <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">{title}</h3>
       {items.length === 0 ? (
         <div className={`${ADMIN_SUBCARD} mt-3 text-sm text-slate-600`}>No applications in this section.</div>
       ) : (
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[980px] table-fixed border-collapse text-xs sm:text-sm">
+        <>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-245 table-fixed border-collapse text-xs sm:text-sm">
             <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2">Application ID</th>
@@ -456,7 +464,7 @@ function AdmissionTable({
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
+              {pageItems.map((item) => (
                 <AdmissionRow
                   key={item.application_id}
                   item={item}
@@ -469,8 +477,33 @@ function AdmissionTable({
                 />
               ))}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+            <p>
+              Showing {(safePage - 1) * PAGE_SIZE + 1}-{(safePage - 1) * PAGE_SIZE + pageItems.length} of {items.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className={ADMIN_BUTTON}
+                disabled={safePage <= 1}
+                onClick={() => onPageChange(Math.max(1, safePage - 1))}
+              >
+                Previous
+              </button>
+              <span>Page {safePage} / {totalPages}</span>
+              <button
+                type="button"
+                className={ADMIN_BUTTON}
+                disabled={safePage >= totalPages}
+                onClick={() => onPageChange(Math.min(totalPages, safePage + 1))}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -478,23 +511,36 @@ function AdmissionTable({
 
 export default function AdmissionsManager({ admissions, onUpdate, onDelete }) {
   const [selectedAdmission, setSelectedAdmission] = useState(null);
+  const [search, setSearch] = useState("");
+  const [pages, setPages] = useState({ pending: 1, approved: 1, rejected: 1 });
 
   const selectedRows = useMemo(() => {
     if (!selectedAdmission) return [];
     return getAdmissionRows(selectedAdmission);
   }, [selectedAdmission]);
 
+  const filteredAdmissions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return admissions;
+    return admissions.filter((item) =>
+      [item.application_id, item.name, item.status, item?.form_data?.class_for_admission, item?.form_data?.stream]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [admissions, search]);
+
   const pendingAdmissions = useMemo(
-    () => admissions.filter((item) => (item.status || "pending") === "pending"),
-    [admissions]
+    () => filteredAdmissions.filter((item) => (item.status || "pending") === "pending"),
+    [filteredAdmissions]
   );
   const approvedAdmissions = useMemo(
-    () => admissions.filter((item) => (item.status || "pending") === "approved"),
-    [admissions]
+    () => filteredAdmissions.filter((item) => (item.status || "pending") === "approved"),
+    [filteredAdmissions]
   );
   const rejectedAdmissions = useMemo(
-    () => admissions.filter((item) => (item.status || "pending") === "rejected"),
-    [admissions]
+    () => filteredAdmissions.filter((item) => (item.status || "pending") === "rejected"),
+    [filteredAdmissions]
   );
 
   const approveAdmission = (applicationId, remarks) => onUpdate(applicationId, { status: "approved", remarks });
@@ -510,10 +556,27 @@ export default function AdmissionsManager({ admissions, onUpdate, onDelete }) {
         </p>
       </div>
 
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <label className="text-sm font-semibold text-slate-700">
+          Search admissions
+          <input
+            className={ADMIN_INPUT}
+            placeholder="Search by ID, name, class, stream, status"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPages({ pending: 1, approved: 1, rejected: 1 });
+            }}
+          />
+        </label>
+      </article>
+
       <AdmissionTable
         title="Pending Applications"
         section="pending"
         items={pendingAdmissions}
+        page={pages.pending}
+        onPageChange={(next) => setPages((prev) => ({ ...prev, pending: next }))}
         onView={setSelectedAdmission}
         onApprove={approveAdmission}
         onReject={rejectAdmission}
@@ -525,6 +588,8 @@ export default function AdmissionsManager({ admissions, onUpdate, onDelete }) {
         title="Approved Applications"
         section="approved"
         items={approvedAdmissions}
+        page={pages.approved}
+        onPageChange={(next) => setPages((prev) => ({ ...prev, approved: next }))}
         onView={setSelectedAdmission}
         onApprove={approveAdmission}
         onReject={rejectAdmission}
@@ -536,6 +601,8 @@ export default function AdmissionsManager({ admissions, onUpdate, onDelete }) {
         title="Rejected Applications"
         section="rejected"
         items={rejectedAdmissions}
+        page={pages.rejected}
+        onPageChange={(next) => setPages((prev) => ({ ...prev, rejected: next }))}
         onView={setSelectedAdmission}
         onApprove={approveAdmission}
         onReject={rejectAdmission}
@@ -573,7 +640,7 @@ export default function AdmissionsManager({ admissions, onUpdate, onDelete }) {
                 {selectedRows.map(([label, value]) => (
                   <div key={label} className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700">
                     <p className="text-[0.68rem] font-extrabold tracking-[0.12em] text-slate-500 uppercase">{label}</p>
-                    <p className="mt-1 font-semibold text-slate-900 break-words">{formatFieldValue(value)}</p>
+                    <p className="mt-1 font-semibold text-slate-900 wrap-break-word">{formatFieldValue(value)}</p>
                   </div>
                 ))}
               </div>

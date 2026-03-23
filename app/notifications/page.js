@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import CallToActionBanner from "../components/common/CallToActionBanner";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 import useInstituteData from "../hooks/useInstituteData";
 import { PAGE_MAIN } from "../lib/uiClasses";
 
@@ -12,7 +13,7 @@ function isPdfAttachment(value) {
 }
 
 export default function NotificationsPage() {
-  const { institute } = useInstituteData();
+  const { institute, loading } = useInstituteData();
   const notificationItems = useMemo(() => institute?.notification_items || [], [institute]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [openId, setOpenId] = useState("");
@@ -36,6 +37,11 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen">
       <main className={PAGE_MAIN}>
+        {loading && !institute ? (
+          <section className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
+            <LoadingSpinner label="Loading institute data" />
+          </section>
+        ) : null}
         <div className="flex items-center">
           <Link href="/" className="inline-flex rounded-full border border-slate-300/80 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
             Back

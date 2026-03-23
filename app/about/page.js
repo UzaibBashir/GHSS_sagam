@@ -2,6 +2,7 @@
 
 import AboutContactSection from "../components/about/AboutContactSection";
 import CallToActionBanner from "../components/common/CallToActionBanner";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 import PageHero from "../components/common/PageHero";
 import ContactSection from "../components/home/ContactSection";
 import HomeHighlightsSection from "../components/home/HomeHighlightsSection";
@@ -12,7 +13,7 @@ import { ABOUT_PAGE_CONTENT, HOME_ABOUT_CONTENT } from "../lib/siteContent";
 import { PAGE_MAIN } from "../lib/uiClasses";
 
 export default function AboutPage() {
-  const { institute } = useInstituteData();
+  const { institute, loading } = useInstituteData();
 
   const controls = institute?.site_controls;
   const aboutEnabled = controls?.about_page_enabled ?? true;
@@ -27,6 +28,11 @@ export default function AboutPage() {
     <div className="min-h-screen">
       <Navbar />
       <main className={PAGE_MAIN}>
+        {loading && !institute ? (
+          <section className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
+            <LoadingSpinner label="Loading institute data" />
+          </section>
+        ) : null}
         <PageHero
           eyebrow="About The Institute"
           title="A dedicated public institution for girls' higher secondary education in Sagam"

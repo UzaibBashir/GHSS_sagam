@@ -10,8 +10,7 @@ import {
   ADMIN_SUBCARD,
   ADMIN_TEXTAREA,
 } from "./adminStyles";
-
-const ONE_MB = 1024 * 1024;
+import { fileToOptimizedDataUrl } from "../../lib/imageUpload";
 
 const EMPTY_NOTICE = {
   headline: "",
@@ -49,22 +48,6 @@ function isPdfAttachment(value) {
   return text.startsWith("data:application/pdf") || text.includes(".pdf");
 }
 
-async function fileToDataUrl(file) {
-  if (!file) {
-    throw new Error("Image file is required");
-  }
-
-  if (String(file.type || "").startsWith("image/") && file.size > ONE_MB) {
-    throw new Error("Image must be less than 1 MB");
-  }
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Image read failed"));
-    reader.readAsDataURL(file);
-  });
-}
 
 function AttachmentPreview({ value, title }) {
   if (!value) return null;
@@ -150,7 +133,7 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
             if (!file) return;
             let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;
@@ -382,7 +365,7 @@ export default function AcademicsManager({
               if (!file) return;
               let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;
@@ -503,7 +486,7 @@ export default function AcademicsManager({
       </article>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[720px] table-fixed border-collapse text-xs sm:text-sm">
+        <table className="w-full min-w-180 table-fixed border-collapse text-xs sm:text-sm">
           <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2">Period</th>

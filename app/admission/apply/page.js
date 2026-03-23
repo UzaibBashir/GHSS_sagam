@@ -1,12 +1,13 @@
 "use client";
 
 import AdmissionSection from "../../components/home/AdmissionSection";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import PageHero from "../../components/common/PageHero";
 import useInstituteData from "../../hooks/useInstituteData";
 import { PAGE_MAIN } from "../../lib/uiClasses";
 
 export default function AdmissionApplyPage() {
-  const { institute } = useInstituteData();
+  const { institute, loading } = useInstituteData();
   const controls = institute?.site_controls;
   const admissionApplyEnabled = controls?.admission_apply_page_enabled ?? true;
   const admissionOpen = controls?.admission_open ?? true;
@@ -14,6 +15,11 @@ export default function AdmissionApplyPage() {
   return (
     <div className="min-h-screen">
       <main className={PAGE_MAIN}>
+        {loading && !institute ? (
+          <section className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
+            <LoadingSpinner label="Loading institute data" />
+          </section>
+        ) : null}
         <PageHero
           eyebrow="Admissions"
           title="Admission Form"

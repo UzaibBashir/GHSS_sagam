@@ -4,6 +4,53 @@ import { useCallback } from "react";
 import { API_BASE } from "../lib/api";
 
 export default function useAdminApi(token) {
+  const recordLatency = (route, method, durationMs, status = 0) => {
+    const payload = {
+      kind: "api_latency",
+      route,
+      method,
+      durationMs,
+      status,
+      source: "admin-web",
+      at: new Date().toISOString(),
+    };
+
+    const body = JSON.stringify(payload);
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon(`${API_BASE}/monitoring/events`, blob);
+      return;
+    }
+
+    fetch(`${API_BASE}/monitoring/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  };
+
+  const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
+    const startedAt = Date.now();
+    const method = String(options?.method || "GET").toUpperCase();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      recordLatency(url.replace(API_BASE, "") || url, method, Date.now() - startedAt, response.status);
+      return response;
+    } catch (error) {
+      recordLatency(url.replace(API_BASE, "") || url, method, Date.now() - startedAt, 0);
+      if (error?.name === "AbortError") {
+        throw new Error("Request timed out. Please try again.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+
   const withAuth = useCallback(
     (headers = {}) => ({ ...headers, Authorization: `Bearer ${token}` }),
     [token]
@@ -34,7 +81,7 @@ export default function useAdminApi(token) {
   };
 
   const login = async (username, password) => {
-    const res = await fetch(`${API_BASE}/admin/login`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: String(username || "").trim(), password: String(password || "").trim() }),
@@ -43,7 +90,7 @@ export default function useAdminApi(token) {
   };
 
   const loadDashboard = async () => {
-    const res = await fetch(`${API_BASE}/admin/dashboard?include_institute=0`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/dashboard?include_institute=0`, {
       headers: withAuth(),
       cache: "no-store",
     });
@@ -51,7 +98,7 @@ export default function useAdminApi(token) {
   };
 
   const loadInstitute = async () => {
-    const res = await fetch(`${API_BASE}/admin/institute`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/institute`, {
       headers: withAuth(),
       cache: "no-store",
     });
@@ -59,7 +106,7 @@ export default function useAdminApi(token) {
   };
 
   const clearContacts = async () => {
-    const res = await fetch(`${API_BASE}/admin/contacts`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/contacts`, {
       method: "DELETE",
       headers: withAuth(),
     });
@@ -67,7 +114,7 @@ export default function useAdminApi(token) {
   };
 
   const addStudent = async (payload) => {
-    const res = await fetch(`${API_BASE}/admin/students`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/students`, {
       method: "POST",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -76,7 +123,7 @@ export default function useAdminApi(token) {
   };
 
   const updateStudent = async (rollNumber, payload) => {
-    const res = await fetch(`${API_BASE}/admin/students/${encodeURIComponent(rollNumber)}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/students/${encodeURIComponent(rollNumber)}`, {
       method: "PUT",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -85,7 +132,7 @@ export default function useAdminApi(token) {
   };
 
   const removeStudent = async (rollNumber) => {
-    const res = await fetch(`${API_BASE}/admin/students/${encodeURIComponent(rollNumber)}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/students/${encodeURIComponent(rollNumber)}`, {
       method: "DELETE",
       headers: withAuth(),
     });
@@ -93,7 +140,7 @@ export default function useAdminApi(token) {
   };
 
   const updateControls = async (payload) => {
-    const res = await fetch(`${API_BASE}/admin/controls`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/controls`, {
       method: "PATCH",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -102,7 +149,7 @@ export default function useAdminApi(token) {
   };
 
   const updateInstitute = async (payload) => {
-    const res = await fetch(`${API_BASE}/admin/institute`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/institute`, {
       method: "PATCH",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -111,7 +158,7 @@ export default function useAdminApi(token) {
   };
 
   const updateAdmission = async (applicationId, payload) => {
-    const res = await fetch(`${API_BASE}/admin/admissions/${applicationId}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/admissions/${applicationId}`, {
       method: "PATCH",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -120,7 +167,7 @@ export default function useAdminApi(token) {
   };
 
   const removeAdmission = async (applicationId) => {
-    const res = await fetch(`${API_BASE}/admin/admissions/${applicationId}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/admissions/${applicationId}`, {
       method: "DELETE",
       headers: withAuth(),
     });
@@ -128,7 +175,7 @@ export default function useAdminApi(token) {
   };
 
   const addNotificationItem = async (payload) => {
-    const res = await fetch(`${API_BASE}/admin/notification-items`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/notification-items`, {
       method: "POST",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -137,7 +184,7 @@ export default function useAdminApi(token) {
   };
 
   const updateNotificationItem = async (id, payload) => {
-    const res = await fetch(`${API_BASE}/admin/notification-items/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/notification-items/${id}`, {
       method: "PUT",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -146,7 +193,7 @@ export default function useAdminApi(token) {
   };
 
   const removeNotificationItem = async (id) => {
-    const res = await fetch(`${API_BASE}/admin/notification-items/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/notification-items/${id}`, {
       method: "DELETE",
       headers: withAuth(),
     });
@@ -154,7 +201,7 @@ export default function useAdminApi(token) {
   };
 
   const addNoticeboardItem = async (payload) => {
-    const res = await fetch(`${API_BASE}/admin/academics/noticeboard`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/academics/noticeboard`, {
       method: "POST",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -163,7 +210,7 @@ export default function useAdminApi(token) {
   };
 
   const updateNoticeboardItem = async (id, payload) => {
-    const res = await fetch(`${API_BASE}/admin/academics/noticeboard/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/academics/noticeboard/${id}`, {
       method: "PUT",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -172,7 +219,7 @@ export default function useAdminApi(token) {
   };
 
   const removeNoticeboardItem = async (id) => {
-    const res = await fetch(`${API_BASE}/admin/academics/noticeboard/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/academics/noticeboard/${id}`, {
       method: "DELETE",
       headers: withAuth(),
     });
@@ -180,7 +227,7 @@ export default function useAdminApi(token) {
   };
 
   const addTimetableItem = async (payload) => {
-    const res = await fetch(`${API_BASE}/admin/academics/timetable`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/academics/timetable`, {
       method: "POST",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -189,7 +236,7 @@ export default function useAdminApi(token) {
   };
 
   const updateTimetableItem = async (id, payload) => {
-    const res = await fetch(`${API_BASE}/admin/academics/timetable/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/academics/timetable/${id}`, {
       method: "PUT",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -198,7 +245,7 @@ export default function useAdminApi(token) {
   };
 
   const removeTimetableItem = async (id) => {
-    const res = await fetch(`${API_BASE}/admin/academics/timetable/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/academics/timetable/${id}`, {
       method: "DELETE",
       headers: withAuth(),
     });
@@ -206,7 +253,7 @@ export default function useAdminApi(token) {
   };
 
   const updateMaterials = async (materials) => {
-    const res = await fetch(`${API_BASE}/admin/academics/materials`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/academics/materials`, {
       method: "PUT",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify({ materials }),
@@ -215,7 +262,7 @@ export default function useAdminApi(token) {
   };
 
   const addNotice = async (payload) => {
-    const res = await fetch(`${API_BASE}/admin/notices`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/notices`, {
       method: "POST",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -224,7 +271,7 @@ export default function useAdminApi(token) {
   };
 
   const updateNotice = async (index, payload) => {
-    const res = await fetch(`${API_BASE}/admin/notices/${index}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/notices/${index}`, {
       method: "PUT",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -233,7 +280,7 @@ export default function useAdminApi(token) {
   };
 
   const removeNotice = async (index) => {
-    const res = await fetch(`${API_BASE}/admin/notices/${index}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/notices/${index}`, {
       method: "DELETE",
       headers: withAuth(),
     });
@@ -241,7 +288,7 @@ export default function useAdminApi(token) {
   };
 
   const addDownload = async (payload) => {
-    const res = await fetch(`${API_BASE}/admin/downloads`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/downloads`, {
       method: "POST",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -250,7 +297,7 @@ export default function useAdminApi(token) {
   };
 
   const updateDownload = async (index, payload) => {
-    const res = await fetch(`${API_BASE}/admin/downloads/${index}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/downloads/${index}`, {
       method: "PUT",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -259,11 +306,53 @@ export default function useAdminApi(token) {
   };
 
   const removeDownload = async (index) => {
-    const res = await fetch(`${API_BASE}/admin/downloads/${index}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/downloads/${index}`, {
       method: "DELETE",
       headers: withAuth(),
     });
     return parseResponse(res, "Could not delete download.");
+  };
+
+  const loadMonitoring = async () => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/monitoring`, {
+      headers: withAuth(),
+      cache: "no-store",
+    });
+    return parseResponse(res, "Could not load monitoring data.");
+  };
+
+  const loadBackups = async () => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/backups`, {
+      headers: withAuth(),
+      cache: "no-store",
+    });
+    return parseResponse(res, "Could not load backups.");
+  };
+
+  const createBackup = async (label) => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/backups`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ label }),
+    });
+    return parseResponse(res, "Could not create backup.");
+  };
+
+  const restoreBackup = async (id) => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/backups/${encodeURIComponent(id)}/restore`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify({}),
+    });
+    return parseResponse(res, "Could not restore backup.");
+  };
+
+  const removeBackup = async (id) => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/backups/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete backup.");
   };
 
   return {
@@ -294,5 +383,10 @@ export default function useAdminApi(token) {
     addDownload,
     updateDownload,
     removeDownload,
+    loadMonitoring,
+    loadBackups,
+    createBackup,
+    restoreBackup,
+    removeBackup,
   };
 }

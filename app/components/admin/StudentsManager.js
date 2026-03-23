@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -20,6 +20,7 @@ const EMPTY_STUDENT = {
 
 const CLASS_OPTIONS = ["Class XI", "Class XII"];
 const STREAM_OPTIONS = ["Medical", "Non-Medical", "Arts"];
+const PAGE_SIZE = 10;
 
 function StudentRow({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
@@ -90,6 +91,23 @@ function StudentRow({ item, onSave, onRemove }) {
 
 export default function StudentsManager({ students, onAdd, onSave, onRemove }) {
   const [studentForm, setStudentForm] = useState(EMPTY_STUDENT);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return students || [];
+    return (students || []).filter((item) =>
+      [item.rollNumber, item.name, item.className, item.stream]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [students, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <section className={ADMIN_SECTION} id="students">
@@ -170,8 +188,23 @@ export default function StudentsManager({ students, onAdd, onSave, onRemove }) {
         </button>
       </article>
 
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <label className={ADMIN_LABEL}>
+          Search students
+          <input
+            className={ADMIN_INPUT}
+            placeholder="Search by roll number, name, class, or stream"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+          />
+        </label>
+      </article>
+
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[720px] table-fixed border-collapse text-xs sm:text-sm">
+        <table className="w-full min-w-180 table-fixed border-collapse text-xs sm:text-sm">
           <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2">Roll number</th>
@@ -183,11 +216,36 @@ export default function StudentsManager({ students, onAdd, onSave, onRemove }) {
             </tr>
           </thead>
           <tbody>
-            {(students || []).map((student) => (
+            {pageItems.map((student) => (
               <StudentRow key={student.rollNumber} item={student} onSave={onSave} onRemove={onRemove} />
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+        <p>
+          Showing {(pageItems.length && (safePage - 1) * PAGE_SIZE + 1) || 0}-{(safePage - 1) * PAGE_SIZE + pageItems.length} of {filtered.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={ADMIN_BUTTON}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            disabled={safePage <= 1}
+          >
+            Previous
+          </button>
+          <span>Page {safePage} / {totalPages}</span>
+          <button
+            type="button"
+            className={ADMIN_BUTTON}
+            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={safePage >= totalPages}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </section>
   );

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AcademicsManager from "../components/admin/AcademicsManager";
 import AdmissionsManager from "../components/admin/AdmissionsManager";
 import AdminLoginCard from "../components/admin/AdminLoginCard";
+import BackupsManager from "../components/admin/BackupsManager";
 import ControlsManager from "../components/admin/ControlsManager";
 import DownloadsManager from "../components/admin/DownloadsManager";
 import FacultiesManager from "../components/admin/FacultiesManager";
@@ -13,9 +14,11 @@ import InstituteProfileManager from "../components/admin/InstituteProfileManager
 import MaterialsManager from "../components/admin/MaterialsManager";
 import NoticesManager from "../components/admin/NoticesManager";
 import NotificationsManager from "../components/admin/NotificationsManager";
+import MonitoringManager from "../components/admin/MonitoringManager";
 import StreamsSubjectsManager from "../components/admin/StreamsSubjectsManager";
 import StudentsManager from "../components/admin/StudentsManager";
 import WebContentManager from "../components/admin/WebContentManager";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 import useAdminApi from "../hooks/useAdminApi";
 import {
   ADMIN_BUTTON_DANGER,
@@ -31,6 +34,28 @@ import {
 } from "../components/admin/adminStyles";
 
 const toErrorMessage = (error) => String(error?.message || error);
+
+const ADMIN_TOKEN_KEY = "admin_token";
+const ADMIN_TOKEN_EXPIRY_KEY = "admin_token_expiry";
+
+function readStoredAdminToken() {
+  if (typeof window === "undefined") return "";
+
+  const token = sessionStorage.getItem(ADMIN_TOKEN_KEY) || "";
+  const expiresAt = Number(sessionStorage.getItem(ADMIN_TOKEN_EXPIRY_KEY) || 0);
+
+  if (!token) {
+    return "";
+  }
+
+  if (Number.isFinite(expiresAt) && expiresAt > 0 && Date.now() > expiresAt) {
+    sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+    sessionStorage.removeItem(ADMIN_TOKEN_EXPIRY_KEY);
+    return "";
+  }
+
+  return token;
+}
 
 
 const defaultAcademicContent = {
@@ -82,9 +107,12 @@ const SECTIONS = [
   { id: "admissions", label: "Admissions" },
   { id: "institute", label: "Institute content" },
   { id: "announcements", label: "Notices & notifications" },
+  { id: "downloads", label: "Downloads" },
   { id: "academic-noticeboard", label: "Academic noticeboard" },
   { id: "materials", label: "Study materials" },
   { id: "students", label: "Student access" },
+  { id: "monitoring", label: "Monitoring" },
+  { id: "backups", label: "Backup and restore" },
 ];
 
 const INSTITUTE_SUBSECTIONS = [
@@ -98,10 +126,7 @@ const INSTITUTE_SUBSECTIONS = [
 export default function AdminPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [token, setToken] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("admin_token") || "";
-  });
+  const [token, setToken] = useState(() => readStoredAdminToken());
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState("");
   const [notificationItems, setNotificationItems] = useState([]);
@@ -114,9 +139,17 @@ export default function AdminPage() {
   const [admissions, setAdmissions] = useState([]);
   const [institute, setInstitute] = useState(defaultInstitute);
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
+  const [busy, setBusy] = useState(false);
+  const [busyMessage, setBusyMessage] = useState("");
+  const [monitoring, setMonitoring] = useState({
+    api: { count: 0, p50: 0, p95: 0, latest: [] },
+    webVitals: { count: 0, latest: [] },
+  });
+  const [backups, setBackups] = useState([]);
   const [activeInstituteSubsection, setActiveInstituteSubsection] = useState(
     INSTITUTE_SUBSECTIONS[0].id
-  );
+  );
+
   const [dashboardRevision, setDashboardRevision] = useState(0);
   const [instituteRevision, setInstituteRevision] = useState(0);
   const [instituteLoaded, setInstituteLoaded] = useState(false);
@@ -126,6 +159,17 @@ export default function AdminPage() {
   useEffect(() => {
     adminApiRef.current = adminApi;
   }, [adminApi]);
+
+  const runWithBusy = useCallback(async (message, task) => {
+    setBusy(true);
+    setBusyMessage(message);
+    try {
+      return await task();
+    } finally {
+      setBusy(false);
+      setBusyMessage("");
+    }
+  }, []);
 
   const refreshDashboard = useCallback(async () => {
     if (!token) return;
@@ -156,7 +200,8 @@ export default function AdminPage() {
       if (error?.status === 401 || error?.status === 403) {
         setConnected(false);
         setToken("");
-        localStorage.removeItem("admin_token");
+        sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+        sessionStorage.removeItem(ADMIN_TOKEN_EXPIRY_KEY);
       } else {
         setConnected(true);
       }
@@ -180,6 +225,28 @@ export default function AdminPage() {
       setStatus(toErrorMessage(error));
     }
   }, [token]);
+
+  const refreshMonitoring = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const data = await adminApiRef.current.loadMonitoring();
+      setMonitoring(data || { api: { count: 0, p50: 0, p95: 0, latest: [] }, webVitals: { count: 0, latest: [] } });
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  }, [token]);
+
+  const refreshBackups = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const data = await adminApiRef.current.loadBackups();
+      setBackups(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  }, [token]);
   useEffect(() => {
     if (!token) return;
     const timer = setTimeout(() => {
@@ -193,16 +260,30 @@ export default function AdminPage() {
     if (instituteLoaded) return;
     refreshInstitute();
   }, [connected, activeSection, instituteLoaded, refreshInstitute]);
+  useEffect(() => {
+    if (!connected) return;
+    if (activeSection !== "monitoring") return;
+    refreshMonitoring();
+  }, [connected, activeSection, refreshMonitoring]);
+  useEffect(() => {
+    if (!connected) return;
+    if (activeSection !== "backups") return;
+    refreshBackups();
+  }, [connected, activeSection, refreshBackups]);
   const login = async () => {
     setStatus("Logging in...");
     try {
-      const data = await adminApi.login(username, password);
+      const data = await runWithBusy("Signing in...", () => adminApi.login(username, password));
       if (!data?.token || typeof data.token !== "string") {
         throw new Error("Login did not return a valid session token.");
       }
       setToken(data.token);
       setConnected(true);
-      localStorage.setItem("admin_token", data.token);
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+      const expiresInSeconds = Number(data.expires_in || 0);
+      if (Number.isFinite(expiresInSeconds) && expiresInSeconds > 0) {
+        sessionStorage.setItem(ADMIN_TOKEN_EXPIRY_KEY, String(Date.now() + expiresInSeconds * 1000));
+      }
       setPassword("");
       setStatus("Login successful. Loading dashboard...");
     } catch (error) {
@@ -224,7 +305,8 @@ export default function AdminPage() {
     setAdmissions([]);
     setInstitute(defaultInstitute);
     setInstituteLoaded(false);
-    localStorage.removeItem("admin_token");
+    sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+    sessionStorage.removeItem(ADMIN_TOKEN_EXPIRY_KEY);
     setStatus("Logged out.");
   };
 
@@ -233,6 +315,44 @@ export default function AdminPage() {
       await adminApi.clearContacts();
       setContacts([]);
       setStatus("All enquiries cleared.");
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleCreateBackup = async (label) => {
+    try {
+      await runWithBusy("Creating snapshot...", () => adminApi.createBackup(label));
+      await refreshBackups();
+      setStatus("Snapshot created.");
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleRestoreBackup = async (id) => {
+    if (!window.confirm("Restore this snapshot? Current website data will be replaced.")) {
+      return;
+    }
+
+    try {
+      await runWithBusy("Restoring snapshot...", async () => {
+        await adminApi.restoreBackup(id);
+        await refreshDashboard();
+        await refreshInstitute();
+      });
+      await refreshBackups();
+      setStatus("Snapshot restored.");
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleDeleteBackup = async (id) => {
+    try {
+      await runWithBusy("Deleting snapshot...", () => adminApi.removeBackup(id));
+      await refreshBackups();
+      setStatus("Snapshot deleted.");
     } catch (error) {
       setStatus(toErrorMessage(error));
     }
@@ -566,6 +686,18 @@ export default function AdminPage() {
             onRemove={handleRemoveStudent}
           />
         );
+      case "monitoring":
+        return <MonitoringManager monitoring={monitoring} onRefresh={refreshMonitoring} loading={busy} />;
+      case "backups":
+        return (
+          <BackupsManager
+            backups={backups}
+            onCreate={handleCreateBackup}
+            onRestore={handleRestoreBackup}
+            onDelete={handleDeleteBackup}
+            loading={busy}
+          />
+        );
       default:
         return null;
     }  }, [
@@ -598,10 +730,19 @@ export default function AdminPage() {
     handleSaveNotification,
     handleSaveStudent,
     handleSaveTimetable,
+    dashboardRevision,
+    instituteRevision,
     institute,
     notices,
     notificationItems,
     students,
+    monitoring,
+    backups,
+    busy,
+    refreshMonitoring,
+    handleCreateBackup,
+    handleRestoreBackup,
+    handleDeleteBackup,
   ]);
 
   return (
@@ -634,10 +775,17 @@ export default function AdminPage() {
             username={username}
             password={password}
             status={status}
+            loading={busy}
             onUsernameChange={setUsername}
             onPasswordChange={setPassword}
             onLogin={login}
           />
+
+          {busy ? (
+            <section className={ADMIN_SECTION}>
+              <LoadingSpinner label={busyMessage || "Working"} />
+            </section>
+          ) : null}
 
           {connected ? (
             <>

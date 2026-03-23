@@ -23,6 +23,77 @@ import {
 } from "../_lib/utils";
 import { getDb } from "../_lib/mongodb";
 
+const PUBLIC_INSTITUTE_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300";
+const MAX_ADMISSION_MULTIPART_BYTES = Number(process.env.ADMISSION_MULTIPART_MAX_BYTES || 6 * 1024 * 1024);
+const MAX_MONITORING_POINTS = Number(process.env.MONITORING_MAX_POINTS || 500);
+const MAX_BACKUP_SNAPSHOTS = Number(process.env.BACKUP_MAX_SNAPSHOTS || 20);
+const BACKUP_VERSION = "2026-03-v1";
+
+function boundedPush(list, item, limit = MAX_MONITORING_POINTS) {
+  list.push(item);
+  if (list.length > limit) {
+    list.splice(0, list.length - limit);
+  }
+}
+
+function extractBackupPayload(store) {
+  return {
+    contacts: structuredClone(store.contacts || []),
+    admissions: structuredClone(store.admissions || []),
+    students: structuredClone(store.students || []),
+    instituteData: structuredClone(store.instituteData || {}),
+  };
+}
+
+function createBackupSnapshot(store, label = "Manual snapshot") {
+  return {
+    id: createId("backup"),
+    label: String(label || "Manual snapshot").trim() || "Manual snapshot",
+    version: BACKUP_VERSION,
+    createdAt: new Date().toISOString(),
+    payload: extractBackupPayload(store),
+  };
+}
+
+function applyBackupSnapshot(store, snapshot) {
+  const payload = snapshot?.payload || {};
+  store.contacts = Array.isArray(payload.contacts) ? structuredClone(payload.contacts) : [];
+  store.admissions = Array.isArray(payload.admissions) ? structuredClone(payload.admissions) : [];
+  store.students = Array.isArray(payload.students) ? structuredClone(payload.students) : [];
+  store.instituteData = payload.instituteData && typeof payload.instituteData === "object" ? structuredClone(payload.instituteData) : {};
+}
+
+function percentile(values, point) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil((point / 100) * sorted.length) - 1));
+  return Number(sorted[index].toFixed(2));
+}
+
+function buildMonitoringSummary(store) {
+  const apiLatency = store.monitoring?.apiLatency || [];
+  const webVitals = store.monitoring?.webVitals || [];
+  const latencyValues = apiLatency
+    .map((item) => Number(item.durationMs || 0))
+    .filter((value) => Number.isFinite(value) && value >= 0);
+
+  const latestApiLatency = apiLatency.slice(-30).reverse();
+  const latestWebVitals = webVitals.slice(-30).reverse();
+
+  return {
+    api: {
+      count: latencyValues.length,
+      p50: percentile(latencyValues, 50),
+      p95: percentile(latencyValues, 95),
+      latest: latestApiLatency,
+    },
+    webVitals: {
+      count: webVitals.length,
+      latest: latestWebVitals,
+    },
+  };
+}
+
 async function getPath(params) {
   const resolvedParams = await params;
   return Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
@@ -474,6 +545,11 @@ async function parseUploadedFile(formData, key, label, required = false) {
 }
 
 async function normalizeMultipartAdmissionPayload(request) {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (Number.isFinite(contentLength) && contentLength > MAX_ADMISSION_MULTIPART_BYTES) {
+    throw new Error("Admission payload is too large");
+  }
+
   const formData = await request.formData();
   const feesPaidVia = getRequiredFormText(formData, "fees_paid_via", "Fees paid via").toLowerCase();
   const classForAdmission = getRequiredFormText(formData, "class_for_admission", "Class for admission");
@@ -566,6 +642,38 @@ function sanitizeAdmissionForAdmin(admission) {
     stream: admission.form_data?.stream || "",
     fees_paid_via: admission.form_data?.fees_paid_via || "",
     files,
+  };
+}
+
+function sanitizeAdmissionForDashboard(admission) {
+  const uploads = admission?.uploads || {};
+  const sanitizedUploads = Object.fromEntries(
+    Object.entries(uploads).map(([key, file]) => {
+      if (!file) {
+        return [key, null];
+      }
+
+      return [
+        key,
+        {
+          name: file.name || "",
+          type: file.type || "",
+          size: file.size || 0,
+        },
+      ];
+    })
+  );
+
+  return {
+    application_id: admission.application_id,
+    name: admission.name,
+    dob: admission.dob,
+    status: admission.status,
+    remarks: admission.remarks || "",
+    submitted_at: admission.submitted_at,
+    approved_at: admission.approved_at || "",
+    form_data: admission.form_data || {},
+    uploads: sanitizedUploads,
   };
 }
 function matchesAdmissionDob(admission, dob) {
@@ -674,8 +782,14 @@ export async function GET(request, context) {
     return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
   }
 
+  if (path[0] === "monitoring" && path[1] === "health" && path.length === 2) {
+    return json({ status: "ok", metrics: buildMonitoringSummary(store) });
+  }
+
   if (path[0] === "institute" && path.length === 1) {
-    return json(getPublicInstituteData(store));
+    return json(getPublicInstituteData(store), 200, {
+      "Cache-Control": PUBLIC_INSTITUTE_CACHE_CONTROL,
+    });
   }
 
   if (path[0] === "admissions" && path[1] === "status" && path.length === 2) {
@@ -793,8 +907,25 @@ export async function GET(request, context) {
       notices: (store.instituteData.notices || []).map((notice, index) => ({ index, text: notice.text })),
       downloads: (store.instituteData.downloads || []).map((item, index) => ({ index, ...item })),
       institute: includeInstitute ? getAdminInstituteData(store) : null,
-      admissions: store.admissions || [],
+      admissions: (store.admissions || []).map(sanitizeAdmissionForDashboard),
     });
+  }
+
+  if (path[1] === "monitoring" && path.length === 2) {
+    return json(buildMonitoringSummary(store));
+  }
+
+  if (path[1] === "backups" && path.length === 2) {
+    const snapshots = (store.backups || []).map((item) => ({
+      id: item.id,
+      label: item.label,
+      version: item.version,
+      createdAt: item.createdAt,
+      admissions: item.payload?.admissions?.length || 0,
+      students: item.payload?.students?.length || 0,
+      contacts: item.payload?.contacts?.length || 0,
+    }));
+    return json(snapshots.reverse());
   }
   if (path[1] === "notices" && path.length === 2) {
     return json(store.instituteData.notices.map((notice, index) => ({ index, text: notice.text })));
@@ -812,7 +943,7 @@ export async function GET(request, context) {
     return json(getControls(store));
   }
   if (path[1] === "admissions" && path.length === 2) {
-    return json(store.admissions);
+    return json((store.admissions || []).map(sanitizeAdmissionForDashboard));
   }
   if (path[1] === "institute" && path.length === 2) {
     return json(getAdminInstituteData(store));
@@ -852,6 +983,40 @@ export async function POST(request, context) {
     store = await getStore();
   } catch (err) {
     return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
+  }
+
+  if (path[0] === "monitoring" && path[1] === "events" && path.length === 2) {
+    try {
+      const payload = await parseJsonBody(request);
+      const kind = String(payload.kind || "").trim();
+
+      if (kind === "web_vital") {
+        boundedPush(store.monitoring.webVitals, {
+          name: String(payload.name || "unknown"),
+          value: Number(payload.value || 0),
+          rating: String(payload.rating || ""),
+          delta: Number(payload.delta || 0),
+          id: String(payload.id || ""),
+          page: String(payload.page || ""),
+          at: String(payload.at || new Date().toISOString()),
+        });
+      } else if (kind === "api_latency") {
+        boundedPush(store.monitoring.apiLatency, {
+          route: String(payload.route || ""),
+          method: String(payload.method || "GET"),
+          durationMs: Number(payload.durationMs || 0),
+          status: Number(payload.status || 0),
+          source: String(payload.source || "web"),
+          at: String(payload.at || new Date().toISOString()),
+        });
+      } else {
+        return error("Unknown monitoring event kind", 400);
+      }
+
+      return persistAndJson(store, { success: true });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Invalid payload", 400);
+    }
   }
 
   if (path[0] === "admissions" && path.length === 1) {
@@ -982,6 +1147,46 @@ export async function POST(request, context) {
   const authError = unauthorizedIfNeeded(request, store, "admin");
   if (authError) {
     return authError;
+  }
+
+  if (path[1] === "backups" && path.length === 2) {
+    try {
+      const payload = await parseJsonBody(request);
+      const snapshot = createBackupSnapshot(store, payload?.label);
+      store.backups.push(snapshot);
+      if (store.backups.length > MAX_BACKUP_SNAPSHOTS) {
+        store.backups.splice(0, store.backups.length - MAX_BACKUP_SNAPSHOTS);
+      }
+      return persistAndJson(store, {
+        success: true,
+        snapshot: {
+          id: snapshot.id,
+          label: snapshot.label,
+          version: snapshot.version,
+          createdAt: snapshot.createdAt,
+        },
+      });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Invalid payload", 400);
+    }
+  }
+
+  if (path[1] === "backups" && path[3] === "restore" && path.length === 4) {
+    const snapshot = (store.backups || []).find((item) => item.id === path[2]);
+    if (!snapshot) {
+      return error("Snapshot not found", 404);
+    }
+
+    applyBackupSnapshot(store, snapshot);
+    return persistAndJson(store, {
+      success: true,
+      restored: {
+        id: snapshot.id,
+        label: snapshot.label,
+        version: snapshot.version,
+        createdAt: snapshot.createdAt,
+      },
+    });
   }
 
   try {
@@ -1359,6 +1564,15 @@ export async function DELETE(request, context) {
   }
 
   try {
+    if (path[1] === "backups" && path.length === 3) {
+      const index = (store.backups || []).findIndex((item) => item.id === path[2]);
+      if (index === -1) {
+        return error("Snapshot not found", 404);
+      }
+      store.backups.splice(index, 1);
+      return persistAndJson(store, { success: true, message: "Snapshot deleted." });
+    }
+
     if (path[1] === "students" && path.length === 3) {
       const index = store.students.findIndex((item) => item.rollNumber === path[2]);
       if (index === -1) {

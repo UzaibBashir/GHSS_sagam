@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Navbar from "../../components/layout/Navbar";
 import PageHero from "../../components/common/PageHero";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import useInstituteData from "../../hooks/useInstituteData";
 import { PAGE_MAIN } from "../../lib/uiClasses";
 import { API_BASE } from "../../lib/api";
@@ -15,7 +16,7 @@ function formatDate(value) {
 }
 
 export default function AdmissionStatusPage() {
-  const { institute } = useInstituteData();
+  const { institute, loading } = useInstituteData();
   const controls = institute?.site_controls;
   const admissionStatusEnabled = controls?.admission_status_page_enabled ?? true;
 
@@ -107,6 +108,11 @@ export default function AdmissionStatusPage() {
     <div className="min-h-screen">
       <Navbar />
       <main className={PAGE_MAIN}>
+        {loading && !institute ? (
+          <section className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
+            <LoadingSpinner label="Loading institute data" />
+          </section>
+        ) : null}
         <PageHero
           eyebrow="Admissions"
           title="Check your admission status"

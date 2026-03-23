@@ -1,7 +1,10 @@
 import { randomBytes } from "node:crypto";
 
 export function json(data, status = 200, headers = undefined) {
-  return Response.json(data, { status, headers });
+  const responseHeaders = new Headers(headers || {});
+  responseHeaders.set("X-API-Version", "2026-03");
+  responseHeaders.set("X-Content-Type-Options", "nosniff");
+  return Response.json(data, { status, headers: responseHeaders });
 }
 
 export function error(detail, status = 400, headers = undefined) {
@@ -32,6 +35,17 @@ export function assertOptionalHttpUrl(field, value) {
 }
 
 export function parseJsonBody(request) {
+  const contentType = (request.headers.get("content-type") || "").toLowerCase();
+  if (!contentType.includes("application/json")) {
+    throw new Error("Content-Type must be application/json");
+  }
+
+  const maxBytes = Number(process.env.JSON_BODY_MAX_BYTES || 1024 * 1024);
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    throw new Error("JSON payload is too large");
+  }
+
   return request.json().catch(() => {
     throw new Error("Invalid JSON payload");
   });

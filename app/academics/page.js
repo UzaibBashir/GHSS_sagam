@@ -1,6 +1,7 @@
 "use client";
 
 import PageHero from "../components/common/PageHero";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 import Navbar from "../components/layout/Navbar";
 import useInstituteData from "../hooks/useInstituteData";
 import { PAGE_MAIN } from "../lib/uiClasses";
@@ -8,7 +9,7 @@ import { PAGE_MAIN } from "../lib/uiClasses";
 const LOGIN_FORM_URL = process.env.NEXT_PUBLIC_GHSS_LOGIN_FORM_URL || "https://docs.google.com/forms/";
 
 export default function AcademicsPage() {
-  const { institute } = useInstituteData();
+  const { institute, loading } = useInstituteData();
   const controls = institute?.site_controls;
   const academicsEnabled = controls?.academics_page_enabled ?? true;
 
@@ -16,6 +17,11 @@ export default function AcademicsPage() {
     <div className="min-h-screen">
       <Navbar />
       <main className={PAGE_MAIN}>
+        {loading && !institute ? (
+          <section className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
+            <LoadingSpinner label="Loading institute data" />
+          </section>
+        ) : null}
         <PageHero
           eyebrow="Academic Life"
           title="Academic login credentials are issued through request form"

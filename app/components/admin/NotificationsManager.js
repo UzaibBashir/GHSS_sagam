@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
@@ -10,8 +10,7 @@ import {
   ADMIN_SUBCARD,
   ADMIN_TEXTAREA,
 } from "./adminStyles";
-
-const ONE_MB = 1024 * 1024;
+import { fileToOptimizedDataUrl } from "../../lib/imageUpload";
 
 const EMPTY_FORM = {
   title: "",
@@ -23,28 +22,13 @@ const EMPTY_FORM = {
   link_label: "",
   link_url: "",
 };
+const PAGE_SIZE = 8;
 
 function isPdfAttachment(value) {
   const text = String(value || "").trim().toLowerCase();
   return text.startsWith("data:application/pdf") || text.includes(".pdf");
 }
 
-async function fileToDataUrl(file) {
-  if (!file) {
-    throw new Error("Image file is required");
-  }
-
-  if (String(file.type || "").startsWith("image/") && file.size > ONE_MB) {
-    throw new Error("Image must be less than 1 MB");
-  }
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Image read failed"));
-    reader.readAsDataURL(file);
-  });
-}
 
 function AttachmentPreview({ value, title }) {
   if (!value) return null;
@@ -131,7 +115,7 @@ function NotificationEditor({ item, onSave, onRemove }) {
             if (!file) return;
             let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;
@@ -186,6 +170,23 @@ function NotificationEditor({ item, onSave, onRemove }) {
 
 export default function NotificationsManager({ items, onAdd, onSave, onRemove }) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items || [];
+    return (items || []).filter((item) =>
+      [item.title, item.category, item.summary, item.details]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [items, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filteredItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleCreate = () => {
     onAdd(form);
@@ -264,7 +265,7 @@ export default function NotificationsManager({ items, onAdd, onSave, onRemove })
               if (!file) return;
               let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;
@@ -310,10 +311,50 @@ export default function NotificationsManager({ items, onAdd, onSave, onRemove })
         </button>
       </article>
 
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <label className={ADMIN_LABEL}>
+          Search notifications
+          <input
+            className={ADMIN_INPUT}
+            placeholder="Search title, category, summary"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+          />
+        </label>
+      </article>
+
       <div className="mt-4 grid gap-3">
-        {items.map((item) => (
+        {pageItems.map((item) => (
           <NotificationEditor key={item.id} item={item} onSave={onSave} onRemove={onRemove} />
         ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+        <p>
+          Showing {(pageItems.length && (safePage - 1) * PAGE_SIZE + 1) || 0}-{(safePage - 1) * PAGE_SIZE + pageItems.length} of {filteredItems.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={ADMIN_BUTTON}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            disabled={safePage <= 1}
+          >
+            Previous
+          </button>
+          <span>Page {safePage} / {totalPages}</span>
+          <button
+            type="button"
+            className={ADMIN_BUTTON}
+            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={safePage >= totalPages}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </section>
   );

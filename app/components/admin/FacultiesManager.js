@@ -9,8 +9,7 @@ import {
   ADMIN_SECTION_TITLE,
   ADMIN_SUBCARD,
 } from "./adminStyles";
-
-const ONE_MB = 1024 * 1024;
+import { fileToOptimizedDataUrl } from "../../lib/imageUpload";
 
 const EMPTY_FACULTY = {
   name: "",
@@ -31,22 +30,6 @@ const EMPTY_PRINCIPAL = {
   photo: "",
 };
 
-async function fileToDataUrl(file) {
-  if (!file) {
-    throw new Error("Image file is required");
-  }
-
-  if (String(file.type || "").startsWith("image/") && file.size > ONE_MB) {
-    throw new Error("Image must be less than 1 MB");
-  }
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Image read failed"));
-    reader.readAsDataURL(file);
-  });
-}
 
 function FacultyEditor({ item, onChange, onRemove }) {
   return (
@@ -88,7 +71,7 @@ function FacultyEditor({ item, onChange, onRemove }) {
             if (!file) return;
             let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;
@@ -207,7 +190,7 @@ export default function FacultiesManager({
               if (!file) return;
               let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;
@@ -260,7 +243,7 @@ export default function FacultiesManager({
               if (!file) return;
               let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;

@@ -8,12 +8,14 @@ import {
   ADMIN_SUBCARD,
   ADMIN_TAG,
 } from "./adminStyles";
+import LoadingSpinner from "../common/LoadingSpinner";
 
 export default function AdminLoginCard({
   connected,
   username,
   password,
   status,
+  loading,
   onUsernameChange,
   onPasswordChange,
   onLogin,
@@ -57,13 +59,19 @@ export default function AdminLoginCard({
               className={ADMIN_INPUT}
             />
           </label>
-          <button type="submit" className={ADMIN_BUTTON}>
-            Sign in
+          <button type="submit" className={ADMIN_BUTTON} disabled={loading}>
+            {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
       ) : (
         <p className="mt-4 text-sm text-slate-600">Use the sections below to update institute content.</p>
       )}
+
+      {loading ? (
+        <div className="mt-3">
+          <LoadingSpinner label="Processing" size="sm" />
+        </div>
+      ) : null}
 
       {status ? (
         <div className={`${ADMIN_SUBCARD} mt-4 text-sm text-slate-700`}>

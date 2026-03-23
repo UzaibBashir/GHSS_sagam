@@ -9,8 +9,7 @@ import {
   ADMIN_SUBCARD,
   ADMIN_TEXTAREA,
 } from "./adminStyles";
-
-const ONE_MB = 1024 * 1024;
+import { fileToOptimizedDataUrl } from "../../lib/imageUpload";
 
 const EMPTY = {
   hero_slides: [],
@@ -51,22 +50,6 @@ function normalizeStudentAchievements(items) {
     .map((item) => ({ ...item, name: item.name || "Student Achievement", className: item.className || "Student Recognition" }));
 }
 
-async function fileToDataUrl(file) {
-  if (!file) {
-    throw new Error("Image file is required");
-  }
-
-  if (String(file.type || "").startsWith("image/") && file.size > ONE_MB) {
-    throw new Error("Image must be less than 1 MB");
-  }
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Image read failed"));
-    reader.readAsDataURL(file);
-  });
-}
 
 function buildDraft(institute) {
   return {
@@ -100,7 +83,8 @@ export default function WebContentManager({ institute, onSave }) {
   const [achievementsText, setAchievementsText] = useState(() => toLines(initialDraft.home_achievements));
   const [guidelinesText, setGuidelinesText] = useState(() => toLines(initialDraft.admission_content.guidelines));
   const [eligibilityText, setEligibilityText] = useState(() => toLines(initialDraft.admission_content.eligibility));
-  const [documentsText, setDocumentsText] = useState(() => toLines(initialDraft.admission_content.requiredDocuments));
+  const [documentsText, setDocumentsText] = useState(() => toLines(initialDraft.admission_content.requiredDocuments));
+
   const saveAll = () => {
     onSave({
       hero_slides: draft.hero_slides,
@@ -161,7 +145,7 @@ export default function WebContentManager({ institute, onSave }) {
                       if (!file) return;
                       let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;
@@ -399,7 +383,7 @@ export default function WebContentManager({ institute, onSave }) {
                       if (!file) return;
                       let dataUrl;
             try {
-              dataUrl = await fileToDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
               alert(error?.message || "Image upload failed");
               return;
