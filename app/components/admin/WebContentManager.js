@@ -10,6 +10,8 @@ import {
   ADMIN_TEXTAREA,
 } from "./adminStyles";
 
+const ONE_MB = 1024 * 1024;
+
 const EMPTY = {
   hero_slides: [],
   home_highlights: { stats: [], reasons: [] },
@@ -54,45 +56,15 @@ async function fileToDataUrl(file) {
     throw new Error("Image file is required");
   }
 
-  const directRead = () =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(new Error("Image read failed"));
-      reader.readAsDataURL(file);
-    });
-
-  if (!String(file.type || "").startsWith("image/")) {
-    return directRead();
+  if (String(file.type || "").startsWith("image/") && file.size > ONE_MB) {
+    throw new Error("Image must be less than 1 MB");
   }
 
-  const rawDataUrl = await directRead();
-
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const maxDimension = 1400;
-      const quality = 0.72;
-      const scale = Math.min(1, maxDimension / Math.max(img.width || 1, img.height || 1));
-      const width = Math.max(1, Math.round((img.width || 1) * scale));
-      const height = Math.max(1, Math.round((img.height || 1) * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-
-      if (!ctx) {
-        resolve(rawDataUrl);
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0, width, height);
-      const outputType = file.type === "image/png" ? "image/jpeg" : file.type;
-      const compressed = canvas.toDataURL(outputType, quality);
-      resolve(compressed || rawDataUrl);
-    };
-    img.onerror = () => resolve(rawDataUrl);
-    img.src = rawDataUrl;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Image read failed"));
+    reader.readAsDataURL(file);
   });
 }
 
@@ -187,7 +159,13 @@ export default function WebContentManager({ institute, onSave }) {
                     onChange={async (event) => {
                       const file = event.target.files?.[0];
                       if (!file) return;
-                      const dataUrl = await fileToDataUrl(file);
+                      let dataUrl;
+            try {
+              dataUrl = await fileToDataUrl(file);
+            } catch (error) {
+              alert(error?.message || "Image upload failed");
+              return;
+            }
                       const slides = [...(draft.hero_slides || [])];
                       slides[index] = { ...slides[index], src: dataUrl };
                       setDraft((prev) => ({ ...prev, hero_slides: slides }));
@@ -419,7 +397,13 @@ export default function WebContentManager({ institute, onSave }) {
                     onChange={async (event) => {
                       const file = event.target.files?.[0];
                       if (!file) return;
-                      const dataUrl = await fileToDataUrl(file);
+                      let dataUrl;
+            try {
+              dataUrl = await fileToDataUrl(file);
+            } catch (error) {
+              alert(error?.message || "Image upload failed");
+              return;
+            }
                       const items = [...(draft.home_student_achievements || [])];
                       items[index] = { ...items[index], photo: dataUrl };
                       setDraft((prev) => ({ ...prev, home_student_achievements: items }));
@@ -555,6 +539,11 @@ export default function WebContentManager({ institute, onSave }) {
     </section>
   );
 }
+
+
+
+
+
 
 
 

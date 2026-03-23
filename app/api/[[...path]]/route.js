@@ -63,6 +63,30 @@ function stripLargeInlineImage(value) {
   return text.length > maxInlineLength ? "" : text;
 }
 
+const MAX_INLINE_IMAGE_BYTES = 1024 * 1024;
+const INLINE_IMAGE_DATA_URL_RE = /^data:image\/[a-z0-9.+-]+;base64,/i;
+
+function estimateBase64DecodedBytes(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:[^;]+;base64,(.+)$/i);
+  if (!match) return 0;
+
+  const base64 = match[1].replace(/\s+/g, "");
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  return Math.floor((base64.length * 3) / 4) - padding;
+}
+
+function assertInlineImageSize(fieldName, value) {
+  const text = String(value || "").trim();
+  if (!text || !INLINE_IMAGE_DATA_URL_RE.test(text)) {
+    return;
+  }
+
+  const bytes = estimateBase64DecodedBytes(text);
+  if (bytes > MAX_INLINE_IMAGE_BYTES) {
+    throw new Error(`${fieldName} must be less than 1 MB`);
+  }
+}
+
 function getPublicInstituteData(store) {
   const data = store.instituteData || {};
 
@@ -177,12 +201,16 @@ function normalizeFaculties(items) {
     throw new Error("Faculties must be an array");
   }
   return items
-    .map((item) => ({
-      name: String(item?.name || "").trim(),
-      designation: String(item?.designation || item?.department || "").trim() || "Faculty",
-      qualification: String(item?.qualification || "").trim() || "Not specified",
-      photo: String(item?.photo || "").trim(),
-    }))
+    .map((item, index) => {
+      const photo = String(item?.photo || "").trim();
+      assertInlineImageSize(`Faculty photo #${index + 1}`, photo);
+      return {
+        name: String(item?.name || "").trim(),
+        designation: String(item?.designation || item?.department || "").trim() || "Faculty",
+        qualification: String(item?.qualification || "").trim() || "Not specified",
+        photo,
+      };
+    })
     .filter((item) => item.name);
 }
 
@@ -217,11 +245,15 @@ function normalizePrincipal(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("Principal details are required");
   }
+
+  const photo = String(payload.photo || "").trim();
+  assertInlineImageSize("Principal photo", photo);
+
   return {
     name: String(payload.name || "").trim(),
     role: String(payload.role || "Principal").trim() || "Principal",
     message: String(payload.message || "").trim(),
-    photo: String(payload.photo || "").trim(),
+    photo,
   };
 }
 function normalizeContact(payload) {
@@ -292,13 +324,17 @@ function normalizeHomeStudentAchievements(items) {
     throw new Error("Home student achievements must be an array");
   }
   return items
-    .map((item) => ({
-      name: String(item?.name || "").trim() || "Student Achievement",
-      className: String(item?.className || item?.class || item?.stream || "Student Recognition").trim(),
-      title: String(item?.title || item?.achievement || "Award and Achievement").trim(),
-      description: String(item?.description || item?.text || "").trim(),
-      photo: String(item?.photo || "").trim(),
-    }))
+    .map((item, index) => {
+      const photo = String(item?.photo || "").trim();
+      assertInlineImageSize(`Student achievement photo #${index + 1}`, photo);
+      return {
+        name: String(item?.name || "").trim() || "Student Achievement",
+        className: String(item?.className || item?.class || item?.stream || "Student Recognition").trim(),
+        title: String(item?.title || item?.achievement || "Award and Achievement").trim(),
+        description: String(item?.description || item?.text || "").trim(),
+        photo,
+      };
+    })
     .filter((item) => item.title && item.description)
     .map((item) => ({
       ...item,
@@ -310,11 +346,15 @@ function normalizeHeroSlides(items) {
     throw new Error("Hero slides must be an array");
   }
   return items
-    .map((item) => ({
-      src: String(item?.src || "").trim(),
-      title: String(item?.title || "").trim(),
-      subtitle: String(item?.subtitle || "").trim(),
-    }))
+    .map((item, index) => {
+      const src = String(item?.src || "").trim();
+      assertInlineImageSize(`Hero slide image #${index + 1}`, src);
+      return {
+        src,
+        title: String(item?.title || "").trim(),
+        subtitle: String(item?.subtitle || "").trim(),
+      };
+    })
     .filter((item) => item.src && item.title && item.subtitle);
 }
 
@@ -404,7 +444,7 @@ function getFormList(formData, key) {
 
 async function parseUploadedFile(formData, key, label, required = false) {
   const value = formData.get(key);
-  const oneMb = 1024 * 1024;
+  const oneMb = MAX_INLINE_IMAGE_BYTES;
 
   if (!value || typeof value === "string") {
     if (required) {
@@ -560,7 +600,12 @@ function normalizeOptionalNotificationAttachment(value) {
   const text = String(value ?? "").trim();
   if (!text) return "";
 
-  if (text.startsWith("data:image/") || text.startsWith("data:application/pdf")) {
+  if (text.startsWith("data:image/")) {
+    assertInlineImageSize("Attachment image", text);
+    return text;
+  }
+
+  if (text.startsWith("data:application/pdf")) {
     return text;
   }
 
@@ -1380,6 +1425,7 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
 
 
 

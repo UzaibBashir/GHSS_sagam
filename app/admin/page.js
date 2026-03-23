@@ -31,40 +31,7 @@ import {
 } from "../components/admin/adminStyles";
 
 const toErrorMessage = (error) => String(error?.message || error);
-const INLINE_IMAGE_PREFIX = "data:image/";
 
-async function compressDataUrl(dataUrl, maxDimension = 1200, quality = 0.68) {
-  const source = String(dataUrl || "").trim();
-  if (!source.startsWith(INLINE_IMAGE_PREFIX)) {
-    return source;
-  }
-
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const width = img.width || 1;
-      const height = img.height || 1;
-      const scale = Math.min(1, maxDimension / Math.max(width, height));
-      const targetWidth = Math.max(1, Math.round(width * scale));
-      const targetHeight = Math.max(1, Math.round(height * scale));
-
-      const canvas = document.createElement("canvas");
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const context = canvas.getContext("2d");
-      if (!context) {
-        resolve(source);
-        return;
-      }
-
-      context.drawImage(img, 0, 0, targetWidth, targetHeight);
-      const compressed = canvas.toDataURL("image/jpeg", quality);
-      resolve(compressed || source);
-    };
-    img.onerror = () => resolve(source);
-    img.src = source;
-  });
-}
 
 const defaultAcademicContent = {
   noticeboard: [],
@@ -149,8 +116,7 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
   const [activeInstituteSubsection, setActiveInstituteSubsection] = useState(
     INSTITUTE_SUBSECTIONS[0].id
-  );
-  const [isCompressingImages, setIsCompressingImages] = useState(false);
+  );
   const [dashboardRevision, setDashboardRevision] = useState(0);
   const [instituteRevision, setInstituteRevision] = useState(0);
   const [instituteLoaded, setInstituteLoaded] = useState(false);
@@ -409,48 +375,6 @@ export default function AdminPage() {
       setStatus("Institute content updated.");
     } catch (error) {
       setStatus(toErrorMessage(error));
-    }
-  };
-
-  const handleCompressStoredImages = async () => {
-    if (isCompressingImages) return;
-
-    setIsCompressingImages(true);
-    setStatus("Compressing existing stored images...");
-
-    try {
-      const principalPhoto = await compressDataUrl(institute?.principal?.photo);
-      const faculties = await Promise.all(
-        (institute?.faculties || []).map(async (item) => ({
-          ...item,
-          photo: await compressDataUrl(item?.photo),
-        }))
-      );
-      const heroSlides = await Promise.all(
-        (institute?.hero_slides || []).map(async (item) => ({
-          ...item,
-          src: await compressDataUrl(item?.src),
-        }))
-      );
-      const studentAchievements = await Promise.all(
-        (institute?.home_student_achievements || []).map(async (item) => ({
-          ...item,
-          photo: await compressDataUrl(item?.photo),
-        }))
-      );
-
-      await adminApi.updateInstitute({
-        principal: { ...(institute?.principal || {}), photo: principalPhoto },
-        faculties,
-        hero_slides: heroSlides,
-        home_student_achievements: studentAchievements,
-      });
-      await refreshInstitute();
-      setStatus("Stored DB images compressed successfully.");
-    } catch (error) {
-      setStatus(`Image compression failed: ${toErrorMessage(error)}`);
-    } finally {
-      setIsCompressingImages(false);
     }
   };
 
@@ -727,14 +651,6 @@ export default function AdminPage() {
                     >
                       Reset
                     </button>
-                    <button
-                      type="button"
-                      onClick={handleCompressStoredImages}
-                      className={ADMIN_BUTTON_OUTLINE}
-                      disabled={isCompressingImages}
-                    >
-                      {isCompressingImages ? "Compressing..." : "Compress Existing DB Images"}
-                    </button>
                   </div>
                 </div>
                 <label className="mt-3 grid gap-2" htmlFor="admin-section-select">
@@ -762,6 +678,9 @@ export default function AdminPage() {
     </main>
   );
 }
+
+
+
 
 
 
