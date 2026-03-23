@@ -43,11 +43,19 @@ export default function useAdminApi(token) {
   };
 
   const loadDashboard = async () => {
-    const res = await fetch(`${API_BASE}/admin/dashboard`, {
+    const res = await fetch(`${API_BASE}/admin/dashboard?include_institute=0`, {
       headers: withAuth(),
       cache: "no-store",
     });
     return parseResponse(res, "Could not load dashboard.");
+  };
+
+  const loadInstitute = async () => {
+    const res = await fetch(`${API_BASE}/admin/institute`, {
+      headers: withAuth(),
+      cache: "no-store",
+    });
+    return parseResponse(res, "Could not load institute content.");
   };
 
   const clearContacts = async () => {
@@ -111,7 +119,6 @@ export default function useAdminApi(token) {
     return parseResponse(res, "Could not update admission status.");
   };
 
-
   const removeAdmission = async (applicationId) => {
     const res = await fetch(`${API_BASE}/admin/admissions/${applicationId}`, {
       method: "DELETE",
@@ -119,6 +126,7 @@ export default function useAdminApi(token) {
     });
     return parseResponse(res, "Could not delete admission form.");
   };
+
   const addNotificationItem = async (payload) => {
     const res = await fetch(`${API_BASE}/admin/notification-items`, {
       method: "POST",
@@ -261,6 +269,7 @@ export default function useAdminApi(token) {
   return {
     login,
     loadDashboard,
+    loadInstitute,
     clearContacts,
     addStudent,
     updateStudent,

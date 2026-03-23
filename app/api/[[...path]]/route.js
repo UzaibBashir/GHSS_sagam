@@ -59,7 +59,7 @@ function stripLargeInlineImage(value) {
 
   // Keep public API payload light by dropping very large base64 blobs.
   // Admin endpoints still return full image data for editing.
-  const maxInlineLength = 120000;
+  const maxInlineLength = 30000;
   return text.length > maxInlineLength ? "" : text;
 }
 
@@ -736,6 +736,9 @@ export async function GET(request, context) {
   }
 
   if (path[1] === "dashboard" && path.length === 2) {
+    const url = new URL(request.url);
+    const includeInstitute = url.searchParams.get("include_institute") !== "0";
+
     return json({
       contacts: store.contacts || [],
       controls: getControls(store),
@@ -744,7 +747,7 @@ export async function GET(request, context) {
       students: store.students || [],
       notices: (store.instituteData.notices || []).map((notice, index) => ({ index, text: notice.text })),
       downloads: (store.instituteData.downloads || []).map((item, index) => ({ index, ...item })),
-      institute: getAdminInstituteData(store),
+      institute: includeInstitute ? getAdminInstituteData(store) : null,
       admissions: store.admissions || [],
     });
   }
@@ -1377,6 +1380,8 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
 
 
 

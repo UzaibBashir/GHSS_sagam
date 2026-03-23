@@ -151,6 +151,9 @@ export default function AdminPage() {
     INSTITUTE_SUBSECTIONS[0].id
   );
   const [isCompressingImages, setIsCompressingImages] = useState(false);
+  const [dashboardRevision, setDashboardRevision] = useState(0);
+  const [instituteRevision, setInstituteRevision] = useState(0);
+  const [instituteLoaded, setInstituteLoaded] = useState(false);
   const adminApi = useAdminApi(token);
   const adminApiRef = useRef(adminApi);
 
@@ -171,11 +174,16 @@ export default function AdminPage() {
       setNotices(data.notices || []);
       setDownloads(data.downloads || []);
       setAdmissions(data.admissions || []);
-      setInstitute({
-        ...defaultInstitute,
-        ...(data.institute || {}),
-        contact: { ...defaultInstitute.contact, ...(data.institute?.contact || {}) },
-      });
+      if (data.institute) {
+        setInstitute({
+          ...defaultInstitute,
+          ...(data.institute || {}),
+          contact: { ...defaultInstitute.contact, ...(data.institute?.contact || {}) },
+        });
+        setInstituteLoaded(true);
+        setInstituteRevision((prev) => prev + 1);
+      }
+      setDashboardRevision((prev) => prev + 1);
       setConnected(true);
       setStatus("Secure portal ready.");
     } catch (error) {
@@ -190,6 +198,22 @@ export default function AdminPage() {
     }
   }, [token]);
 
+  const refreshInstitute = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const instituteData = await adminApiRef.current.loadInstitute();
+      setInstitute({
+        ...defaultInstitute,
+        ...(instituteData || {}),
+        contact: { ...defaultInstitute.contact, ...(instituteData?.contact || {}) },
+      });
+      setInstituteLoaded(true);
+      setInstituteRevision((prev) => prev + 1);
+    } catch (error) {
+      setStatus(toErrorMessage(error));
+    }
+  }, [token]);
   useEffect(() => {
     if (!token) return;
     const timer = setTimeout(() => {
@@ -197,6 +221,12 @@ export default function AdminPage() {
     }, 0);
     return () => clearTimeout(timer);
   }, [token, refreshDashboard]);
+  useEffect(() => {
+    if (!connected) return;
+    if (activeSection !== "institute") return;
+    if (instituteLoaded) return;
+    refreshInstitute();
+  }, [connected, activeSection, instituteLoaded, refreshInstitute]);
   const login = async () => {
     setStatus("Logging in...");
     try {
@@ -227,6 +257,7 @@ export default function AdminPage() {
     setDownloads([]);
     setAdmissions([]);
     setInstitute(defaultInstitute);
+    setInstituteLoaded(false);
     localStorage.removeItem("admin_token");
     setStatus("Logged out.");
   };
@@ -374,7 +405,7 @@ export default function AdminPage() {
   const handleSaveInstitute = async (payload) => {
     try {
       await adminApi.updateInstitute(payload);
-      await refreshDashboard();
+      await refreshInstitute();
       setStatus("Institute content updated.");
     } catch (error) {
       setStatus(toErrorMessage(error));
@@ -414,7 +445,7 @@ export default function AdminPage() {
         hero_slides: heroSlides,
         home_student_achievements: studentAchievements,
       });
-      await refreshDashboard();
+      await refreshInstitute();
       setStatus("Stored DB images compressed successfully.");
     } catch (error) {
       setStatus(`Image compression failed: ${toErrorMessage(error)}`);
@@ -516,7 +547,7 @@ export default function AdminPage() {
   const activePane = useMemo(() => {
     switch (activeSection) {
       case "controls":
-        return <ControlsManager key={JSON.stringify(controls)} controls={controls} onSave={handleSaveControls} />;
+        return <ControlsManager key={`controls-${dashboardRevision}`} controls={controls} onSave={handleSaveControls} />;
       case "admissions":
         return <AdmissionsManager admissions={admissions} onUpdate={handleUpdateAdmission} onDelete={handleDeleteAdmission} />;
       case "institute":
@@ -540,18 +571,18 @@ export default function AdminPage() {
               </div>
             </article>
             {activeInstituteSubsection === "profile" ? (
-              <InstituteProfileManager key={JSON.stringify({ description: institute.description, about_us: institute.about_us, facilities: institute.facilities, contact: institute.contact })} institute={institute} onSave={handleSaveInstitute} />
+              <InstituteProfileManager key={`institute-${instituteRevision}-profile`} institute={institute} onSave={handleSaveInstitute} />
             ) : null}
             {activeInstituteSubsection === "highlights" ? (
               <InstituteDetailsManager
-                key={JSON.stringify(institute.institute_details || [])}
+                key={`institute-${instituteRevision}-highlights`}
                 details={institute.institute_details}
                 onSave={(items) => handleSaveInstitute({ institute_details: items })}
               />
             ) : null}
             {activeInstituteSubsection === "streams" ? (
               <StreamsSubjectsManager
-                key={JSON.stringify({ programs: institute.academics || [], streams: institute.streams_subjects || [] })}
+                key={`institute-${instituteRevision}-streams`}
                 programs={institute.academics}
                 onSavePrograms={(items) => handleSaveInstitute({ academics: items })}
                 streams={institute.streams_subjects}
@@ -560,7 +591,7 @@ export default function AdminPage() {
             ) : null}
             {activeInstituteSubsection === "faculty" ? (
               <FacultiesManager
-                key={JSON.stringify({ faculties: institute.faculties || [], staff: institute.staff || [], principal: institute.principal || {} })}
+                key={`institute-${instituteRevision}-faculty`}
                 faculties={institute.faculties}
                 onSave={(items) => handleSaveInstitute({ faculties: items })}
                 staff={institute.staff}
@@ -570,7 +601,7 @@ export default function AdminPage() {
               />
             ) : null}
             {activeInstituteSubsection === "web-content" ? (
-              <WebContentManager key={JSON.stringify({ hero_slides: institute.hero_slides || [], home_highlights: institute.home_highlights || {}, home_front_desk: institute.home_front_desk || {}, home_achievements: institute.home_achievements || [], home_student_achievements: institute.home_student_achievements || [], home_resources: institute.home_resources || [], admission_content: institute.admission_content || {} })} institute={institute} onSave={handleSaveInstitute} />
+              <WebContentManager key={`institute-${instituteRevision}-web`} institute={institute} onSave={handleSaveInstitute} />
             ) : null}
           </div>
         );
@@ -731,6 +762,8 @@ export default function AdminPage() {
     </main>
   );
 }
+
+
 
 
 
