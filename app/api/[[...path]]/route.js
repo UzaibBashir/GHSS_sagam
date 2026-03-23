@@ -51,9 +51,39 @@ function getControls(store) {
   };
 }
 
+function stripLargeInlineImage(value) {
+  const text = String(value || "").trim();
+  if (!text.startsWith("data:image/")) {
+    return text;
+  }
+
+  // Keep public API payload light by dropping very large base64 blobs.
+  // Admin endpoints still return full image data for editing.
+  const maxInlineLength = 120000;
+  return text.length > maxInlineLength ? "" : text;
+}
+
 function getPublicInstituteData(store) {
+  const data = store.instituteData || {};
+
   return {
-    ...store.instituteData,
+    ...data,
+    principal: {
+      ...(data.principal || {}),
+      photo: stripLargeInlineImage(data?.principal?.photo),
+    },
+    faculties: (data.faculties || []).map((item) => ({
+      ...item,
+      photo: stripLargeInlineImage(item?.photo),
+    })),
+    hero_slides: (data.hero_slides || []).map((slide) => ({
+      ...slide,
+      src: stripLargeInlineImage(slide?.src),
+    })),
+    home_student_achievements: (data.home_student_achievements || []).map((item) => ({
+      ...item,
+      photo: stripLargeInlineImage(item?.photo),
+    })),
     academic_content: undefined,
   };
 }
@@ -705,6 +735,19 @@ export async function GET(request, context) {
     return authError;
   }
 
+  if (path[1] === "dashboard" && path.length === 2) {
+    return json({
+      contacts: store.contacts || [],
+      controls: getControls(store),
+      notificationItems: store.instituteData.notification_items || [],
+      academicContent: store.instituteData.academic_content || { noticeboard: [], timetable: [], materials: [] },
+      students: store.students || [],
+      notices: (store.instituteData.notices || []).map((notice, index) => ({ index, text: notice.text })),
+      downloads: (store.instituteData.downloads || []).map((item, index) => ({ index, ...item })),
+      institute: getAdminInstituteData(store),
+      admissions: store.admissions || [],
+    });
+  }
   if (path[1] === "notices" && path.length === 2) {
     return json(store.instituteData.notices.map((notice, index) => ({ index, text: notice.text })));
   }
@@ -1334,6 +1377,10 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? err.message : "Invalid request", 400);
   }
 }
+
+
+
+
 
 
 

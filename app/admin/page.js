@@ -31,6 +31,40 @@ import {
 } from "../components/admin/adminStyles";
 
 const toErrorMessage = (error) => String(error?.message || error);
+const INLINE_IMAGE_PREFIX = "data:image/";
+
+async function compressDataUrl(dataUrl, maxDimension = 1200, quality = 0.68) {
+  const source = String(dataUrl || "").trim();
+  if (!source.startsWith(INLINE_IMAGE_PREFIX)) {
+    return source;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const width = img.width || 1;
+      const height = img.height || 1;
+      const scale = Math.min(1, maxDimension / Math.max(width, height));
+      const targetWidth = Math.max(1, Math.round(width * scale));
+      const targetHeight = Math.max(1, Math.round(height * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        resolve(source);
+        return;
+      }
+
+      context.drawImage(img, 0, 0, targetWidth, targetHeight);
+      const compressed = canvas.toDataURL("image/jpeg", quality);
+      resolve(compressed || source);
+    };
+    img.onerror = () => resolve(source);
+    img.src = source;
+  });
+}
 
 const defaultAcademicContent = {
   noticeboard: [],
@@ -116,6 +150,7 @@ export default function AdminPage() {
   const [activeInstituteSubsection, setActiveInstituteSubsection] = useState(
     INSTITUTE_SUBSECTIONS[0].id
   );
+  const [isCompressingImages, setIsCompressingImages] = useState(false);
   const adminApi = useAdminApi(token);
   const adminApiRef = useRef(adminApi);
 
@@ -146,6 +181,7 @@ export default function AdminPage() {
     } catch (error) {
       if (error?.status === 401 || error?.status === 403) {
         setConnected(false);
+        setToken("");
         localStorage.removeItem("admin_token");
       } else {
         setConnected(true);
@@ -165,10 +201,14 @@ export default function AdminPage() {
     setStatus("Logging in...");
     try {
       const data = await adminApi.login(username, password);
+      if (!data?.token || typeof data.token !== "string") {
+        throw new Error("Login did not return a valid session token.");
+      }
       setToken(data.token);
+      setConnected(true);
       localStorage.setItem("admin_token", data.token);
       setPassword("");
-      setStatus("Login successful.");
+      setStatus("Login successful. Loading dashboard...");
     } catch (error) {
       setConnected(false);
       setStatus(`Login failed: ${toErrorMessage(error)}`);
@@ -338,6 +378,48 @@ export default function AdminPage() {
       setStatus("Institute content updated.");
     } catch (error) {
       setStatus(toErrorMessage(error));
+    }
+  };
+
+  const handleCompressStoredImages = async () => {
+    if (isCompressingImages) return;
+
+    setIsCompressingImages(true);
+    setStatus("Compressing existing stored images...");
+
+    try {
+      const principalPhoto = await compressDataUrl(institute?.principal?.photo);
+      const faculties = await Promise.all(
+        (institute?.faculties || []).map(async (item) => ({
+          ...item,
+          photo: await compressDataUrl(item?.photo),
+        }))
+      );
+      const heroSlides = await Promise.all(
+        (institute?.hero_slides || []).map(async (item) => ({
+          ...item,
+          src: await compressDataUrl(item?.src),
+        }))
+      );
+      const studentAchievements = await Promise.all(
+        (institute?.home_student_achievements || []).map(async (item) => ({
+          ...item,
+          photo: await compressDataUrl(item?.photo),
+        }))
+      );
+
+      await adminApi.updateInstitute({
+        principal: { ...(institute?.principal || {}), photo: principalPhoto },
+        faculties,
+        hero_slides: heroSlides,
+        home_student_achievements: studentAchievements,
+      });
+      await refreshDashboard();
+      setStatus("Stored DB images compressed successfully.");
+    } catch (error) {
+      setStatus(`Image compression failed: ${toErrorMessage(error)}`);
+    } finally {
+      setIsCompressingImages(false);
     }
   };
 
@@ -604,16 +686,25 @@ export default function AdminPage() {
 
           {connected ? (
             <>
-              <div className={ADMIN_NAV}>
-                <div className="flex items-center justify-between gap-3">
+              <div className={ADMIN_NAV}>                <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Navigate</p>
-                  <button
-                    type="button"
-                    onClick={() => setActiveSection(SECTIONS[0].id)}
-                    className={ADMIN_BUTTON_OUTLINE}
-                  >
-                    Reset
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection(SECTIONS[0].id)}
+                      className={ADMIN_BUTTON_OUTLINE}
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCompressStoredImages}
+                      className={ADMIN_BUTTON_OUTLINE}
+                      disabled={isCompressingImages}
+                    >
+                      {isCompressingImages ? "Compressing..." : "Compress Existing DB Images"}
+                    </button>
+                  </div>
                 </div>
                 <label className="mt-3 grid gap-2" htmlFor="admin-section-select">
                   <span className={ADMIN_LABEL}>Select section</span>
@@ -640,6 +731,14 @@ export default function AdminPage() {
     </main>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

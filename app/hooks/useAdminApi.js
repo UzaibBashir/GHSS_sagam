@@ -43,36 +43,11 @@ export default function useAdminApi(token) {
   };
 
   const loadDashboard = async () => {
-    const endpointRequests = [
-      ["contacts", fetch(`${API_BASE}/admin/contacts`, { headers: withAuth(), cache: "no-store" })],
-      ["controls", fetch(`${API_BASE}/admin/controls`, { headers: withAuth(), cache: "no-store" })],
-      ["notification items", fetch(`${API_BASE}/admin/notification-items`, { headers: withAuth(), cache: "no-store" })],
-      ["academic content", fetch(`${API_BASE}/admin/academics/content`, { headers: withAuth(), cache: "no-store" })],
-      ["students", fetch(`${API_BASE}/admin/students`, { headers: withAuth(), cache: "no-store" })],
-      ["notices", fetch(`${API_BASE}/admin/notices`, { headers: withAuth(), cache: "no-store" })],
-      ["downloads", fetch(`${API_BASE}/admin/downloads`, { headers: withAuth(), cache: "no-store" })],
-      ["institute", fetch(`${API_BASE}/admin/institute`, { headers: withAuth(), cache: "no-store" })],
-      ["admissions", fetch(`${API_BASE}/admin/admissions`, { headers: withAuth(), cache: "no-store" })],
-    ];
-
-    const responses = await Promise.all(endpointRequests.map(([, request]) => request));
-    const [
-      contacts,
-      controls,
-      notificationItems,
-      academicContent,
-      students,
-      notices,
-      downloads,
-      institute,
-      admissions,
-    ] = await Promise.all(
-      responses.map((res, index) =>
-        parseResponse(res, `Could not load ${endpointRequests[index][0]}.`)
-      )
-    );
-
-    return { contacts, controls, notificationItems, academicContent, students, notices, downloads, institute, admissions };
+    const res = await fetch(`${API_BASE}/admin/dashboard`, {
+      headers: withAuth(),
+      cache: "no-store",
+    });
+    return parseResponse(res, "Could not load dashboard.");
   };
 
   const clearContacts = async () => {
@@ -312,6 +287,3 @@ export default function useAdminApi(token) {
     removeDownload,
   };
 }
-
-
-

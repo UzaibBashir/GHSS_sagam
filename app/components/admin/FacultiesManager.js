@@ -30,11 +30,49 @@ const EMPTY_PRINCIPAL = {
 };
 
 async function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Image read failed"));
-    reader.readAsDataURL(file);
+  if (!file) {
+    throw new Error("Image file is required");
+  }
+
+  const directRead = () =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Image read failed"));
+      reader.readAsDataURL(file);
+    });
+
+  if (!String(file.type || "").startsWith("image/")) {
+    return directRead();
+  }
+
+  const rawDataUrl = await directRead();
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDimension = 1400;
+      const quality = 0.72;
+      const scale = Math.min(1, maxDimension / Math.max(img.width || 1, img.height || 1));
+      const width = Math.max(1, Math.round((img.width || 1) * scale));
+      const height = Math.max(1, Math.round((img.height || 1) * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        resolve(rawDataUrl);
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      const outputType = file.type === "image/png" ? "image/jpeg" : file.type;
+      const compressed = canvas.toDataURL(outputType, quality);
+      resolve(compressed || rawDataUrl);
+    };
+    img.onerror = () => resolve(rawDataUrl);
+    img.src = rawDataUrl;
   });
 }
 
@@ -316,3 +354,4 @@ export default function FacultiesManager({
     </section>
   );
 }
+

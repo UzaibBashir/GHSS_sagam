@@ -33,12 +33,18 @@ function secureEquals(a, b) {
   return timingSafeEqual(left, right);
 }
 
-function getSigningSecret() {
-  return config.sessionSecret || `dev-secret-${config.adminPassword}`;
+function getSigningSecrets() {
+  const fallback = `dev-secret-${config.adminPassword}`;
+  const secrets = [config.sessionSecret, fallback].filter(Boolean);
+  return [...new Set(secrets)];
 }
 
-function signTokenPayload(payload) {
-  return createHmac("sha256", getSigningSecret()).update(payload).digest("base64url");
+function getPrimarySigningSecret() {
+  return getSigningSecrets()[0] || `dev-secret-${config.adminPassword}`;
+}
+
+function signTokenPayload(payload, secret = getPrimarySigningSecret()) {
+  return createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
 export function ensureSecureConfig() {
@@ -114,8 +120,8 @@ export function verifyToken(_store, authorizationHeader, requiredRole = null) {
     return { ok: false, status: 401, detail: "Session expired. Please login again." };
   }
 
-  const expectedSignature = signTokenPayload(payload);
-  if (!secureEquals(signature, expectedSignature)) {
+  const validSignature = getSigningSecrets().some((secret) => secureEquals(signature, signTokenPayload(payload, secret)));
+  if (!validSignature) {
     return { ok: false, status: 401, detail: "Session expired. Please login again." };
   }
 
