@@ -375,6 +375,28 @@ const DEFAULT_STATE = {
   students: structuredClone(DEFAULT_STUDENTS),
   instituteData: structuredClone(DEFAULT_INSTITUTE_DATA),
 };
+const allowMemoryFallback = String(process.env.ALLOW_MEMORY_STORE_FALLBACK || "1").trim() !== "0";
+const dbOperationTimeoutMs = Number(process.env.DB_OPERATION_TIMEOUT_MS || 4000);
+let memoryStore = null;
+let warnedMemoryFallback = false;
+
+function withTimeout(promise, timeoutMs, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
 
 function resetIdentityShape(store) {
   if (!store.instituteData || typeof store.instituteData !== "object") {
@@ -606,32 +628,71 @@ function stripMetaFields(doc) {
 }
 
 export async function getStore() {
-  const db = await getDb();
-  const collection = db.collection(getCollectionName());
-  const existing = await collection.findOne({ _id: "main" });
+  try {
+    const db = await withTimeout(getDb(), dbOperationTimeoutMs, "Database connection");
+    const collection = db.collection(getCollectionName());
+    const existing = await withTimeout(collection.findOne({ _id: "main" }), dbOperationTimeoutMs, "Database read");
 
-  if (!existing) {
-    const initial = normalizeStoreShape(structuredClone(DEFAULT_STATE));
-    await collection.insertOne({ _id: "main", ...initial, updatedAt: new Date().toISOString() });
-    return initial;
+    if (!existing) {
+      const initial = normalizeStoreShape(structuredClone(DEFAULT_STATE));
+      await withTimeout(
+        collection.insertOne({ _id: "main", ...initial, updatedAt: new Date().toISOString() }),
+        dbOperationTimeoutMs,
+        "Database initialize"
+      );
+      return initial;
+    }
+
+    const store = normalizeStoreShape({
+      ...structuredClone(DEFAULT_STATE),
+      ...stripMetaFields(existing),
+    });
+    return store;
+  } catch (err) {
+    if (!allowMemoryFallback) {
+      throw err;
+    }
+    if (!memoryStore) {
+      memoryStore = normalizeStoreShape(structuredClone(DEFAULT_STATE));
+    }
+    if (!warnedMemoryFallback) {
+      warnedMemoryFallback = true;
+      console.warn(
+        "[store] MongoDB unavailable. Falling back to in-memory state. Data will reset on server restart.",
+        err instanceof Error ? err.message : err
+      );
+    }
+    return memoryStore;
   }
-
-  const store = normalizeStoreShape({
-    ...structuredClone(DEFAULT_STATE),
-    ...stripMetaFields(existing),
-  });
-  return store;
 }
 
 export async function saveStore(store) {
-  const db = await getDb();
-  const collection = db.collection(getCollectionName());
   const normalized = normalizeStoreShape(store);
-  await collection.updateOne(
-    { _id: "main" },
-    { $set: { ...normalized, updatedAt: new Date().toISOString() } },
-    { upsert: true }
-  );
+  try {
+    const db = await withTimeout(getDb(), dbOperationTimeoutMs, "Database connection");
+    const collection = db.collection(getCollectionName());
+    await withTimeout(
+      collection.updateOne(
+        { _id: "main" },
+        { $set: { ...normalized, updatedAt: new Date().toISOString() } },
+        { upsert: true }
+      ),
+      dbOperationTimeoutMs,
+      "Database write"
+    );
+  } catch (err) {
+    if (!allowMemoryFallback) {
+      throw err;
+    }
+    memoryStore = normalized;
+    if (!warnedMemoryFallback) {
+      warnedMemoryFallback = true;
+      console.warn(
+        "[store] MongoDB unavailable. Continuing with in-memory state.",
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
 }
 
 
