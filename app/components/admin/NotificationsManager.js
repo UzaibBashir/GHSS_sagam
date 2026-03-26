@@ -11,6 +11,7 @@ import {
   ADMIN_TEXTAREA,
 } from "./adminStyles";
 import { fileToOptimizedDataUrl } from "../../lib/imageUpload";
+import LoadingSpinner from "../common/LoadingSpinner";
 
 const EMPTY_FORM = {
   title: "",
@@ -51,6 +52,8 @@ function AttachmentPreview({ value, title }) {
 
 function NotificationEditor({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
 
   return (
     <article className={ADMIN_SUBCARD}>
@@ -113,17 +116,25 @@ function NotificationEditor({ item, onSave, onRemove }) {
           onChange={async (event) => {
             const file = event.target.files?.[0];
             if (!file) return;
+            setUploading(true);
+            setUploadMessage("");
             let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setUploading(false);
               return;
             }
             setDraft((prev) => ({ ...prev, image_url: dataUrl }));
+            setUploadMessage("Attachment uploaded. Click 'Update changes' to confirm.");
+            setUploading(false);
           }}
         />
       </label>
+      {uploading ? <LoadingSpinner label="Uploading attachment" size="sm" /> : null}
+      {uploadMessage ? <p className="text-xs font-medium text-emerald-700">{uploadMessage}</p> : null}
       <AttachmentPreview value={draft.image_url} title={draft.title} />
       {draft.image_url ? (
         <button
@@ -158,7 +169,7 @@ function NotificationEditor({ item, onSave, onRemove }) {
 
       <div className="mt-3 flex flex-wrap gap-2">
         <button className={ADMIN_BUTTON} onClick={() => onSave(item.id, draft)}>
-          Save changes
+          Update changes
         </button>
         <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.id)}>
           Delete
@@ -172,6 +183,8 @@ export default function NotificationsManager({ items, onAdd, onSave, onRemove })
   const [form, setForm] = useState(EMPTY_FORM);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [formUploadBusy, setFormUploadBusy] = useState(false);
+  const [formUploadMessage, setFormUploadMessage] = useState("");
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -263,17 +276,25 @@ export default function NotificationsManager({ items, onAdd, onSave, onRemove })
             onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) return;
+              setFormUploadBusy(true);
+              setFormUploadMessage("");
               let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setFormUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setFormUploadBusy(false);
               return;
             }
               setForm((prev) => ({ ...prev, image_url: dataUrl }));
+              setFormUploadMessage("Attachment uploaded. Click 'Publish notification' to confirm.");
+              setFormUploadBusy(false);
             }}
           />
         </label>
+        {formUploadBusy ? <LoadingSpinner label="Uploading attachment" size="sm" /> : null}
+        {formUploadMessage ? <p className="text-xs font-medium text-emerald-700">{formUploadMessage}</p> : null}
         <AttachmentPreview value={form.image_url} title={form.title} />
         {form.image_url ? (
           <button

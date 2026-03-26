@@ -194,7 +194,7 @@ export default function StreamsSubjectsManager({ streams, onSave, programs, onSa
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={saveAll}>
-        Save programs, streams & subjects
+        Apply programs, streams & subjects changes
       </button>
     </section>
   );

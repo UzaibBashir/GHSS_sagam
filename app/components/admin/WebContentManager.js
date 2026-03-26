@@ -10,6 +10,7 @@ import {
   ADMIN_TEXTAREA,
 } from "./adminStyles";
 import { fileToOptimizedDataUrl } from "../../lib/imageUpload";
+import LoadingSpinner from "../common/LoadingSpinner";
 
 const EMPTY = {
   hero_slides: [],
@@ -84,6 +85,8 @@ export default function WebContentManager({ institute, onSave }) {
   const [guidelinesText, setGuidelinesText] = useState(() => toLines(initialDraft.admission_content.guidelines));
   const [eligibilityText, setEligibilityText] = useState(() => toLines(initialDraft.admission_content.eligibility));
   const [documentsText, setDocumentsText] = useState(() => toLines(initialDraft.admission_content.requiredDocuments));
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
 
   const saveAll = () => {
     onSave({
@@ -114,6 +117,8 @@ export default function WebContentManager({ institute, onSave }) {
         <h2 className={ADMIN_SECTION_TITLE}>Website Content</h2>
         <p className={ADMIN_SECTION_DESC}>Edit dynamic homepage and admission page content stored in database.</p>
       </div>
+      {uploadBusy ? <LoadingSpinner label="Uploading image" size="sm" /> : null}
+      {uploadMessage ? <p className="text-xs font-medium text-emerald-700">{uploadMessage}</p> : null}
 
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Homepage slideshow</h3>
@@ -143,16 +148,22 @@ export default function WebContentManager({ institute, onSave }) {
                     onChange={async (event) => {
                       const file = event.target.files?.[0];
                       if (!file) return;
+                      setUploadBusy(true);
+                      setUploadMessage("");
                       let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setUploadBusy(false);
               return;
             }
                       const slides = [...(draft.hero_slides || [])];
                       slides[index] = { ...slides[index], src: dataUrl };
                       setDraft((prev) => ({ ...prev, hero_slides: slides }));
+                      setUploadMessage("Slide image uploaded. Click 'Save website content' to confirm.");
+                      setUploadBusy(false);
                     }}
                   />
                 </label>
@@ -381,16 +392,22 @@ export default function WebContentManager({ institute, onSave }) {
                     onChange={async (event) => {
                       const file = event.target.files?.[0];
                       if (!file) return;
+                      setUploadBusy(true);
+                      setUploadMessage("");
                       let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setUploadBusy(false);
               return;
             }
                       const items = [...(draft.home_student_achievements || [])];
                       items[index] = { ...items[index], photo: dataUrl };
                       setDraft((prev) => ({ ...prev, home_student_achievements: items }));
+                      setUploadMessage("Student photo uploaded. Click 'Save website content' to confirm.");
+                      setUploadBusy(false);
                     }}
                   />
                 </label>

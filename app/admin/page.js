@@ -155,6 +155,10 @@ export default function AdminPage() {
   const [instituteLoaded, setInstituteLoaded] = useState(false);
   const adminApi = useAdminApi(token);
   const adminApiRef = useRef(adminApi);
+  const isStatusError = useMemo(
+    () => /error|failed|invalid|denied|unauthorized|forbidden/i.test(status),
+    [status]
+  );
 
   useEffect(() => {
     adminApiRef.current = adminApi;
@@ -312,7 +316,7 @@ export default function AdminPage() {
 
   const handleClearContacts = async () => {
     try {
-      await adminApi.clearContacts();
+      await runWithBusy("Clearing enquiries...", () => adminApi.clearContacts());
       setContacts([]);
       setStatus("All enquiries cleared.");
     } catch (error) {
@@ -360,7 +364,7 @@ export default function AdminPage() {
 
   const handleAddStudent = async (payload) => {
     try {
-      await adminApi.addStudent(payload);
+      await runWithBusy("Adding student login...", () => adminApi.addStudent(payload));
       setStatus("Student login added.");
       await refreshDashboard();
     } catch (error) {
@@ -370,7 +374,7 @@ export default function AdminPage() {
 
   const handleSaveStudent = async (rollNumber, payload) => {
     try {
-      await adminApi.updateStudent(rollNumber, payload);
+      await runWithBusy("Updating student login...", () => adminApi.updateStudent(rollNumber, payload));
       setStatus("Student login updated.");
       await refreshDashboard();
     } catch (error) {
@@ -380,7 +384,7 @@ export default function AdminPage() {
 
   const handleRemoveStudent = async (rollNumber) => {
     try {
-      await adminApi.removeStudent(rollNumber);
+      await runWithBusy("Removing student login...", () => adminApi.removeStudent(rollNumber));
       setStatus("Student login removed.");
       await refreshDashboard();
     } catch (error) {
@@ -390,7 +394,7 @@ export default function AdminPage() {
 
   const handleAddNotification = async (payload) => {
     try {
-      await adminApi.addNotificationItem(payload);
+      await runWithBusy("Publishing notification...", () => adminApi.addNotificationItem(payload));
       setStatus("Notification added.");
       await refreshDashboard();
     } catch (error) {
@@ -400,7 +404,7 @@ export default function AdminPage() {
 
   const handleSaveNotification = async (id, payload) => {
     try {
-      await adminApi.updateNotificationItem(id, payload);
+      await runWithBusy("Updating notification...", () => adminApi.updateNotificationItem(id, payload));
       setStatus("Notification updated.");
       await refreshDashboard();
     } catch (error) {
@@ -410,7 +414,7 @@ export default function AdminPage() {
 
   const handleRemoveNotification = async (id) => {
     try {
-      await adminApi.removeNotificationItem(id);
+      await runWithBusy("Deleting notification...", () => adminApi.removeNotificationItem(id));
       setStatus("Notification deleted.");
       await refreshDashboard();
     } catch (error) {
@@ -420,7 +424,7 @@ export default function AdminPage() {
 
   const handleAddNoticeboard = async (payload) => {
     try {
-      await adminApi.addNoticeboardItem(payload);
+      await runWithBusy("Adding noticeboard item...", () => adminApi.addNoticeboardItem(payload));
       setStatus("Noticeboard item added.");
       await refreshDashboard();
     } catch (error) {
@@ -430,7 +434,7 @@ export default function AdminPage() {
 
   const handleSaveNoticeboard = async (id, payload) => {
     try {
-      await adminApi.updateNoticeboardItem(id, payload);
+      await runWithBusy("Updating noticeboard item...", () => adminApi.updateNoticeboardItem(id, payload));
       setStatus("Noticeboard item updated.");
       await refreshDashboard();
     } catch (error) {
@@ -440,7 +444,7 @@ export default function AdminPage() {
 
   const handleRemoveNoticeboard = async (id) => {
     try {
-      await adminApi.removeNoticeboardItem(id);
+      await runWithBusy("Deleting noticeboard item...", () => adminApi.removeNoticeboardItem(id));
       setStatus("Noticeboard item deleted.");
       await refreshDashboard();
     } catch (error) {
@@ -450,7 +454,7 @@ export default function AdminPage() {
 
   const handleAddTimetable = async (payload) => {
     try {
-      await adminApi.addTimetableItem(payload);
+      await runWithBusy("Adding timetable row...", () => adminApi.addTimetableItem(payload));
       setStatus("Timetable row added.");
       await refreshDashboard();
     } catch (error) {
@@ -460,7 +464,7 @@ export default function AdminPage() {
 
   const handleSaveTimetable = async (id, payload) => {
     try {
-      await adminApi.updateTimetableItem(id, payload);
+      await runWithBusy("Updating timetable row...", () => adminApi.updateTimetableItem(id, payload));
       setStatus("Timetable row updated.");
       await refreshDashboard();
     } catch (error) {
@@ -470,7 +474,7 @@ export default function AdminPage() {
 
   const handleRemoveTimetable = async (id) => {
     try {
-      await adminApi.removeTimetableItem(id);
+      await runWithBusy("Deleting timetable row...", () => adminApi.removeTimetableItem(id));
       setStatus("Timetable row deleted.");
       await refreshDashboard();
     } catch (error) {
@@ -480,7 +484,7 @@ export default function AdminPage() {
 
   const handleSaveControls = async (payload) => {
     try {
-      await adminApi.updateControls(payload);
+      await runWithBusy("Updating site controls...", () => adminApi.updateControls(payload));
       await refreshDashboard();
       setStatus("Site controls updated.");
     } catch (error) {
@@ -490,7 +494,7 @@ export default function AdminPage() {
 
   const handleSaveInstitute = async (payload) => {
     try {
-      await adminApi.updateInstitute(payload);
+      await runWithBusy("Saving institute content...", () => adminApi.updateInstitute(payload));
       await refreshInstitute();
       setStatus("Institute content updated.");
     } catch (error) {
@@ -500,7 +504,7 @@ export default function AdminPage() {
 
   const handleAddNotice = async (payload) => {
     try {
-      await adminApi.addNotice(payload);
+      await runWithBusy("Adding notice...", () => adminApi.addNotice(payload));
       setStatus("Notice added.");
       await refreshDashboard();
     } catch (error) {
@@ -510,7 +514,7 @@ export default function AdminPage() {
 
   const handleSaveNotice = async (index, payload) => {
     try {
-      await adminApi.updateNotice(index, payload);
+      await runWithBusy("Updating notice...", () => adminApi.updateNotice(index, payload));
       setStatus("Notice updated.");
       await refreshDashboard();
     } catch (error) {
@@ -520,7 +524,7 @@ export default function AdminPage() {
 
   const handleRemoveNotice = async (index) => {
     try {
-      await adminApi.removeNotice(index);
+      await runWithBusy("Removing notice...", () => adminApi.removeNotice(index));
       setStatus("Notice removed.");
       await refreshDashboard();
     } catch (error) {
@@ -530,7 +534,7 @@ export default function AdminPage() {
 
   const handleAddDownload = async (payload) => {
     try {
-      await adminApi.addDownload(payload);
+      await runWithBusy("Adding download item...", () => adminApi.addDownload(payload));
       setStatus("Download item added.");
       await refreshDashboard();
     } catch (error) {
@@ -540,7 +544,7 @@ export default function AdminPage() {
 
   const handleSaveDownload = async (index, payload) => {
     try {
-      await adminApi.updateDownload(index, payload);
+      await runWithBusy("Updating download item...", () => adminApi.updateDownload(index, payload));
       setStatus("Download item updated.");
       await refreshDashboard();
     } catch (error) {
@@ -550,7 +554,7 @@ export default function AdminPage() {
 
   const handleRemoveDownload = async (index) => {
     try {
-      await adminApi.removeDownload(index);
+      await runWithBusy("Removing download item...", () => adminApi.removeDownload(index));
       setStatus("Download item removed.");
       await refreshDashboard();
     } catch (error) {
@@ -560,7 +564,7 @@ export default function AdminPage() {
 
   const handleUpdateAdmission = async (applicationId, payload) => {
     try {
-      await adminApi.updateAdmission(applicationId, payload);
+      await runWithBusy("Updating admission status...", () => adminApi.updateAdmission(applicationId, payload));
       setStatus("Admission status updated.");
       await refreshDashboard();
     } catch (error) {
@@ -571,7 +575,7 @@ export default function AdminPage() {
 
   const handleDeleteAdmission = async (applicationId) => {
     try {
-      await adminApi.removeAdmission(applicationId);
+      await runWithBusy("Deleting admission form...", () => adminApi.removeAdmission(applicationId));
       setStatus("Admission form deleted.");
       await refreshDashboard();
     } catch (error) {
@@ -580,7 +584,7 @@ export default function AdminPage() {
   };
   const handleSaveMaterials = async (materials) => {
     try {
-      await adminApi.updateMaterials(materials);
+      await runWithBusy("Saving study materials...", () => adminApi.updateMaterials(materials));
       await refreshDashboard();
       setStatus("Study materials updated.");
     } catch (error) {
@@ -817,6 +821,18 @@ export default function AdminPage() {
                   </select>
                 </label>
               </div>
+
+              {status ? (
+                <div
+                  className={`rounded-lg border px-4 py-3 text-sm ${
+                    isStatusError
+                      ? "border-rose-200 bg-rose-50 text-rose-800"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  }`}
+                >
+                  <strong>{isStatusError ? "Action failed:" : "Action successful:"}</strong> {status}
+                </div>
+              ) : null}
 
               <div className="min-w-0 max-w-full overflow-hidden">{activePane}</div>
             </>

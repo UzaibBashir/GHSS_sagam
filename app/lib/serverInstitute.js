@@ -8,7 +8,8 @@ function stripLargeInlineImage(value) {
     return text;
   }
 
-  const maxInlineLength = 30000;
+  // Keep inline image payloads from admin uploads while still dropping very large data URLs.
+  const maxInlineLength = 600000;
   return text.length > maxInlineLength ? "" : text;
 }
 

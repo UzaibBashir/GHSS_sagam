@@ -95,7 +95,7 @@ export default function StaffManager({ staff, onSave }) {
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(items)}>
-        Save staff list
+        Update staff list
       </button>
     </section>
   );

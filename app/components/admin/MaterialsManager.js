@@ -166,7 +166,7 @@ export default function MaterialsManager({ materials, onSave }) {
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(buildMaterials(rows))}>
-        Save study materials
+        Update study materials
       </button>
     </section>
   );

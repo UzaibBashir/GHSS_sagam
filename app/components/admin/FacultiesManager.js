@@ -10,6 +10,7 @@ import {
   ADMIN_SUBCARD,
 } from "./adminStyles";
 import { fileToOptimizedDataUrl } from "../../lib/imageUpload";
+import LoadingSpinner from "../common/LoadingSpinner";
 
 const EMPTY_FACULTY = {
   name: "",
@@ -32,6 +33,9 @@ const EMPTY_PRINCIPAL = {
 
 
 function FacultyEditor({ item, onChange, onRemove }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+
   return (
     <article className={ADMIN_SUBCARD}>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -69,17 +73,25 @@ function FacultyEditor({ item, onChange, onRemove }) {
           onChange={async (event) => {
             const file = event.target.files?.[0];
             if (!file) return;
+            setUploading(true);
+            setUploadMessage("");
             let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setUploading(false);
               return;
             }
             onChange({ ...item, photo: dataUrl });
+            setUploadMessage("Photo uploaded. Click save to confirm.");
+            setUploading(false);
           }}
         />
       </label>
+      {uploading ? <LoadingSpinner label="Uploading photo" size="sm" /> : null}
+      {uploadMessage ? <p className="text-xs font-medium text-emerald-700">{uploadMessage}</p> : null}
       {item.photo ? (
         <img src={item.photo} alt={item.name || "Faculty"} className="mt-3 h-20 w-20 rounded-lg object-cover border border-slate-200" />
       ) : null}
@@ -131,6 +143,10 @@ export default function FacultiesManager({
   const [staffItems, setStaffItems] = useState(() => staff || []);
   const [staffForm, setStaffForm] = useState(EMPTY_STAFF);
   const [principalForm, setPrincipalForm] = useState(() => ({ ...EMPTY_PRINCIPAL, ...(principal || {}) }));
+  const [principalUploadBusy, setPrincipalUploadBusy] = useState(false);
+  const [principalUploadMessage, setPrincipalUploadMessage] = useState("");
+  const [facultyUploadBusy, setFacultyUploadBusy] = useState(false);
+  const [facultyUploadMessage, setFacultyUploadMessage] = useState("");
 
   const saveAll = async () => {
     if (typeof onSave === "function") {
@@ -188,17 +204,25 @@ export default function FacultiesManager({
             onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) return;
+              setPrincipalUploadBusy(true);
+              setPrincipalUploadMessage("");
               let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setPrincipalUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setPrincipalUploadBusy(false);
               return;
             }
               setPrincipalForm((prev) => ({ ...prev, photo: dataUrl }));
+              setPrincipalUploadMessage("Photo uploaded. Click 'Apply faculty & staff changes' to confirm.");
+              setPrincipalUploadBusy(false);
             }}
           />
         </label>
+        {principalUploadBusy ? <LoadingSpinner label="Uploading photo" size="sm" /> : null}
+        {principalUploadMessage ? <p className="text-xs font-medium text-emerald-700">{principalUploadMessage}</p> : null}
         {principalForm.photo ? (
           <img src={principalForm.photo} alt={principalForm.name || "Principal"} className="mt-3 h-20 w-20 rounded-lg object-cover border border-slate-200" />
         ) : null}
@@ -241,17 +265,25 @@ export default function FacultiesManager({
             onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) return;
+              setFacultyUploadBusy(true);
+              setFacultyUploadMessage("");
               let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setFacultyUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setFacultyUploadBusy(false);
               return;
             }
               setForm((prev) => ({ ...prev, photo: dataUrl }));
+              setFacultyUploadMessage("Photo uploaded. Click 'Add faculty' to confirm.");
+              setFacultyUploadBusy(false);
             }}
           />
         </label>
+        {facultyUploadBusy ? <LoadingSpinner label="Uploading photo" size="sm" /> : null}
+        {facultyUploadMessage ? <p className="text-xs font-medium text-emerald-700">{facultyUploadMessage}</p> : null}
         {form.photo ? (
           <img src={form.photo} alt={form.name || "Faculty"} className="mt-3 h-20 w-20 rounded-lg object-cover border border-slate-200" />
         ) : null}
@@ -322,7 +354,7 @@ export default function FacultiesManager({
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={saveAll}>
-        Save faculty & staff
+        Apply faculty & staff changes
       </button>
     </section>
   );

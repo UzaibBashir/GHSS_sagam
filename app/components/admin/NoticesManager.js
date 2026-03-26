@@ -24,9 +24,9 @@ function NoticeEditor({ item, onSave, onRemove }) {
         />
       </label>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button className={ADMIN_BUTTON} onClick={() => onSave(item.index, { text: draft })}>
-          Save changes
-        </button>
+      <button className={ADMIN_BUTTON} onClick={() => onSave(item.index, { text: draft })}>
+        Update changes
+      </button>
         <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.index)}>
           Remove notice
         </button>

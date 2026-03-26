@@ -11,6 +11,7 @@ import {
   ADMIN_TEXTAREA,
 } from "./adminStyles";
 import { fileToOptimizedDataUrl } from "../../lib/imageUpload";
+import LoadingSpinner from "../common/LoadingSpinner";
 
 const EMPTY_NOTICE = {
   headline: "",
@@ -70,6 +71,8 @@ function AttachmentPreview({ value, title }) {
 
 function NoticeboardEditor({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
 
   return (
     <article className={ADMIN_SUBCARD}>
@@ -131,17 +134,25 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
           onChange={async (event) => {
             const file = event.target.files?.[0];
             if (!file) return;
+            setUploading(true);
+            setUploadMessage("");
             let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setUploading(false);
               return;
             }
             setDraft((prev) => ({ ...prev, image_url: dataUrl }));
+            setUploadMessage("Attachment uploaded. Click 'Update changes' to confirm.");
+            setUploading(false);
           }}
         />
       </label>
+      {uploading ? <LoadingSpinner label="Uploading attachment" size="sm" /> : null}
+      {uploadMessage ? <p className="text-xs font-medium text-emerald-700">{uploadMessage}</p> : null}
       <AttachmentPreview value={draft.image_url} title={draft.headline} />
       {draft.image_url ? (
         <button
@@ -176,7 +187,7 @@ function NoticeboardEditor({ item, onSave, onRemove }) {
 
       <div className="mt-3 flex flex-wrap gap-2">
         <button className={ADMIN_BUTTON} onClick={() => onSave(item.id, draft)}>
-          Save changes
+          Update changes
         </button>
         <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.id)}>
           Delete
@@ -234,7 +245,7 @@ function TimetableRow({ item, onSave, onRemove }) {
       <td className="px-3 py-2">
         <div className="flex flex-wrap gap-2">
           <button className={ADMIN_BUTTON} onClick={() => onSave(item.id, draft)}>
-            Save
+            Update
           </button>
           <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.id)}>
             Delete
@@ -258,6 +269,8 @@ export default function AcademicsManager({
   const [timetableForm, setTimetableForm] = useState(EMPTY_TIMETABLE);
   const [classFilter, setClassFilter] = useState("");
   const [streamFilter, setStreamFilter] = useState("");
+  const [noticeUploadBusy, setNoticeUploadBusy] = useState(false);
+  const [noticeUploadMessage, setNoticeUploadMessage] = useState("");
 
   const noticeboardItems = academicContent?.noticeboard || [];
   const timetableItems = academicContent?.timetable || [];
@@ -363,17 +376,25 @@ export default function AcademicsManager({
             onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) return;
+              setNoticeUploadBusy(true);
+              setNoticeUploadMessage("");
               let dataUrl;
             try {
               dataUrl = await fileToOptimizedDataUrl(file);
             } catch (error) {
+              setNoticeUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
+              setNoticeUploadBusy(false);
               return;
             }
               setNoticeForm((prev) => ({ ...prev, image_url: dataUrl }));
+              setNoticeUploadMessage("Attachment uploaded. Click 'Add noticeboard item' to confirm.");
+              setNoticeUploadBusy(false);
             }}
           />
         </label>
+        {noticeUploadBusy ? <LoadingSpinner label="Uploading attachment" size="sm" /> : null}
+        {noticeUploadMessage ? <p className="text-xs font-medium text-emerald-700">{noticeUploadMessage}</p> : null}
         <AttachmentPreview value={noticeForm.image_url} title={noticeForm.headline} />
         {noticeForm.image_url ? (
           <button

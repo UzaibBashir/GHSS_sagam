@@ -69,7 +69,7 @@ export default function InstituteDetailsManager({ details, onSave }) {
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(items)}>
-        Save highlights
+        Update highlights
       </button>
     </section>
   );

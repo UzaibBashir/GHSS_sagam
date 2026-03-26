@@ -112,7 +112,7 @@ export default function ControlsManager({ controls, onSave }) {
       </article>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(draft)}>
-        Save site controls
+        Apply site controls
       </button>
     </section>
   );

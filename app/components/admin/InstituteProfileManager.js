@@ -169,7 +169,7 @@ export default function InstituteProfileManager({ institute, onSave }) {
       </article>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(draft)}>
-        Save profile details
+        Update profile details
       </button>
     </section>
   );

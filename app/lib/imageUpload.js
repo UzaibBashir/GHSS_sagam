@@ -57,7 +57,13 @@ export async function fileToOptimizedDataUrl(file, options = {}) {
     return readAsDataUrl(file);
   }
 
-  const imageBitmap = await createImageBitmap(file);
+  let imageBitmap;
+  try {
+    imageBitmap = await createImageBitmap(file);
+  } catch {
+    // Fallback for browsers/file types that cannot be decoded by createImageBitmap.
+    return readAsDataUrl(file);
+  }
   const ratio = Math.min(maxWidth / imageBitmap.width, maxHeight / imageBitmap.height, 1);
   const targetWidth = Math.max(1, Math.round(imageBitmap.width * ratio));
   const targetHeight = Math.max(1, Math.round(imageBitmap.height * ratio));
