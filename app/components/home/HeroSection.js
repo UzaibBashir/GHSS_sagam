@@ -41,6 +41,9 @@ export default function HeroSection({ institute }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [failedSlides, setFailedSlides] = useState({});
   const [loadedSlides, setLoadedSlides] = useState({});
+  const [pageReady, setPageReady] = useState(() =>
+    typeof document !== "undefined" ? document.readyState === "complete" : false
+  );
 
   useEffect(() => {
     if (!slides.length) return undefined;
@@ -52,6 +55,16 @@ export default function HeroSection({ institute }) {
     return () => clearInterval(timer);
   }, [slides.length]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (document.readyState === "complete") return undefined;
+
+    const markReady = () => setPageReady(true);
+    window.addEventListener("load", markReady, { once: true });
+    return () => {
+      window.removeEventListener("load", markReady);
+    };
+  }, []);
 
   return (
     <section
@@ -63,6 +76,7 @@ export default function HeroSection({ institute }) {
       {slides.map((slide, index) => {
         const hasImage = Boolean(slide.src) && !failedSlides[index];
         const isLoaded = Boolean(loadedSlides[index]);
+        const enhanceQuality = isLoaded && pageReady;
 
         return (
           <div
@@ -76,7 +90,9 @@ export default function HeroSection({ institute }) {
                 src={slide.src}
                 alt={slide.title}
                 loading={index === 0 ? "eager" : "lazy"}
-                className={`h-full w-full object-cover transition-opacity duration-500 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+                className={`h-full w-full object-cover transition-all duration-[1600ms] ease-out will-change-[filter,transform,opacity] ${
+                  isLoaded ? "opacity-100" : "opacity-0"
+                } ${enhanceQuality ? "blur-0 saturate-100 contrast-100 scale-100" : "blur-xl saturate-75 contrast-75 scale-[1.06]"}`}
                 onLoad={() => {
                   setLoadedSlides((prev) => ({ ...prev, [index]: true }));
                 }}

@@ -76,7 +76,7 @@ function buildDraft(institute) {
   };
 }
 
-export default function WebContentManager({ institute, onSave }) {
+export default function WebContentManager({ institute, onSave, view = "all" }) {
   const initialDraft = buildDraft(institute);
   const [draft, setDraft] = useState(() => initialDraft);
   const [reasonsText, setReasonsText] = useState(() => toLines(initialDraft.home_highlights.reasons));
@@ -111,6 +111,9 @@ export default function WebContentManager({ institute, onSave }) {
     });
   };
 
+  const showSlideshow = view === "all" || view === "slideshow";
+  const showContent = view === "all" || view === "content";
+
   return (
     <section className={ADMIN_SECTION} id="web-content">
       <div>
@@ -120,25 +123,13 @@ export default function WebContentManager({ institute, onSave }) {
       {uploadBusy ? <LoadingSpinner label="Uploading image" size="sm" /> : null}
       {uploadMessage ? <p className="text-xs font-medium text-emerald-700">{uploadMessage}</p> : null}
 
+      {showSlideshow ? (
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Homepage slideshow</h3>
         <div className="mt-3 grid gap-3">
           {(draft.hero_slides || []).map((item, index) => (
             <div key={`slide-${index}`} className="rounded-xl border border-slate-200 p-3">
               <div className="grid gap-3">
-                <label className={ADMIN_LABEL}>
-                  Image URL or data
-                  <input
-                    className={ADMIN_INPUT}
-                    value={item.src}
-                    onChange={(event) => {
-                      const slides = [...(draft.hero_slides || [])];
-                      slides[index] = { ...slides[index], src: event.target.value };
-                      setDraft((prev) => ({ ...prev, hero_slides: slides }));
-                    }}
-                    placeholder="https://.../slide-image.jpg"
-                  />
-                </label>
                 <label className={ADMIN_LABEL}>
                   Upload slide image
                   <input
@@ -217,7 +208,9 @@ export default function WebContentManager({ institute, onSave }) {
           </button>
         </div>
       </article>
+      ) : null}
 
+      {showContent ? (
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Home highlights</h3>
         <div className="mt-3 grid gap-3">
@@ -279,7 +272,9 @@ export default function WebContentManager({ institute, onSave }) {
           </label>
         </div>
       </article>
+      ) : null}
 
+      {showContent ? (
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Front desk content</h3>
         <label className={ADMIN_LABEL}>
@@ -300,7 +295,9 @@ export default function WebContentManager({ institute, onSave }) {
           <textarea rows={5} className={ADMIN_TEXTAREA} value={frontDeskItemsText} onChange={(e) => setFrontDeskItemsText(e.target.value)} />
         </label>
       </article>
+      ) : null}
 
+      {showContent ? (
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Achievements</h3>
         <label className={ADMIN_LABEL}>
@@ -308,7 +305,9 @@ export default function WebContentManager({ institute, onSave }) {
           <textarea rows={6} className={ADMIN_TEXTAREA} value={achievementsText} onChange={(e) => setAchievementsText(e.target.value)} />
         </label>
       </article>
+      ) : null}
 
+      {showContent ? (
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Student achievement cards</h3>
         <div className="mt-3 grid gap-3">
@@ -366,20 +365,6 @@ export default function WebContentManager({ institute, onSave }) {
                       items[index] = { ...items[index], description: event.target.value };
                       setDraft((prev) => ({ ...prev, home_student_achievements: items }));
                     }}
-                  />
-                </label>
-
-                <label className={ADMIN_LABEL}>
-                  Photo URL or data URL
-                  <input
-                    className={ADMIN_INPUT}
-                    value={item.photo || ""}
-                    onChange={(event) => {
-                      const items = [...(draft.home_student_achievements || [])];
-                      items[index] = { ...items[index], photo: event.target.value };
-                      setDraft((prev) => ({ ...prev, home_student_achievements: items }));
-                    }}
-                    placeholder="https://.../student.jpg"
                   />
                 </label>
 
@@ -447,7 +432,9 @@ export default function WebContentManager({ institute, onSave }) {
           </button>
         </div>
       </article>
+      ) : null}
 
+      {showContent ? (
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Resources</h3>
         <div className="mt-3 grid gap-3">
@@ -504,7 +491,9 @@ export default function WebContentManager({ institute, onSave }) {
           </button>
         </div>
       </article>
+      ) : null}
 
+      {showContent ? (
       <article className={`${ADMIN_SUBCARD} mt-4`}>
         <h3 className="text-base font-semibold text-slate-900">Admission page content</h3>
         <label className={ADMIN_LABEL}>
@@ -533,6 +522,7 @@ export default function WebContentManager({ institute, onSave }) {
           <textarea rows={5} className={ADMIN_TEXTAREA} value={documentsText} onChange={(e) => setDocumentsText(e.target.value)} />
         </label>
       </article>
+      ) : null}
 
       <button type="button" className={`${ADMIN_BUTTON} mt-4`} onClick={saveAll}>
         Save website content

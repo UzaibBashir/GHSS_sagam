@@ -10,28 +10,31 @@ import {
   ADMIN_SUBCARD,
 } from "./adminStyles";
 
-function NoticeEditor({ item, onSave, onRemove }) {
+function NoticeRow({ item, onSave, onRemove }) {
   const [draft, setDraft] = useState(item.text || "");
 
   return (
-    <article className={ADMIN_SUBCARD}>
-      <label className={ADMIN_LABEL}>
-        Notice text
+    <tr className="border-t border-slate-200 align-top">
+      <td className="px-3 py-2 text-sm text-slate-700">{item.index + 1}</td>
+      <td className="px-3 py-2">
         <input
           className={ADMIN_INPUT}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          placeholder="Notice text"
         />
-      </label>
-      <div className="mt-3 flex flex-wrap gap-2">
-      <button className={ADMIN_BUTTON} onClick={() => onSave(item.index, { text: draft })}>
-        Update changes
-      </button>
-        <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.index)}>
-          Remove notice
-        </button>
-      </div>
-    </article>
+      </td>
+      <td className="px-3 py-2">
+        <div className="flex flex-wrap gap-2">
+          <button className={ADMIN_BUTTON} onClick={() => onSave(item.index, { text: draft })}>
+            Update
+          </button>
+          <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.index)}>
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
   );
 }
 
@@ -43,7 +46,7 @@ export default function NoticesManager({ notices, onAdd, onSave, onRemove }) {
       <div>
         <h2 className={ADMIN_SECTION_TITLE}>Quick Notices</h2>
         <p className={ADMIN_SECTION_DESC}>
-          Short notices shown on the website as quick updates for students and parents.
+          Keep short notice lines updated for students and parents.
         </p>
       </div>
 
@@ -69,11 +72,31 @@ export default function NoticesManager({ notices, onAdd, onSave, onRemove }) {
         </button>
       </article>
 
-      <div className="mt-4 grid gap-3">
-        {notices.map((item) => (
-          <NoticeEditor key={`${item.index}-${item.text}`} item={item} onSave={onSave} onRemove={onRemove} />
-        ))}
-      </div>
+      <article className={`${ADMIN_SUBCARD} mt-4`}>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[620px] table-fixed border-collapse text-xs sm:text-sm">
+            <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-3 py-2 w-16">#</th>
+                <th className="px-3 py-2">Notice text</th>
+                <th className="px-3 py-2 w-48">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(notices || []).map((item) => (
+                <NoticeRow key={`${item.index}-${item.text}`} item={item} onSave={onSave} onRemove={onRemove} />
+              ))}
+              {!notices?.length ? (
+                <tr>
+                  <td className="px-3 py-4 text-slate-500" colSpan={3}>
+                    No notices yet.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </article>
     </section>
   );
 }

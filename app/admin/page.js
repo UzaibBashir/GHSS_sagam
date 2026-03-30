@@ -116,11 +116,12 @@ const SECTIONS = [
 ];
 
 const INSTITUTE_SUBSECTIONS = [
-  { id: "profile", label: "1. Institute profile" },
-  { id: "highlights", label: "2. Institute details" },
-  { id: "streams", label: "3. Streams & subjects" },
-  { id: "faculty", label: "4. Faculty & staff" },
-  { id: "web-content", label: "5. Website content" },
+  { id: "slideshow", label: "1. Homepage slideshow" },
+  { id: "profile", label: "2. Institute profile" },
+  { id: "highlights", label: "3. Institute details" },
+  { id: "streams", label: "4. Streams & subjects" },
+  { id: "faculty", label: "5. Faculty & staff" },
+  { id: "web-content", label: "6. Website content" },
 ];
 
 export default function AdminPage() {
@@ -618,6 +619,9 @@ export default function AdminPage() {
                 ))}
               </div>
             </article>
+            {activeInstituteSubsection === "slideshow" ? (
+              <WebContentManager key={`institute-${instituteRevision}-slideshow`} institute={institute} onSave={handleSaveInstitute} view="slideshow" />
+            ) : null}
             {activeInstituteSubsection === "profile" ? (
               <InstituteProfileManager key={`institute-${instituteRevision}-profile`} institute={institute} onSave={handleSaveInstitute} />
             ) : null}
@@ -649,7 +653,7 @@ export default function AdminPage() {
               />
             ) : null}
             {activeInstituteSubsection === "web-content" ? (
-              <WebContentManager key={`institute-${instituteRevision}-web`} institute={institute} onSave={handleSaveInstitute} />
+              <WebContentManager key={`institute-${instituteRevision}-web`} institute={institute} onSave={handleSaveInstitute} view="content" />
             ) : null}
           </div>
         );
@@ -748,14 +752,18 @@ export default function AdminPage() {
     handleRestoreBackup,
     handleDeleteBackup,
   ]);
+  const activeSectionLabel = useMemo(
+    () => SECTIONS.find((item) => item.id === activeSection)?.label || "Section",
+    [activeSection]
+  );
 
   return (
     <main className={`${ADMIN_PAGE} admin-root`}>
       <div className={ADMIN_CONTAINER}>
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        <header className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Administration</p>
-            <h1 className="text-2xl font-semibold text-slate-900">School Management Console</h1>
+            <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl">School Management Console</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -773,7 +781,7 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <div className="mt-6 grid gap-6 min-w-0 max-w-full overflow-x-hidden">
+        <div className="mt-4 grid gap-4 min-w-0 max-w-full overflow-x-hidden sm:mt-5">
           <AdminLoginCard
             connected={connected}
             username={username}
@@ -793,9 +801,10 @@ export default function AdminPage() {
 
           {connected ? (
             <>
-              <div className={ADMIN_NAV}>                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Navigate</p>
-                  <div className="flex flex-wrap items-center gap-2">
+              <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+                <aside className={`${ADMIN_NAV} lg:sticky lg:top-4`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Navigation</p>
                     <button
                       type="button"
                       onClick={() => setActiveSection(SECTIONS[0].id)}
@@ -804,37 +813,58 @@ export default function AdminPage() {
                       Reset
                     </button>
                   </div>
-                </div>
-                <label className="mt-3 grid gap-2" htmlFor="admin-section-select">
-                  <span className={ADMIN_LABEL}>Select section</span>
-                  <select
-                    id="admin-section-select"
-                    className={ADMIN_INPUT}
-                    value={activeSection}
-                    onChange={(event) => setActiveSection(event.target.value)}
-                  >
+                  <label className="mt-3 grid gap-2 lg:hidden" htmlFor="admin-section-select">
+                    <span className={ADMIN_LABEL}>Select section</span>
+                    <select
+                      id="admin-section-select"
+                      className={ADMIN_INPUT}
+                      value={activeSection}
+                      onChange={(event) => setActiveSection(event.target.value)}
+                    >
+                      {SECTIONS.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <nav className="mt-3 hidden lg:grid lg:gap-2">
                     {SECTIONS.map((item) => (
-                      <option key={item.id} value={item.id}>
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setActiveSection(item.id)}
+                        className={
+                          activeSection === item.id
+                            ? "rounded-md border border-slate-900 bg-slate-900 px-3 py-2 text-left text-sm font-semibold text-white"
+                            : "rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                        }
+                      >
                         {item.label}
-                      </option>
+                      </button>
                     ))}
-                  </select>
-                </label>
+                  </nav>
+                </aside>
+
+                <section className="min-w-0 space-y-4">
+                  {status ? (
+                    <div
+                      className={`rounded-lg border px-4 py-3 text-sm ${
+                        isStatusError
+                          ? "border-rose-200 bg-rose-50 text-rose-800"
+                          : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      }`}
+                    >
+                      <strong>{isStatusError ? "Action failed:" : "Action successful:"}</strong> {status}
+                    </div>
+                  ) : null}
+                  <section className={ADMIN_SECTION}>
+                    <h2 className={ADMIN_SECTION_TITLE}>{activeSectionLabel}</h2>
+                    <p className="mt-1 text-sm text-slate-600">Use the form below to update records and save changes.</p>
+                  </section>
+                  <div className="min-w-0 max-w-full overflow-hidden">{activePane}</div>
+                </section>
               </div>
-
-              {status ? (
-                <div
-                  className={`rounded-lg border px-4 py-3 text-sm ${
-                    isStatusError
-                      ? "border-rose-200 bg-rose-50 text-rose-800"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-800"
-                  }`}
-                >
-                  <strong>{isStatusError ? "Action failed:" : "Action successful:"}</strong> {status}
-                </div>
-              ) : null}
-
-              <div className="min-w-0 max-w-full overflow-hidden">{activePane}</div>
             </>
           ) : null}
         </div>
