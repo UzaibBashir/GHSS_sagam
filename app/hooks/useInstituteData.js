@@ -52,14 +52,6 @@ export default function useInstituteData() {
     if (instituteCacheFresh()) {
       return cachedInstitute;
     }
-
-    const boot = readBootstrappedInstitute();
-    if (boot) {
-      cachedInstitute = boot;
-      cachedAt = Date.now();
-      return boot;
-    }
-
     return null;
   });
   const [loading, setLoading] = useState(() => !institute);
@@ -67,14 +59,26 @@ export default function useInstituteData() {
   useEffect(() => {
     let alive = true;
 
-    if (institute) {
-      setLoading(false);
+    if (instituteCacheFresh()) {
       return () => {
         alive = false;
       };
     }
 
-    setLoading(true);
+    const boot = readBootstrappedInstitute();
+    if (boot) {
+      cachedInstitute = boot;
+      cachedAt = Date.now();
+      Promise.resolve().then(() => {
+        if (alive) {
+          setInstitute(boot);
+          setLoading(false);
+        }
+      });
+      return () => {
+        alive = false;
+      };
+    }
 
     loadInstitute()
       .then((data) => {

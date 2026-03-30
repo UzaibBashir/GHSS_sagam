@@ -33,7 +33,8 @@ export default function InstituteProfileManager({ institute, onSave }) {
       address: String(institute?.contact?.address || ""),
     },
   }));
-  const [newFacility, setNewFacility] = useState("");
+  const [newFacility, setNewFacility] = useState("");
+
   return (
     <section className={ADMIN_SECTION} id="profile">
       <div>
@@ -169,7 +170,7 @@ export default function InstituteProfileManager({ institute, onSave }) {
       </article>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(draft)}>
-        Update profile details
+        Confirm changes
       </button>
     </section>
   );

@@ -21,6 +21,7 @@ import WebContentManager from "../components/admin/WebContentManager";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import useAdminApi from "../hooks/useAdminApi";
 import {
+  ADMIN_BUTTON,
   ADMIN_BUTTON_DANGER,
   ADMIN_BUTTON_OUTLINE,
   ADMIN_CONTAINER,
@@ -142,6 +143,7 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
   const [busy, setBusy] = useState(false);
   const [busyMessage, setBusyMessage] = useState("");
+  const [confirmState, setConfirmState] = useState(null);
   const [monitoring, setMonitoring] = useState({
     api: { count: 0, p50: 0, p95: 0, latest: [] },
     webVitals: { count: 0, latest: [] },
@@ -175,6 +177,37 @@ export default function AdminPage() {
       setBusyMessage("");
     }
   }, []);
+
+  const requestConfirmation = useCallback((message, confirmLabel = "Confirm changes") => {
+    return new Promise((resolve) => {
+      setConfirmState({
+        message,
+        confirmLabel,
+        resolve,
+      });
+    });
+  }, []);
+
+  const closeConfirmation = useCallback((confirmed) => {
+    setConfirmState((current) => {
+      if (current?.resolve) {
+        current.resolve(Boolean(confirmed));
+      }
+      return null;
+    });
+  }, []);
+
+  const runWithConfirmedBusy = useCallback(
+    async (message, task, confirmMessage = "Please confirm to apply this update.") => {
+      const confirmed = await requestConfirmation(confirmMessage);
+      if (!confirmed) {
+        setStatus("Action cancelled.");
+        return null;
+      }
+      return runWithBusy(message, task);
+    },
+    [requestConfirmation, runWithBusy]
+  );
 
   const refreshDashboard = useCallback(async () => {
     if (!token) return;
@@ -317,7 +350,7 @@ export default function AdminPage() {
 
   const handleClearContacts = async () => {
     try {
-      await runWithBusy("Clearing enquiries...", () => adminApi.clearContacts());
+      await runWithConfirmedBusy("Clearing enquiries...", () => adminApi.clearContacts());
       setContacts([]);
       setStatus("All enquiries cleared.");
     } catch (error) {
@@ -327,7 +360,7 @@ export default function AdminPage() {
 
   const handleCreateBackup = async (label) => {
     try {
-      await runWithBusy("Creating snapshot...", () => adminApi.createBackup(label));
+      await runWithConfirmedBusy("Creating snapshot...", () => adminApi.createBackup(label));
       await refreshBackups();
       setStatus("Snapshot created.");
     } catch (error) {
@@ -336,12 +369,8 @@ export default function AdminPage() {
   };
 
   const handleRestoreBackup = async (id) => {
-    if (!window.confirm("Restore this snapshot? Current website data will be replaced.")) {
-      return;
-    }
-
     try {
-      await runWithBusy("Restoring snapshot...", async () => {
+      await runWithConfirmedBusy("Restoring snapshot...", async () => {
         await adminApi.restoreBackup(id);
         await refreshDashboard();
         await refreshInstitute();
@@ -355,7 +384,7 @@ export default function AdminPage() {
 
   const handleDeleteBackup = async (id) => {
     try {
-      await runWithBusy("Deleting snapshot...", () => adminApi.removeBackup(id));
+      await runWithConfirmedBusy("Deleting snapshot...", () => adminApi.removeBackup(id));
       await refreshBackups();
       setStatus("Snapshot deleted.");
     } catch (error) {
@@ -365,7 +394,7 @@ export default function AdminPage() {
 
   const handleAddStudent = async (payload) => {
     try {
-      await runWithBusy("Adding student login...", () => adminApi.addStudent(payload));
+      await runWithConfirmedBusy("Adding student login...", () => adminApi.addStudent(payload));
       setStatus("Student login added.");
       await refreshDashboard();
     } catch (error) {
@@ -375,7 +404,7 @@ export default function AdminPage() {
 
   const handleSaveStudent = async (rollNumber, payload) => {
     try {
-      await runWithBusy("Updating student login...", () => adminApi.updateStudent(rollNumber, payload));
+      await runWithConfirmedBusy("Updating student login...", () => adminApi.updateStudent(rollNumber, payload));
       setStatus("Student login updated.");
       await refreshDashboard();
     } catch (error) {
@@ -385,7 +414,7 @@ export default function AdminPage() {
 
   const handleRemoveStudent = async (rollNumber) => {
     try {
-      await runWithBusy("Removing student login...", () => adminApi.removeStudent(rollNumber));
+      await runWithConfirmedBusy("Removing student login...", () => adminApi.removeStudent(rollNumber));
       setStatus("Student login removed.");
       await refreshDashboard();
     } catch (error) {
@@ -395,7 +424,7 @@ export default function AdminPage() {
 
   const handleAddNotification = async (payload) => {
     try {
-      await runWithBusy("Publishing notification...", () => adminApi.addNotificationItem(payload));
+      await runWithConfirmedBusy("Publishing notification...", () => adminApi.addNotificationItem(payload));
       setStatus("Notification added.");
       await refreshDashboard();
     } catch (error) {
@@ -405,7 +434,7 @@ export default function AdminPage() {
 
   const handleSaveNotification = async (id, payload) => {
     try {
-      await runWithBusy("Updating notification...", () => adminApi.updateNotificationItem(id, payload));
+      await runWithConfirmedBusy("Updating notification...", () => adminApi.updateNotificationItem(id, payload));
       setStatus("Notification updated.");
       await refreshDashboard();
     } catch (error) {
@@ -415,7 +444,7 @@ export default function AdminPage() {
 
   const handleRemoveNotification = async (id) => {
     try {
-      await runWithBusy("Deleting notification...", () => adminApi.removeNotificationItem(id));
+      await runWithConfirmedBusy("Deleting notification...", () => adminApi.removeNotificationItem(id));
       setStatus("Notification deleted.");
       await refreshDashboard();
     } catch (error) {
@@ -425,7 +454,7 @@ export default function AdminPage() {
 
   const handleAddNoticeboard = async (payload) => {
     try {
-      await runWithBusy("Adding noticeboard item...", () => adminApi.addNoticeboardItem(payload));
+      await runWithConfirmedBusy("Adding noticeboard item...", () => adminApi.addNoticeboardItem(payload));
       setStatus("Noticeboard item added.");
       await refreshDashboard();
     } catch (error) {
@@ -435,7 +464,7 @@ export default function AdminPage() {
 
   const handleSaveNoticeboard = async (id, payload) => {
     try {
-      await runWithBusy("Updating noticeboard item...", () => adminApi.updateNoticeboardItem(id, payload));
+      await runWithConfirmedBusy("Updating noticeboard item...", () => adminApi.updateNoticeboardItem(id, payload));
       setStatus("Noticeboard item updated.");
       await refreshDashboard();
     } catch (error) {
@@ -445,7 +474,7 @@ export default function AdminPage() {
 
   const handleRemoveNoticeboard = async (id) => {
     try {
-      await runWithBusy("Deleting noticeboard item...", () => adminApi.removeNoticeboardItem(id));
+      await runWithConfirmedBusy("Deleting noticeboard item...", () => adminApi.removeNoticeboardItem(id));
       setStatus("Noticeboard item deleted.");
       await refreshDashboard();
     } catch (error) {
@@ -455,7 +484,7 @@ export default function AdminPage() {
 
   const handleAddTimetable = async (payload) => {
     try {
-      await runWithBusy("Adding timetable row...", () => adminApi.addTimetableItem(payload));
+      await runWithConfirmedBusy("Adding timetable row...", () => adminApi.addTimetableItem(payload));
       setStatus("Timetable row added.");
       await refreshDashboard();
     } catch (error) {
@@ -465,7 +494,7 @@ export default function AdminPage() {
 
   const handleSaveTimetable = async (id, payload) => {
     try {
-      await runWithBusy("Updating timetable row...", () => adminApi.updateTimetableItem(id, payload));
+      await runWithConfirmedBusy("Updating timetable row...", () => adminApi.updateTimetableItem(id, payload));
       setStatus("Timetable row updated.");
       await refreshDashboard();
     } catch (error) {
@@ -475,7 +504,7 @@ export default function AdminPage() {
 
   const handleRemoveTimetable = async (id) => {
     try {
-      await runWithBusy("Deleting timetable row...", () => adminApi.removeTimetableItem(id));
+      await runWithConfirmedBusy("Deleting timetable row...", () => adminApi.removeTimetableItem(id));
       setStatus("Timetable row deleted.");
       await refreshDashboard();
     } catch (error) {
@@ -485,7 +514,7 @@ export default function AdminPage() {
 
   const handleSaveControls = async (payload) => {
     try {
-      await runWithBusy("Updating site controls...", () => adminApi.updateControls(payload));
+      await runWithConfirmedBusy("Updating site controls...", () => adminApi.updateControls(payload));
       await refreshDashboard();
       setStatus("Site controls updated.");
     } catch (error) {
@@ -495,7 +524,7 @@ export default function AdminPage() {
 
   const handleSaveInstitute = async (payload) => {
     try {
-      await runWithBusy("Saving institute content...", () => adminApi.updateInstitute(payload));
+      await runWithConfirmedBusy("Saving institute content...", () => adminApi.updateInstitute(payload));
       await refreshInstitute();
       setStatus("Institute content updated.");
     } catch (error) {
@@ -505,7 +534,7 @@ export default function AdminPage() {
 
   const handleAddNotice = async (payload) => {
     try {
-      await runWithBusy("Adding notice...", () => adminApi.addNotice(payload));
+      await runWithConfirmedBusy("Adding notice...", () => adminApi.addNotice(payload));
       setStatus("Notice added.");
       await refreshDashboard();
     } catch (error) {
@@ -515,7 +544,7 @@ export default function AdminPage() {
 
   const handleSaveNotice = async (index, payload) => {
     try {
-      await runWithBusy("Updating notice...", () => adminApi.updateNotice(index, payload));
+      await runWithConfirmedBusy("Updating notice...", () => adminApi.updateNotice(index, payload));
       setStatus("Notice updated.");
       await refreshDashboard();
     } catch (error) {
@@ -525,7 +554,7 @@ export default function AdminPage() {
 
   const handleRemoveNotice = async (index) => {
     try {
-      await runWithBusy("Removing notice...", () => adminApi.removeNotice(index));
+      await runWithConfirmedBusy("Removing notice...", () => adminApi.removeNotice(index));
       setStatus("Notice removed.");
       await refreshDashboard();
     } catch (error) {
@@ -535,7 +564,7 @@ export default function AdminPage() {
 
   const handleAddDownload = async (payload) => {
     try {
-      await runWithBusy("Adding download item...", () => adminApi.addDownload(payload));
+      await runWithConfirmedBusy("Adding download item...", () => adminApi.addDownload(payload));
       setStatus("Download item added.");
       await refreshDashboard();
     } catch (error) {
@@ -545,7 +574,7 @@ export default function AdminPage() {
 
   const handleSaveDownload = async (index, payload) => {
     try {
-      await runWithBusy("Updating download item...", () => adminApi.updateDownload(index, payload));
+      await runWithConfirmedBusy("Updating download item...", () => adminApi.updateDownload(index, payload));
       setStatus("Download item updated.");
       await refreshDashboard();
     } catch (error) {
@@ -555,7 +584,7 @@ export default function AdminPage() {
 
   const handleRemoveDownload = async (index) => {
     try {
-      await runWithBusy("Removing download item...", () => adminApi.removeDownload(index));
+      await runWithConfirmedBusy("Removing download item...", () => adminApi.removeDownload(index));
       setStatus("Download item removed.");
       await refreshDashboard();
     } catch (error) {
@@ -565,7 +594,7 @@ export default function AdminPage() {
 
   const handleUpdateAdmission = async (applicationId, payload) => {
     try {
-      await runWithBusy("Updating admission status...", () => adminApi.updateAdmission(applicationId, payload));
+      await runWithConfirmedBusy("Updating admission status...", () => adminApi.updateAdmission(applicationId, payload));
       setStatus("Admission status updated.");
       await refreshDashboard();
     } catch (error) {
@@ -576,7 +605,7 @@ export default function AdminPage() {
 
   const handleDeleteAdmission = async (applicationId) => {
     try {
-      await runWithBusy("Deleting admission form...", () => adminApi.removeAdmission(applicationId));
+      await runWithConfirmedBusy("Deleting admission form...", () => adminApi.removeAdmission(applicationId));
       setStatus("Admission form deleted.");
       await refreshDashboard();
     } catch (error) {
@@ -585,7 +614,7 @@ export default function AdminPage() {
   };
   const handleSaveMaterials = async (materials) => {
     try {
-      await runWithBusy("Saving study materials...", () => adminApi.updateMaterials(materials));
+      await runWithConfirmedBusy("Saving study materials...", () => adminApi.updateMaterials(materials));
       await refreshDashboard();
       setStatus("Study materials updated.");
     } catch (error) {
@@ -793,12 +822,6 @@ export default function AdminPage() {
             onLogin={login}
           />
 
-          {busy ? (
-            <section className={ADMIN_SECTION}>
-              <LoadingSpinner label={busyMessage || "Working"} />
-            </section>
-          ) : null}
-
           {connected ? (
             <>
               <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
@@ -869,6 +892,32 @@ export default function AdminPage() {
           ) : null}
         </div>
       </div>
+
+      {confirmState ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/40 px-4 backdrop-blur-sm">
+          <section className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <p className="text-base font-semibold text-slate-900">Confirm update</p>
+            <p className="mt-2 text-sm text-slate-600">{confirmState.message}</p>
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+              <button type="button" className={ADMIN_BUTTON_OUTLINE} onClick={() => closeConfirmation(false)}>
+                Cancel
+              </button>
+              <button type="button" className={ADMIN_BUTTON} onClick={() => closeConfirmation(true)}>
+                {confirmState.confirmLabel || "Confirm changes"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {busy ? (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-md">
+          <section className="w-full max-w-sm rounded-xl border border-slate-200 bg-white/95 p-5 shadow-2xl">
+            <LoadingSpinner label={busyMessage || "Applying update..."} />
+            <p className="mt-2 text-center text-sm font-medium text-slate-700">Please wait while your changes are being applied.</p>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -67,7 +67,7 @@ export default function FacilitiesManager({ facilities, onSave }) {
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(items)}>
-        Update facilities
+        Confirm changes
       </button>
     </section>
   );

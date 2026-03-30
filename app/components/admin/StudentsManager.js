@@ -77,9 +77,9 @@ function StudentRow({ item, onSave, onRemove }) {
       </td>
       <td className="px-3 py-2">
         <div className="flex flex-wrap gap-2">
-          <button className={ADMIN_BUTTON} onClick={() => onSave(item.rollNumber, draft)}>
-            Save
-          </button>
+      <button className={ADMIN_BUTTON} onClick={() => onSave(item.rollNumber, draft)}>
+        Update
+      </button>
           <button className={ADMIN_BUTTON_DANGER} onClick={() => onRemove(item.rollNumber)}>
             Remove
           </button>

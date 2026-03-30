@@ -41,9 +41,7 @@ export default function HeroSection({ institute }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [failedSlides, setFailedSlides] = useState({});
   const [loadedSlides, setLoadedSlides] = useState({});
-  const [pageReady, setPageReady] = useState(() =>
-    typeof document !== "undefined" ? document.readyState === "complete" : false
-  );
+  const [pageReady, setPageReady] = useState(false);
 
   useEffect(() => {
     if (!slides.length) return undefined;
@@ -57,7 +55,12 @@ export default function HeroSection({ institute }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    if (document.readyState === "complete") return undefined;
+    if (document.readyState === "complete") {
+      Promise.resolve().then(() => {
+        setPageReady(true);
+      });
+      return undefined;
+    }
 
     const markReady = () => setPageReady(true);
     window.addEventListener("load", markReady, { once: true });

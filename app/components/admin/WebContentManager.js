@@ -153,7 +153,7 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
                       const slides = [...(draft.hero_slides || [])];
                       slides[index] = { ...slides[index], src: dataUrl };
                       setDraft((prev) => ({ ...prev, hero_slides: slides }));
-                      setUploadMessage("Slide image uploaded. Click 'Save website content' to confirm.");
+                      setUploadMessage("Slide image uploaded. Click 'Confirm changes' and confirm in overlay.");
                       setUploadBusy(false);
                     }}
                   />
@@ -391,7 +391,7 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
                       const items = [...(draft.home_student_achievements || [])];
                       items[index] = { ...items[index], photo: dataUrl };
                       setDraft((prev) => ({ ...prev, home_student_achievements: items }));
-                      setUploadMessage("Student photo uploaded. Click 'Save website content' to confirm.");
+                      setUploadMessage("Student photo uploaded. Click 'Confirm changes' and confirm in overlay.");
                       setUploadBusy(false);
                     }}
                   />
@@ -525,7 +525,7 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
       ) : null}
 
       <button type="button" className={`${ADMIN_BUTTON} mt-4`} onClick={saveAll}>
-        Save website content
+        Confirm changes
       </button>
     </section>
   );

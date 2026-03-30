@@ -81,7 +81,8 @@ export default function StreamsSubjectsManager({ streams, onSave, programs, onSa
   const [items, setItems] = useState(() => streams || []);
   const [form, setForm] = useState(EMPTY_STREAM);
   const [programItems, setProgramItems] = useState(() => programs || []);
-  const [programForm, setProgramForm] = useState(EMPTY_PROGRAM);
+  const [programForm, setProgramForm] = useState(EMPTY_PROGRAM);
+
   const saveAll = async () => {
     if (typeof onSavePrograms === "function") {
       await onSavePrograms(programItems);
@@ -194,7 +195,7 @@ export default function StreamsSubjectsManager({ streams, onSave, programs, onSa
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={saveAll}>
-        Apply programs, streams & subjects changes
+        Confirm changes
       </button>
     </section>
   );

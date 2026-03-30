@@ -94,7 +94,7 @@ export default function ProgramsManager({ programs, onSave }) {
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={() => onSave(items)}>
-        Update programs
+        Confirm changes
       </button>
     </section>
   );

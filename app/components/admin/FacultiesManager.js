@@ -85,7 +85,7 @@ function FacultyEditor({ item, onChange, onRemove }) {
               return;
             }
             onChange({ ...item, photo: dataUrl });
-            setUploadMessage("Photo uploaded. Click save to confirm.");
+            setUploadMessage("Photo uploaded. Click 'Confirm changes' and confirm in overlay.");
             setUploading(false);
           }}
         />
@@ -216,7 +216,7 @@ export default function FacultiesManager({
               return;
             }
               setPrincipalForm((prev) => ({ ...prev, photo: dataUrl }));
-              setPrincipalUploadMessage("Photo uploaded. Click 'Apply faculty & staff changes' to confirm.");
+              setPrincipalUploadMessage("Photo uploaded. Click 'Confirm changes' and confirm in overlay.");
               setPrincipalUploadBusy(false);
             }}
           />
@@ -354,7 +354,7 @@ export default function FacultiesManager({
       </div>
 
       <button className={`${ADMIN_BUTTON} mt-4`} onClick={saveAll}>
-        Apply faculty & staff changes
+        Confirm changes
       </button>
     </section>
   );
