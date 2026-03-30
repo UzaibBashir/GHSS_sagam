@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { API_BASE } from "../lib/api";
 
 const INSTITUTE_CACHE_TTL_MS = 60 * 1000;
+const INSTITUTE_FETCH_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_INSTITUTE_FETCH_TIMEOUT_MS || 12000);
 let cachedInstitute = null;
 let cachedAt = 0;
 let inflightInstituteRequest = null;
@@ -18,7 +19,12 @@ async function loadInstitute() {
   }
 
   if (!inflightInstituteRequest) {
-    inflightInstituteRequest = fetch(`${API_BASE}/institute`)
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort("Institute request timed out");
+    }, INSTITUTE_FETCH_TIMEOUT_MS);
+
+    inflightInstituteRequest = fetch(`${API_BASE}/institute`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) {
           throw new Error("Failed to load institute data");
@@ -29,6 +35,9 @@ async function loadInstitute() {
         cachedInstitute = data;
         cachedAt = Date.now();
         return data;
+      })
+      .finally(() => {
+        clearTimeout(timer);
       })
       .finally(() => {
         inflightInstituteRequest = null;
@@ -65,7 +74,7 @@ export default function useInstituteData() {
       })
       .catch(() => {
         if (alive) {
-          setInstitute(null);
+          setInstitute(cachedInstitute);
           setLoading(false);
         }
       });
