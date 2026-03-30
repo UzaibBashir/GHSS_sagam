@@ -49,7 +49,7 @@ function createNonce() {
   return randomBytes(16).toString("base64");
 }
 
-function buildCsp({ nonce, isProduction }) {
+function buildCsp({ isProduction }) {
   const directives = [
     "default-src 'self'",
     "base-uri 'self'",
@@ -58,8 +58,8 @@ function buildCsp({ nonce, isProduction }) {
     "form-action 'self'",
     "img-src 'self' data: blob: https://images.unsplash.com https://images.meesho.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isProduction ? "" : " 'unsafe-eval'"}`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
     `connect-src 'self'${isProduction ? "" : " ws: wss:"}`,
     "frame-src https://maps.google.com https://www.google.com",
     "worker-src 'self' blob:",
@@ -93,7 +93,7 @@ export function proxy(request) {
     return new NextResponse("Invalid host header", { status: 400 });
   }
 
-  response.headers.set("Content-Security-Policy", buildCsp({ nonce, isProduction }));
+  response.headers.set("Content-Security-Policy", buildCsp({ isProduction }));
   response.headers.set("x-nonce", nonce);
 
   if (isProduction) {
