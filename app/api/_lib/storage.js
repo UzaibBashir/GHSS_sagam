@@ -54,6 +54,11 @@ async function saveToLocalStorage(params) {
   };
 }
 
+function toDataUrl(contentType, buffer) {
+  const safeType = String(contentType || "application/octet-stream").trim().toLowerCase();
+  return `data:${safeType};base64,${Buffer.from(buffer).toString("base64")}`;
+}
+
 async function loadAwsS3Client() {
   const moduleName = "@aws-sdk/client-s3";
   const dynamicImport = new Function("name", "return import(name);");
@@ -137,10 +142,27 @@ export async function saveUploadedBuffer(params) {
     scope: String(params.scope || "misc"),
   };
 
-  const saved =
-    DEFAULT_STORAGE_DRIVER === "s3"
-      ? await saveToS3Storage(payload)
-      : await saveToLocalStorage(payload);
+  let saved;
+  if (DEFAULT_STORAGE_DRIVER === "s3") {
+    saved = await saveToS3Storage(payload);
+  } else {
+    try {
+      saved = await saveToLocalStorage(payload);
+    } catch (err) {
+      const code = String(err?.code || "").toUpperCase();
+      const noWritableFs = code === "ENOENT" || code === "EROFS" || code === "EACCES" || code === "EPERM";
+      if (!noWritableFs) {
+        throw err;
+      }
+
+      // Serverless deployments may not allow writing under /var/task/public.
+      // Fallback to inline data URL so uploads still work without crashing.
+      saved = {
+        key: `inline/${Date.now()}-${randomUUID().slice(0, 8)}`,
+        url: toDataUrl(payload.contentType, payload.buffer),
+      };
+    }
+  }
 
   return {
     ...saved,
@@ -149,4 +171,3 @@ export async function saveUploadedBuffer(params) {
     size,
   };
 }
-
