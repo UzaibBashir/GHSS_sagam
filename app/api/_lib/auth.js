@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 function parseCsv(value, fallback) {
   const source = value || fallback;
@@ -22,6 +22,8 @@ export const config = {
   adminRateLimit: Number(process.env.ADMIN_RATE_LIMIT || 8),
   studentRateLimit: Number(process.env.STUDENT_RATE_LIMIT || 10),
   contactRateLimit: Number(process.env.CONTACT_RATE_LIMIT || 5),
+  monitoringRateLimit: Number(process.env.MONITORING_RATE_LIMIT || 60),
+  monitoringIngestKey: String(process.env.MONITORING_INGEST_KEY || "").trim(),
 };
 
 function secureEquals(a, b) {
@@ -33,14 +35,73 @@ function secureEquals(a, b) {
   return timingSafeEqual(left, right);
 }
 
+const PASSWORD_HASH_PREFIX = "scrypt$v1";
+
+function toBase64Url(buffer) {
+  return Buffer.from(buffer).toString("base64url");
+}
+
+function fromBase64Url(value) {
+  return Buffer.from(String(value || ""), "base64url");
+}
+
+export function isPasswordHash(value) {
+  return String(value || "").startsWith(`${PASSWORD_HASH_PREFIX}$`);
+}
+
+export function hashPassword(password) {
+  const plain = String(password || "");
+  if (!plain) {
+    throw new Error("Password cannot be empty");
+  }
+  const salt = randomBytes(16);
+  const digest = scryptSync(plain, salt, 64);
+  return `${PASSWORD_HASH_PREFIX}$${toBase64Url(salt)}$${toBase64Url(digest)}`;
+}
+
+function verifyPasswordHash(password, encoded) {
+  const parts = String(encoded || "").split("$");
+  if (parts.length !== 4 || `${parts[0]}$${parts[1]}` !== PASSWORD_HASH_PREFIX) {
+    return false;
+  }
+  const salt = fromBase64Url(parts[2]);
+  const expected = fromBase64Url(parts[3]);
+  const actual = scryptSync(String(password || ""), salt, expected.length || 64);
+  if (actual.length !== expected.length) {
+    return false;
+  }
+  return timingSafeEqual(actual, expected);
+}
+
+export function verifyPasswordValue(inputPassword, storedValue) {
+  const stored = String(storedValue || "");
+  if (!stored) {
+    return false;
+  }
+  if (isPasswordHash(stored)) {
+    return verifyPasswordHash(inputPassword, stored);
+  }
+  return secureEquals(inputPassword, stored);
+}
+
 function getSigningSecrets() {
+  if (config.sessionSecret) {
+    return [config.sessionSecret];
+  }
+  if (config.environment === "production") {
+    return [];
+  }
   const fallback = `dev-secret-${config.adminPassword}`;
-  const secrets = [config.sessionSecret, fallback].filter(Boolean);
+  const secrets = [fallback].filter(Boolean);
   return [...new Set(secrets)];
 }
 
 function getPrimarySigningSecret() {
-  return getSigningSecrets()[0] || `dev-secret-${config.adminPassword}`;
+  const secrets = getSigningSecrets();
+  if (secrets.length) {
+    return secrets[0];
+  }
+  return `dev-secret-${config.adminPassword}`;
 }
 
 function signTokenPayload(payload, secret = getPrimarySigningSecret()) {
@@ -144,7 +205,7 @@ export function verifyToken(_store, authorizationHeader, requiredRole = null) {
 }
 
 export function verifyAdminCredentials(username, password) {
-  return secureEquals(username, config.adminUsername) && secureEquals(password, config.adminPassword);
+  return secureEquals(username, config.adminUsername) && verifyPasswordValue(password, config.adminPassword);
 }
 
 export function verifyStudentCredentials(store, rollNumber, password) {
@@ -153,7 +214,8 @@ export function verifyStudentCredentials(store, rollNumber, password) {
     return null;
   }
 
-  if (!secureEquals(student.password, password)) {
+  const storedPassword = student.passwordHash || student.password || "";
+  if (!verifyPasswordValue(password, storedPassword)) {
     return null;
   }
 

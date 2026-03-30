@@ -131,7 +131,9 @@ function escapeHtml(value) {
 }
 
 function buildFileDataUrl(file) {
-  if (!file || !file.data) return "";
+  if (!file) return "";
+  if (file.url) return String(file.url);
+  if (!file.data) return "";
   const type = String(file.type || "image/jpeg").trim() || "image/jpeg";
   return `data:${type};base64,${file.data}`;
 }
@@ -651,4 +653,3 @@ export default function AdmissionsManager({ admissions, onUpdate, onDelete }) {
     </section>
   );
 }
-

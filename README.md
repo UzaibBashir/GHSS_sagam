@@ -26,9 +26,9 @@ Examples:
 - Admin token auth with expiry
 - Login lockout after repeated failures
 - Per-IP rate limits for contact and login endpoints
-- Host allowlist validation via `middleware.js`
-- Security headers + CSP via `next.config.mjs`
-- HSTS in production via middleware
+- Host allowlist validation via `proxy.js`
+- Security headers via `next.config.mjs`
+- Nonce-based CSP + HSTS in production via `proxy.js`
 - Production guard for weak admin secrets
 
 ## Environment variables
@@ -47,8 +47,15 @@ Copy `.env.example` to `.env.local` and set secure values:
 - `ADMIN_RATE_LIMIT`
 - `STUDENT_RATE_LIMIT`
 - `CONTACT_RATE_LIMIT`
+- `MONITORING_RATE_LIMIT`
+- `MONITORING_INGEST_KEY` (optional shared key for monitoring ingest)
 - `ALLOWED_HOSTS`
 - `NEXT_PUBLIC_API_URL` (keep `/api` unless intentionally externalized)
+- `ALLOW_MEMORY_STORE_FALLBACK` (set `0` in production)
+- `STUDENT_BOOTSTRAP_JSON` (optional one-time bootstrap with hashed/plain passwords)
+- `STORAGE_DRIVER` (`local` or `s3`)
+- `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE`
+- `STORAGE_PUBLIC_BASE_URL` (optional CDN/base URL for object URLs)
 
 ## Local development
 
@@ -74,9 +81,12 @@ npm run build
 4. Add the environment variables above in Vercel Project Settings.
 5. Deploy.
 
-## Note about in-memory data
+## Persistence and storage
 
-Admin edits and student logins are stored in memory. For long-term persistence, connect a database or external storage.
+- Application state is persisted to MongoDB.
+- State is partitioned into separate Mongo collections (meta/contacts/admissions/students/institute/security/monitoring/backups) with optimistic version checks.
+- Uploads use a storage abstraction: local filesystem by default, S3-compatible object storage when `STORAGE_DRIVER=s3`.
+- In production, set `ALLOW_MEMORY_STORE_FALLBACK=0` to prevent silent fallback to in-memory state when MongoDB is unavailable.
 
 ## Note about legacy locked folders
 

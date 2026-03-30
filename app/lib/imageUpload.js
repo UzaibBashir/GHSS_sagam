@@ -1,3 +1,5 @@
+import { API_BASE } from "./api";
+
 const ONE_MB = 1024 * 1024;
 
 function readAsDataUrl(file) {
@@ -20,13 +22,74 @@ function createCanvas(width, height) {
   return canvas;
 }
 
-async function canvasToDataUrl(canvas, quality) {
+async function canvasToBlob(canvas, quality) {
   if (typeof canvas.convertToBlob === "function") {
-    const blob = await canvas.convertToBlob({ type: "image/webp", quality });
-    return readAsDataUrl(blob);
+    return canvas.convertToBlob({ type: "image/webp", quality });
   }
 
-  return canvas.toDataURL("image/webp", quality);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Image optimization failed"));
+          return;
+        }
+        resolve(blob);
+      },
+      "image/webp",
+      quality
+    );
+  });
+}
+
+function getAdminToken() {
+  if (typeof window === "undefined") return "";
+  try {
+    return String(sessionStorage.getItem("admin_token") || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+async function uploadImageBlob(blob, originalName = "upload.webp") {
+  const token = getAdminToken();
+  if (!token) {
+    throw new Error("Admin session expired. Please sign in again.");
+  }
+
+  const ext = String(originalName || "")
+    .split(".")
+    .pop()
+    ?.toLowerCase();
+  const normalizedName =
+    ext && ext !== "bin" ? originalName : `${String(originalName || "upload").replace(/\.[^/.]+$/, "") || "upload"}.webp`;
+  const file = new File([blob], normalizedName, { type: blob.type || "image/webp" });
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE}/admin/uploads`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(payload?.detail || "Image upload failed");
+  }
+
+  const url = String(payload?.upload?.url || "").trim();
+  if (!url) {
+    throw new Error("Image upload failed");
+  }
+
+  return url;
 }
 
 export async function fileToOptimizedDataUrl(file, options = {}) {
@@ -54,7 +117,7 @@ export async function fileToOptimizedDataUrl(file, options = {}) {
   const quality = Number(options.quality || 0.78);
 
   if (file.size <= maxBytes) {
-    return readAsDataUrl(file);
+    return uploadImageBlob(file, file.name || "upload");
   }
 
   let imageBitmap;
@@ -62,7 +125,7 @@ export async function fileToOptimizedDataUrl(file, options = {}) {
     imageBitmap = await createImageBitmap(file);
   } catch {
     // Fallback for browsers/file types that cannot be decoded by createImageBitmap.
-    return readAsDataUrl(file);
+    return uploadImageBlob(file, file.name || "upload");
   }
   const ratio = Math.min(maxWidth / imageBitmap.width, maxHeight / imageBitmap.height, 1);
   const targetWidth = Math.max(1, Math.round(imageBitmap.width * ratio));
@@ -77,12 +140,12 @@ export async function fileToOptimizedDataUrl(file, options = {}) {
 
   context.drawImage(imageBitmap, 0, 0, targetWidth, targetHeight);
 
-  let output = await canvasToDataUrl(canvas, quality);
+  let output = await canvasToBlob(canvas, quality);
 
   // Final guard in case the compressed output is still large.
-  if (output.length > maxBytes * 2) {
-    output = await canvasToDataUrl(canvas, Math.max(0.55, quality - 0.2));
+  if (output.size > maxBytes) {
+    output = await canvasToBlob(canvas, Math.max(0.55, quality - 0.2));
   }
 
-  return output;
+  return uploadImageBlob(output, `${String(file.name || "upload").replace(/\.[^/.]+$/, "")}.webp`);
 }

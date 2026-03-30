@@ -811,16 +811,18 @@ export default function AdminPage() {
         </header>
 
         <div className="mt-4 grid gap-4 min-w-0 max-w-full overflow-x-hidden sm:mt-5">
-          <AdminLoginCard
-            connected={connected}
-            username={username}
-            password={password}
-            status={status}
-            loading={busy}
-            onUsernameChange={setUsername}
-            onPasswordChange={setPassword}
-            onLogin={login}
-          />
+          {!connected ? (
+            <AdminLoginCard
+              connected={connected}
+              username={username}
+              password={password}
+              status={status}
+              loading={busy}
+              onUsernameChange={setUsername}
+              onPasswordChange={setPassword}
+              onLogin={login}
+            />
+          ) : null}
 
           {connected ? (
             <>

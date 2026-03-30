@@ -143,7 +143,7 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
                       setUploadMessage("");
                       let dataUrl;
             try {
-              dataUrl = await fileToOptimizedDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file, { maxBytes: 320 * 1024, maxWidth: 1280, maxHeight: 1280, quality: 0.72 });
             } catch (error) {
               setUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");
@@ -381,7 +381,7 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
                       setUploadMessage("");
                       let dataUrl;
             try {
-              dataUrl = await fileToOptimizedDataUrl(file);
+              dataUrl = await fileToOptimizedDataUrl(file, { maxBytes: 220 * 1024, maxWidth: 900, maxHeight: 900, quality: 0.7 });
             } catch (error) {
               setUploadMessage(error?.message || "Image upload failed");
               alert(error?.message || "Image upload failed");

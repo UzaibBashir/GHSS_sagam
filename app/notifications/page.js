@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import CallToActionBanner from "../components/common/CallToActionBanner";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -120,11 +121,16 @@ export default function NotificationsPage() {
                                 Open attached PDF
                               </a>
                             ) : (
-                              <img
-                                src={item.image_url}
-                                alt={item.title}
-                                className="mt-3 h-auto w-full rounded-xl border border-slate-200 object-cover"
-                              />
+                              <div className="relative mt-3 h-64 w-full overflow-hidden rounded-xl border border-slate-200">
+                                <Image
+                                  src={item.image_url}
+                                  alt={item.title}
+                                  fill
+                                  unoptimized
+                                  sizes="(max-width: 768px) 100vw, 900px"
+                                  className="object-cover"
+                                />
+                              </div>
                             )
                           ) : null}
                           {item.link_url && item.link_label ? (

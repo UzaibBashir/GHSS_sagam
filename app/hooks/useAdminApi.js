@@ -153,7 +153,7 @@ export default function useAdminApi(token) {
       method: "PATCH",
       headers: withAuth({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
-    });
+    }, 45000);
     return parseResponse(res, "Could not update institute content.");
   };
 

@@ -1,4 +1,5 @@
 import { getDb } from "./mongodb";
+import { hashPassword, isPasswordHash } from "./auth";
 
 const DEFAULT_INSTITUTE_DATA = {
   name: "Government Girls Higher Secondary School, Sagam",
@@ -330,36 +331,53 @@ const DEFAULT_INSTITUTE_DATA = {
   },
 };
 
-const DEFAULT_STUDENTS = [
-  {
-    rollNumber: "230363",
-    password: "uzaib",
-    name: "Uzaib",
-    className: "Class XII",
-    stream: "Medical",
-  },
-  {
-    rollNumber: "GGHSS-XI-M-101",
-    password: "medical101",
-    name: "Aaliya Bashir",
-    className: "Class XI",
-    stream: "Medical",
-  },
-  {
-    rollNumber: "GGHSS-XI-NM-102",
-    password: "nonmedical102",
-    name: "Sana Jan",
-    className: "Class XI",
-    stream: "Non-Medical",
-  },
-  {
-    rollNumber: "GGHSS-XII-A-103",
-    password: "arts103",
-    name: "Insha Yousuf",
-    className: "Class XII",
-    stream: "Arts",
-  },
-];
+function getBootstrapStudentsFromEnv() {
+  const raw = String(process.env.STUDENT_BOOTSTRAP_JSON || "").trim();
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((item) => {
+        const rollNumber = String(item?.rollNumber || "").trim();
+        const name = String(item?.name || "").trim();
+        const className = String(item?.className || "").trim();
+        const stream = String(item?.stream || "").trim();
+        const plainPassword = String(item?.password || "").trim();
+        const providedHash = String(item?.passwordHash || "").trim();
+
+        const passwordHash =
+          providedHash && isPasswordHash(providedHash)
+            ? providedHash
+            : plainPassword
+              ? hashPassword(plainPassword)
+              : "";
+
+        if (!rollNumber || !name || !className || !stream || !passwordHash) {
+          return null;
+        }
+
+        return {
+          rollNumber,
+          name,
+          className,
+          stream,
+          passwordHash,
+        };
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+const DEFAULT_STUDENTS = getBootstrapStudentsFromEnv();
 
 const DEFAULT_STATE = {
   contacts: [],
@@ -374,9 +392,14 @@ const DEFAULT_STATE = {
   },
   students: structuredClone(DEFAULT_STUDENTS),
   instituteData: structuredClone(DEFAULT_INSTITUTE_DATA),
+  __meta: {
+    version: 0,
+  },
 };
-const allowMemoryFallback = String(process.env.ALLOW_MEMORY_STORE_FALLBACK || "1").trim() !== "0";
-const dbOperationTimeoutMs = Number(process.env.DB_OPERATION_TIMEOUT_MS || 4000);
+const allowMemoryFallback = process.env.ALLOW_MEMORY_STORE_FALLBACK
+  ? String(process.env.ALLOW_MEMORY_STORE_FALLBACK).trim() !== "0"
+  : process.env.NODE_ENV !== "production";
+const dbOperationTimeoutMs = Number(process.env.DB_OPERATION_TIMEOUT_MS || 12000);
 let memoryStore = null;
 let warnedMemoryFallback = false;
 
@@ -531,6 +554,50 @@ function resetStudentShape(store) {
   if (!Array.isArray(store.students) || !store.students.length) {
     store.students = structuredClone(DEFAULT_STUDENTS);
   }
+
+  store.students = (store.students || [])
+    .map((item) => {
+      const rollNumber = String(item?.rollNumber || "").trim();
+      const name = String(item?.name || "").trim();
+      const className = String(item?.className || "").trim();
+      const stream = String(item?.stream || "").trim();
+      const legacyPassword = String(item?.password || "").trim();
+      const existingHash = String(item?.passwordHash || "").trim();
+
+      let passwordHash = existingHash;
+      if (!passwordHash) {
+        if (isPasswordHash(legacyPassword)) {
+          passwordHash = legacyPassword;
+        } else if (legacyPassword) {
+          passwordHash = hashPassword(legacyPassword);
+        }
+      } else if (!isPasswordHash(passwordHash)) {
+        passwordHash = hashPassword(passwordHash);
+      }
+
+      if (!rollNumber || !name || !className || !stream || !passwordHash) {
+        return null;
+      }
+
+      return {
+        rollNumber,
+        name,
+        className,
+        stream,
+        passwordHash,
+      };
+    })
+    .filter(Boolean);
+
+  if (!store.students.length) {
+    store.students = structuredClone(DEFAULT_STUDENTS).map((item) => ({
+      rollNumber: item.rollNumber,
+      name: item.name,
+      className: item.className,
+      stream: item.stream,
+      passwordHash: item.passwordHash || (item.password ? hashPassword(item.password) : ""),
+    }));
+  }
 }
 
 function resetRateLimitShape(store) {
@@ -558,6 +625,13 @@ function resetMonitoringShape(store) {
   if (!Array.isArray(store.monitoring.apiLatency)) {
     store.monitoring.apiLatency = [];
   }
+}
+
+function resetMetaShape(store) {
+  const version = Number(store?.__meta?.version || 0);
+  store.__meta = {
+    version: Number.isFinite(version) && version >= 0 ? Math.floor(version) : 0,
+  };
 }
 
 function getRateLimitBucket(store, key, windowSeconds) {
@@ -604,6 +678,7 @@ function normalizeStoreShape(store) {
   resetRateLimitShape(store);
   resetBackupsShape(store);
   resetMonitoringShape(store);
+  resetMetaShape(store);
   if (!Array.isArray(store.contacts)) {
     store.contacts = [];
   }
@@ -620,40 +695,199 @@ function getCollectionName() {
   return process.env.MONGODB_STATE_COLLECTION || "app_state";
 }
 
-function stripMetaFields(doc) {
-  const store = { ...doc };
-  delete store._id;
-  delete store.updatedAt;
-  return store;
+function getCollectionNames() {
+  const base = getCollectionName();
+  return {
+    meta: `${base}_meta`,
+    contacts: `${base}_contacts`,
+    admissions: `${base}_admissions`,
+    students: `${base}_students`,
+    instituteData: `${base}_institute`,
+    adminSessions: `${base}_admin_sessions`,
+    loginFailures: `${base}_login_failures`,
+    rateLimits: `${base}_rate_limits`,
+    backups: `${base}_backups`,
+    monitoring: `${base}_monitoring`,
+  };
+}
+
+function getDefaultStateForPersistence() {
+  return normalizeStoreShape(structuredClone(DEFAULT_STATE));
+}
+
+async function findMainDoc(collection, label) {
+  return withTimeout(collection.findOne({ _id: "main" }), dbOperationTimeoutMs, label);
+}
+
+async function readCollectionState(db) {
+  const names = getCollectionNames();
+  const [
+    metaDoc,
+    contactsDoc,
+    admissionsDoc,
+    studentsDoc,
+    instituteDoc,
+    adminSessionsDoc,
+    loginFailuresDoc,
+    rateLimitsDoc,
+    backupsDoc,
+    monitoringDoc,
+  ] = await Promise.all([
+    findMainDoc(db.collection(names.meta), "Read state meta"),
+    findMainDoc(db.collection(names.contacts), "Read contacts"),
+    findMainDoc(db.collection(names.admissions), "Read admissions"),
+    findMainDoc(db.collection(names.students), "Read students"),
+    findMainDoc(db.collection(names.instituteData), "Read institute data"),
+    findMainDoc(db.collection(names.adminSessions), "Read admin sessions"),
+    findMainDoc(db.collection(names.loginFailures), "Read login failures"),
+    findMainDoc(db.collection(names.rateLimits), "Read rate limits"),
+    findMainDoc(db.collection(names.backups), "Read backups"),
+    findMainDoc(db.collection(names.monitoring), "Read monitoring"),
+  ]);
+
+  return {
+    hasExistingState: Boolean(metaDoc),
+    state: {
+      contacts: contactsDoc?.items || [],
+      admissions: admissionsDoc?.items || [],
+      students: studentsDoc?.items || [],
+      instituteData: instituteDoc?.value || {},
+      adminSessions: adminSessionsDoc?.value || {},
+      loginFailures: loginFailuresDoc?.value || {},
+      rateLimits: rateLimitsDoc?.value || {},
+      backups: backupsDoc?.items || [],
+      monitoring: monitoringDoc?.value || { webVitals: [], apiLatency: [] },
+      __meta: {
+        version: Number(metaDoc?.version || 0),
+      },
+    },
+  };
+}
+
+async function writeCollectionState(db, normalized, expectedVersion) {
+  const names = getCollectionNames();
+  const now = new Date().toISOString();
+  const metaCollection = db.collection(names.meta);
+
+  const currentMeta = await findMainDoc(metaCollection, "Read state meta");
+  const currentVersion = Number(currentMeta?.version || 0);
+  const baselineVersion =
+    Number.isFinite(expectedVersion) && expectedVersion > 0 ? expectedVersion : currentVersion;
+
+  if (baselineVersion !== currentVersion) {
+    const conflict = new Error("State changed on the server. Please refresh and retry.");
+    conflict.code = "STATE_CONFLICT";
+    throw conflict;
+  }
+
+  const nextVersion = currentVersion + 1;
+
+  const metaWriteResult = await withTimeout(
+    metaCollection.updateOne(
+      { _id: "main", version: currentVersion },
+      { $set: { version: nextVersion, updatedAt: now } },
+      { upsert: !currentMeta }
+    ),
+    dbOperationTimeoutMs,
+    "Write state meta"
+  );
+
+  const metaMatched = Number(metaWriteResult?.matchedCount || 0);
+  const metaUpserted = Number(metaWriteResult?.upsertedCount || 0);
+  if (!metaMatched && !metaUpserted) {
+    const conflict = new Error("State changed on the server. Please refresh and retry.");
+    conflict.code = "STATE_CONFLICT";
+    throw conflict;
+  }
+
+  await Promise.all([
+    withTimeout(
+      db
+        .collection(names.contacts)
+        .updateOne({ _id: "main" }, { $set: { items: normalized.contacts, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write contacts"
+    ),
+    withTimeout(
+      db
+        .collection(names.admissions)
+        .updateOne({ _id: "main" }, { $set: { items: normalized.admissions, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write admissions"
+    ),
+    withTimeout(
+      db
+        .collection(names.students)
+        .updateOne({ _id: "main" }, { $set: { items: normalized.students, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write students"
+    ),
+    withTimeout(
+      db
+        .collection(names.instituteData)
+        .updateOne({ _id: "main" }, { $set: { value: normalized.instituteData, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write institute data"
+    ),
+    withTimeout(
+      db
+        .collection(names.adminSessions)
+        .updateOne({ _id: "main" }, { $set: { value: normalized.adminSessions, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write admin sessions"
+    ),
+    withTimeout(
+      db
+        .collection(names.loginFailures)
+        .updateOne({ _id: "main" }, { $set: { value: normalized.loginFailures, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write login failures"
+    ),
+    withTimeout(
+      db.collection(names.rateLimits).updateOne({ _id: "main" }, { $set: { value: normalized.rateLimits, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write rate limits"
+    ),
+    withTimeout(
+      db.collection(names.backups).updateOne({ _id: "main" }, { $set: { items: normalized.backups, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write backups"
+    ),
+    withTimeout(
+      db
+        .collection(names.monitoring)
+        .updateOne({ _id: "main" }, { $set: { value: normalized.monitoring, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write monitoring"
+    ),
+  ]);
+
+  return nextVersion;
 }
 
 export async function getStore() {
   try {
     const db = await withTimeout(getDb(), dbOperationTimeoutMs, "Database connection");
-    const collection = db.collection(getCollectionName());
-    const existing = await withTimeout(collection.findOne({ _id: "main" }), dbOperationTimeoutMs, "Database read");
-
-    if (!existing) {
-      const initial = normalizeStoreShape(structuredClone(DEFAULT_STATE));
-      await withTimeout(
-        collection.insertOne({ _id: "main", ...initial, updatedAt: new Date().toISOString() }),
-        dbOperationTimeoutMs,
-        "Database initialize"
-      );
-      return initial;
-    }
-
+    const { state, hasExistingState } = await readCollectionState(db);
     const store = normalizeStoreShape({
       ...structuredClone(DEFAULT_STATE),
-      ...stripMetaFields(existing),
+      ...state,
+      __meta: {
+        version: Number(state?.__meta?.version || 0),
+      },
     });
+    if (!hasExistingState) {
+      const version = await writeCollectionState(db, store, 0);
+      store.__meta.version = version;
+      return store;
+    }
     return store;
   } catch (err) {
     if (!allowMemoryFallback) {
       throw err;
     }
     if (!memoryStore) {
-      memoryStore = normalizeStoreShape(structuredClone(DEFAULT_STATE));
+      memoryStore = getDefaultStateForPersistence();
     }
     if (!warnedMemoryFallback) {
       warnedMemoryFallback = true;
@@ -670,20 +904,18 @@ export async function saveStore(store) {
   const normalized = normalizeStoreShape(store);
   try {
     const db = await withTimeout(getDb(), dbOperationTimeoutMs, "Database connection");
-    const collection = db.collection(getCollectionName());
-    await withTimeout(
-      collection.updateOne(
-        { _id: "main" },
-        { $set: { ...normalized, updatedAt: new Date().toISOString() } },
-        { upsert: true }
-      ),
-      dbOperationTimeoutMs,
-      "Database write"
-    );
+    const expectedVersion = Number(normalized?.__meta?.version || 0);
+    const nextVersion = await writeCollectionState(db, normalized, expectedVersion);
+    normalized.__meta.version = nextVersion;
+    store.__meta = { version: nextVersion };
   } catch (err) {
     if (!allowMemoryFallback) {
       throw err;
     }
+    const currentVersion = Number(memoryStore?.__meta?.version || 0);
+    const nextVersion = currentVersion + 1;
+    normalized.__meta.version = nextVersion;
+    store.__meta = { version: nextVersion };
     memoryStore = normalized;
     if (!warnedMemoryFallback) {
       warnedMemoryFallback = true;

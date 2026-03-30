@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 const AUTO_SLIDE_MS = 4500;
@@ -89,11 +90,14 @@ export default function HeroSection({ institute }) {
             }`}
           >
             {hasImage ? (
-              <img
+              <Image
                 src={slide.src}
                 alt={slide.title}
-                loading={index === 0 ? "eager" : "lazy"}
-                className={`h-full w-full object-cover transition-all duration-[1600ms] ease-out will-change-[filter,transform,opacity] ${
+                fill
+                unoptimized
+                priority={index === 0}
+                sizes="100vw"
+                className={`object-cover transition-all duration-[1600ms] ease-out will-change-[filter,transform,opacity] ${
                   isLoaded ? "opacity-100" : "opacity-0"
                 } ${enhanceQuality ? "blur-0 saturate-100 contrast-100 scale-100" : "blur-xl saturate-75 contrast-75 scale-[1.06]"}`}
                 onLoad={() => {

@@ -69,10 +69,11 @@ function StudentRow({ item, onSave, onRemove }) {
       </td>
       <td className="px-3 py-2">
         <input
-          type="text"
+          type="password"
           className={ADMIN_INPUT}
           value={draft.password}
           onChange={(event) => setDraft((prev) => ({ ...prev, password: event.target.value }))}
+          placeholder="Leave blank to keep current"
         />
       </td>
       <td className="px-3 py-2">
@@ -201,6 +202,7 @@ export default function StudentsManager({ students, onAdd, onSave, onRemove }) {
             }}
           />
         </label>
+        <p className="mt-2 text-xs text-slate-600">For existing students, leave password empty while editing to keep current password.</p>
       </article>
 
       <div className="mt-4 overflow-x-auto">

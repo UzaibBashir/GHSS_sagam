@@ -8,15 +8,6 @@ let cachedInstitute = null;
 let cachedAt = 0;
 let inflightInstituteRequest = null;
 
-function readBootstrappedInstitute() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const boot = window.__GHHS_BOOTSTRAP__;
-  return boot?.institute || null;
-}
-
 function instituteCacheFresh() {
   return cachedInstitute && Date.now() - cachedAt < INSTITUTE_CACHE_TTL_MS;
 }
@@ -60,21 +51,6 @@ export default function useInstituteData() {
     let alive = true;
 
     if (instituteCacheFresh()) {
-      return () => {
-        alive = false;
-      };
-    }
-
-    const boot = readBootstrappedInstitute();
-    if (boot) {
-      cachedInstitute = boot;
-      cachedAt = Date.now();
-      Promise.resolve().then(() => {
-        if (alive) {
-          setInstitute(boot);
-          setLoading(false);
-        }
-      });
       return () => {
         alive = false;
       };

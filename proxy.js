@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 
 const defaultAllowedHosts = ["localhost", "127.0.0.1", ".vercel.app"];
@@ -44,8 +45,41 @@ function hostAllowed(hostname, allowlist) {
   });
 }
 
+function createNonce() {
+  return randomBytes(16).toString("base64");
+}
+
+function buildCsp({ nonce, isProduction }) {
+  const directives = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "form-action 'self'",
+    "img-src 'self' data: blob: https://images.unsplash.com https://images.meesho.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isProduction ? "" : " 'unsafe-eval'"}`,
+    `connect-src 'self'${isProduction ? "" : " ws: wss:"}`,
+    "frame-src https://maps.google.com https://www.google.com",
+    "worker-src 'self' blob:",
+  ];
+  if (isProduction) {
+    directives.push("upgrade-insecure-requests");
+  }
+  return directives.join("; ");
+}
+
 export function proxy(request) {
-  const response = NextResponse.next();
+  const nonce = createNonce();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
   const environment = (process.env.ENVIRONMENT || process.env.NODE_ENV || "").toLowerCase();
   const isProduction = environment === "production" || process.env.VERCEL_ENV === "production";
 
@@ -57,6 +91,9 @@ export function proxy(request) {
   if (isProduction && hostName && !hostAllowed(hostName, allowedHosts)) {
     return new NextResponse("Invalid host header", { status: 400 });
   }
+
+  response.headers.set("Content-Security-Policy", buildCsp({ nonce, isProduction }));
+  response.headers.set("x-nonce", nonce);
 
   if (isProduction) {
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");

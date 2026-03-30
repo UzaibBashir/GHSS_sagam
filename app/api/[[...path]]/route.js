@@ -6,6 +6,7 @@ import {
   ensureSecureConfig,
   getClientIp,
   getOrCreateLoginBucket,
+  hashPassword,
   makeLoginBucketKey,
   verifyAdminCredentials,
   verifyStudentCredentials,
@@ -22,9 +23,11 @@ import {
   parseJsonBody,
 } from "../_lib/utils";
 import { getDb } from "../_lib/mongodb";
+import { saveUploadedBuffer } from "../_lib/storage";
 
 const PUBLIC_INSTITUTE_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300";
 const MAX_ADMISSION_MULTIPART_BYTES = Number(process.env.ADMISSION_MULTIPART_MAX_BYTES || 6 * 1024 * 1024);
+const MAX_ADMIN_IMAGE_UPLOAD_BYTES = Number(process.env.ADMIN_IMAGE_UPLOAD_MAX_BYTES || 2 * 1024 * 1024);
 const MAX_MONITORING_POINTS = Number(process.env.MONITORING_MAX_POINTS || 500);
 const MAX_BACKUP_SNAPSHOTS = Number(process.env.BACKUP_MAX_SNAPSHOTS || 20);
 const BACKUP_VERSION = "2026-03-v1";
@@ -227,6 +230,9 @@ function normalizeComparable(value) {
 
 function safeAdminError(err) {
   if (err instanceof Error) {
+    if (err.message === "State changed on the server. Please refresh and retry.") {
+      return error(err.message, 409);
+    }
     if (err.message === "Set a strong ADMIN_PASSWORD for production.") {
       return error(err.message, 500);
     }
@@ -237,13 +243,28 @@ function safeAdminError(err) {
   return null;
 }
 
-function normalizeStudentPayload(payload) {
+function normalizeStudentPayload(payload, options = {}) {
+  const requirePassword = options.requirePassword !== false;
+  const passwordRaw = String(payload?.password || "").trim();
+  if (requirePassword && !passwordRaw) {
+    throw new Error("Password cannot be empty");
+  }
   return {
     rollNumber: assertNonEmpty("Roll number", payload.rollNumber),
-    password: assertNonEmpty("Password", payload.password),
+    password: passwordRaw,
     name: assertNonEmpty("Student name", payload.name),
     className: assertNonEmpty("Class", payload.className),
     stream: assertNonEmpty("Stream", payload.stream),
+  };
+}
+
+function sanitizeStudentForAdmin(student) {
+  return {
+    rollNumber: String(student?.rollNumber || "").trim(),
+    name: String(student?.name || "").trim(),
+    className: String(student?.className || "").trim(),
+    stream: String(student?.stream || "").trim(),
+    password: "",
   };
 }
 function normalizeStringList(items, label) {
@@ -534,13 +555,23 @@ async function parseUploadedFile(formData, key, label, required = false) {
   if (value.size > oneMb) {
     throw new Error(`${label} must be less than 1 MB`);
   }
-
-  const data = Buffer.from(await value.arrayBuffer()).toString("base64");
+  const mime = String(value.type || "").trim().toLowerCase() || "application/octet-stream";
+  const name = String(value.name || "upload").trim() || "upload";
+  const buffer = Buffer.from(await value.arrayBuffer());
+  const savedFile = await saveUploadedBuffer({
+    buffer,
+    contentType: mime,
+    originalName: name,
+    scope: "admissions",
+    size: Number(value.size || buffer.byteLength || 0),
+    maxBytes: oneMb,
+  });
   return {
-    name: value.name || "upload",
-    type: value.type || "application/octet-stream",
-    size: value.size,
-    data,
+    name: savedFile.name,
+    type: savedFile.type,
+    size: savedFile.size,
+    url: savedFile.url,
+    storage_key: savedFile.key,
   };
 }
 
@@ -732,6 +763,40 @@ function normalizeOptionalNotificationLink(value) {
   }
   return text;
 }
+
+async function saveAdminImageUpload(file) {
+  const mimeType = String(file?.type || "").toLowerCase();
+  if (!mimeType.startsWith("image/")) {
+    throw new Error("Only image uploads are supported");
+  }
+
+  const size = Number(file?.size || 0);
+  if (!size) {
+    throw new Error("Image file is required");
+  }
+  if (size > MAX_ADMIN_IMAGE_UPLOAD_BYTES) {
+    throw new Error(`Image must be less than ${Math.round(MAX_ADMIN_IMAGE_UPLOAD_BYTES / (1024 * 1024))} MB`);
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const savedFile = await saveUploadedBuffer({
+    buffer,
+    contentType: mimeType,
+    originalName: String(file?.name || "image-upload"),
+    scope: "admin",
+    size,
+    maxBytes: MAX_ADMIN_IMAGE_UPLOAD_BYTES,
+  });
+
+  return {
+    url: savedFile.url,
+    name: savedFile.name,
+    type: savedFile.type,
+    size: savedFile.size,
+    storage_key: savedFile.key,
+  };
+}
+
 async function persistAndJson(store, payload, status = 200, headers = undefined) {
   await saveStore(store);
   return json(payload, status, headers);
@@ -764,6 +829,10 @@ export async function GET(request, context) {
   }
 
   if (path[0] === "health" && path[1] === "db-write" && path.length === 2) {
+    const environment = (process.env.ENVIRONMENT || process.env.NODE_ENV || "development").toLowerCase();
+    if (environment === "production") {
+      return error("Not found", 404);
+    }
     try {
       const db = await getDb();
       const collection = db.collection(process.env.MONGODB_STATE_COLLECTION || "app_state");
@@ -818,6 +887,12 @@ export async function GET(request, context) {
   }
 
   if (path[0] === "student") {
+    try {
+      ensureSecureConfig();
+    } catch (err) {
+      return safeAdminError(err) || error(err instanceof Error ? err.message : "Server configuration error", 500);
+    }
+
     const authError = unauthorizedIfNeeded(request, store, "student");
     if (authError) {
       return authError;
@@ -903,7 +978,7 @@ export async function GET(request, context) {
       controls: getControls(store),
       notificationItems: store.instituteData.notification_items || [],
       academicContent: store.instituteData.academic_content || { noticeboard: [], timetable: [], materials: [] },
-      students: store.students || [],
+      students: (store.students || []).map(sanitizeStudentForAdmin),
       notices: (store.instituteData.notices || []).map((notice, index) => ({ index, text: notice.text })),
       downloads: (store.instituteData.downloads || []).map((item, index) => ({ index, ...item })),
       institute: includeInstitute ? getAdminInstituteData(store) : null,
@@ -950,7 +1025,7 @@ export async function GET(request, context) {
   }
 
   if (path[1] === "students" && path.length === 2) {
-    return json(store.students);
+    return json((store.students || []).map(sanitizeStudentForAdmin));
   }
 
   if (path[1] === "notification-items" && path.length === 2) {
@@ -986,6 +1061,16 @@ export async function POST(request, context) {
   }
 
   if (path[0] === "monitoring" && path[1] === "events" && path.length === 2) {
+    const rateError = rateLimitOrReject(store, request, "monitoring-events", config.monitoringRateLimit);
+    if (rateError) {
+      return persistAndResponse(store, rateError);
+    }
+    if (config.monitoringIngestKey) {
+      const supplied = String(request.headers.get("x-monitoring-key") || "").trim();
+      if (!supplied || supplied !== config.monitoringIngestKey) {
+        return persistAndResponse(store, error("Unauthorized monitoring ingest key", 401));
+      }
+    }
     try {
       const payload = await parseJsonBody(request);
       const kind = String(payload.kind || "").trim();
@@ -1063,6 +1148,12 @@ export async function POST(request, context) {
   }
 
   if (path[0] === "student" && path[1] === "login" && path.length === 2) {
+    try {
+      ensureSecureConfig();
+    } catch (err) {
+      return safeAdminError(err) || error(err instanceof Error ? err.message : "Server configuration error", 500);
+    }
+
     const rateError = rateLimitOrReject(store, request, "student-login", config.studentRateLimit);
     if (rateError) {
       return persistAndResponse(store, rateError);
@@ -1149,6 +1240,21 @@ export async function POST(request, context) {
     return authError;
   }
 
+  if (path[1] === "uploads" && path.length === 2) {
+    try {
+      const formData = await request.formData();
+      const file = formData.get("file");
+      if (!file || typeof file === "string") {
+        return error("Image file is required", 400);
+      }
+
+      const upload = await saveAdminImageUpload(file);
+      return json({ success: true, upload });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Upload failed", 400);
+    }
+  }
+
   if (path[1] === "backups" && path.length === 2) {
     try {
       const payload = await parseJsonBody(request);
@@ -1193,10 +1299,17 @@ export async function POST(request, context) {
     const payload = await parseJsonBody(request);
 
     if (path[1] === "students" && path.length === 2) {
-      const student = normalizeStudentPayload(payload);
+      const student = normalizeStudentPayload(payload, { requirePassword: true });
       ensureUniqueRollNumber(store.students, student.rollNumber);
-      store.students.unshift(student);
-      return persistAndJson(store, { success: true, student });
+      const savedStudent = {
+        rollNumber: student.rollNumber,
+        name: student.name,
+        className: student.className,
+        stream: student.stream,
+        passwordHash: hashPassword(student.password),
+      };
+      store.students.unshift(savedStudent);
+      return persistAndJson(store, { success: true, student: sanitizeStudentForAdmin(savedStudent) });
     }
 
     if (path[1] === "notices" && path.length === 2) {
@@ -1436,14 +1549,28 @@ export async function PUT(request, context) {
     const payload = await parseJsonBody(request);
 
     if (path[1] === "students" && path.length === 3) {
-      const student = normalizeStudentPayload(payload);
+      const student = normalizeStudentPayload(payload, { requirePassword: false });
       const index = store.students.findIndex((item) => item.rollNumber === path[2]);
       if (index === -1) {
         return error("Student not found", 404);
       }
       ensureUniqueRollNumber(store.students, student.rollNumber, path[2]);
-      store.students[index] = student;
-      return persistAndJson(store, { success: true, student });
+      const existing = store.students[index] || {};
+      const nextPasswordHash = student.password
+        ? hashPassword(student.password)
+        : String(existing.passwordHash || existing.password || "").trim();
+      if (!nextPasswordHash) {
+        return error("Password cannot be empty", 400);
+      }
+      const savedStudent = {
+        rollNumber: student.rollNumber,
+        name: student.name,
+        className: student.className,
+        stream: student.stream,
+        passwordHash: nextPasswordHash,
+      };
+      store.students[index] = savedStudent;
+      return persistAndJson(store, { success: true, student: sanitizeStudentForAdmin(savedStudent) });
     }
     if (path[1] === "notices" && path.length === 3) {
       const index = parseIndex(path[2], "Notice");
