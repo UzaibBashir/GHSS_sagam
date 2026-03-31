@@ -627,7 +627,7 @@ export default function AdminPage() {
       case "controls":
         return <ControlsManager key={`controls-${dashboardRevision}`} controls={controls} onSave={handleSaveControls} />;
       case "admissions":
-        return <AdmissionsManager admissions={admissions} onUpdate={handleUpdateAdmission} onDelete={handleDeleteAdmission} />;
+        return <AdmissionsManager key={`admissions-${dashboardRevision}`} admissions={admissions} onUpdate={handleUpdateAdmission} onDelete={handleDeleteAdmission} />;
       case "institute":
         return (
           <div className="grid gap-6">
@@ -689,8 +689,9 @@ export default function AdminPage() {
       case "announcements":
         return (
           <div className="grid gap-6">
-            <NoticesManager notices={notices} onAdd={handleAddNotice} onSave={handleSaveNotice} onRemove={handleRemoveNotice} />
+            <NoticesManager key={`notices-${dashboardRevision}`} notices={notices} onAdd={handleAddNotice} onSave={handleSaveNotice} onRemove={handleRemoveNotice} />
             <NotificationsManager
+              key={`notifications-${dashboardRevision}`}
               items={notificationItems}
               onAdd={handleAddNotification}
               onSave={handleSaveNotification}
@@ -699,10 +700,11 @@ export default function AdminPage() {
           </div>
         );
       case "downloads":
-        return <DownloadsManager downloads={downloads} onAdd={handleAddDownload} onSave={handleSaveDownload} onRemove={handleRemoveDownload} />;
+        return <DownloadsManager key={`downloads-${dashboardRevision}`} downloads={downloads} onAdd={handleAddDownload} onSave={handleSaveDownload} onRemove={handleRemoveDownload} />;
       case "academic-noticeboard":
         return (
           <AcademicsManager
+            key={`academics-${dashboardRevision}`}
             academicContent={academicContent}
             onAddNoticeboard={handleAddNoticeboard}
             onSaveNoticeboard={handleSaveNoticeboard}
@@ -713,10 +715,11 @@ export default function AdminPage() {
           />
         );
       case "materials":
-        return <MaterialsManager materials={academicContent.materials} onSave={handleSaveMaterials} />;
+        return <MaterialsManager key={`materials-${dashboardRevision}`} materials={academicContent.materials} onSave={handleSaveMaterials} />;
       case "students":
         return (
           <StudentsManager
+            key={`students-${dashboardRevision}`}
             students={students}
             onAdd={handleAddStudent}
             onSave={handleSaveStudent}
@@ -724,10 +727,11 @@ export default function AdminPage() {
           />
         );
       case "monitoring":
-        return <MonitoringManager monitoring={monitoring} onRefresh={refreshMonitoring} loading={busy} />;
+        return <MonitoringManager key={`monitoring-${dashboardRevision}`} monitoring={monitoring} onRefresh={refreshMonitoring} loading={busy} />;
       case "backups":
         return (
           <BackupsManager
+            key={`backups-${dashboardRevision}`}
             backups={backups}
             onCreate={handleCreateBackup}
             onRestore={handleRestoreBackup}
