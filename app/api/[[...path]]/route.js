@@ -1037,6 +1037,26 @@ export async function GET(request, context) {
     return error("Not found", 404);
   }
 
+  if (path[0] === "media" && path.length === 2) {
+    try {
+      const media = await loadStoredMedia(path[1]);
+      if (!media) {
+        return error("File not found", 404);
+      }
+
+      return new Response(media.buffer, {
+        status: 200,
+        headers: {
+          "Content-Type": media.contentType,
+          "Content-Length": String(media.size || media.buffer.byteLength || 0),
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Failed to load media", 500);
+    }
+  }
+
   if (path[0] !== "admin") {
     return error("Not found", 404);
   }
@@ -1109,26 +1129,6 @@ export async function GET(request, context) {
 
   if (path[1] === "students" && path.length === 2) {
     return json((store.students || []).map(sanitizeStudentForAdmin));
-  }
-
-  if (path[0] === "media" && path.length === 2) {
-    try {
-      const media = await loadStoredMedia(path[1]);
-      if (!media) {
-        return error("File not found", 404);
-      }
-
-      return new Response(media.buffer, {
-        status: 200,
-        headers: {
-          "Content-Type": media.contentType,
-          "Content-Length": String(media.size || media.buffer.byteLength || 0),
-          "Cache-Control": "public, max-age=31536000, immutable",
-        },
-      });
-    } catch (err) {
-      return error(err instanceof Error ? err.message : "Failed to load media", 500);
-    }
   }
 
   if (path[1] === "notification-items" && path.length === 2) {
