@@ -22,7 +22,11 @@ const EMPTY = {
   admission_content: { sessionYear: "2026", guidelines: [], eligibility: [], requiredDocuments: [] },
 };
 
-const EMPTY_SLIDE = { src: "", title: "", subtitle: "" };
+const EMPTY_SLIDE = {
+  src: "",
+  title: "School update",
+  subtitle: "Latest updates from Government Girls Higher Secondary School, Sagam.",
+};
 const EMPTY_STAT = { value: "", label: "" };
 const EMPTY_RESOURCE = { title: "", description: "", href: "", label: "" };
 const EMPTY_STUDENT_ACHIEVEMENT = { name: "", className: "", title: "", description: "", photo: "" };
@@ -151,7 +155,15 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
               return;
             }
                       const slides = [...(draft.hero_slides || [])];
-                      slides[index] = { ...slides[index], src: dataUrl };
+                      const current = slides[index] || EMPTY_SLIDE;
+                      slides[index] = {
+                        ...current,
+                        src: dataUrl,
+                        title: String(current.title || "").trim() || `School update ${index + 1}`,
+                        subtitle:
+                          String(current.subtitle || "").trim() ||
+                          "Latest updates from Government Girls Higher Secondary School, Sagam.",
+                      };
                       setDraft((prev) => ({ ...prev, hero_slides: slides }));
                       setUploadMessage("Slide image uploaded. Click 'Confirm changes' and confirm in overlay.");
                       setUploadBusy(false);
@@ -202,7 +214,15 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
           <button
             type="button"
             className={ADMIN_BUTTON}
-            onClick={() => setDraft((prev) => ({ ...prev, hero_slides: [...(prev.hero_slides || []), EMPTY_SLIDE] }))}
+            onClick={() =>
+              setDraft((prev) => ({
+                ...prev,
+                hero_slides: [
+                  ...(prev.hero_slides || []),
+                  { ...EMPTY_SLIDE, title: `School update ${(prev.hero_slides || []).length + 1}` },
+                ],
+              }))
+            }
           >
             Add slide
           </button>
