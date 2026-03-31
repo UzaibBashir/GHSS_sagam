@@ -81,22 +81,34 @@ async function loadInstitute() {
 }
 
 export default function useInstituteData() {
-  const [institute, setInstitute] = useState(() => {
+  // Keep server and first client render identical to avoid hydration mismatches.
+  const [institute, setInstitute] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+
     if (instituteCacheFresh()) {
-      return cachedInstitute;
+      queueMicrotask(() => {
+        if (!alive) return;
+        setInstitute(cachedInstitute);
+        setLoading(false);
+      });
+      return () => {
+        alive = false;
+      };
     }
+
     const local = readLocalCache();
     if (local?.data) {
       cachedInstitute = local.data;
       cachedAt = local.at;
-      return local.data;
+      queueMicrotask(() => {
+        if (!alive) return;
+        setInstitute(local.data);
+        setLoading(false);
+      });
     }
-    return null;
-  });
-  const [loading, setLoading] = useState(() => !institute);
-
-  useEffect(() => {
-    let alive = true;
 
     if (instituteCacheFresh()) {
       return () => {

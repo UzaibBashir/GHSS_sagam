@@ -29,15 +29,17 @@ export default function HeroSection({ institute }) {
     const rawSlides = Array.isArray(institute?.hero_slides) ? institute.hero_slides : [];
 
     const normalized = rawSlides
-      .map((slide) => ({
+      .map((slide, index) => ({
         src: (() => {
           const raw = String(slide?.src || "").trim();
           return /^[a-f0-9]{12,64}$/i.test(raw) ? `/api/media/${raw}` : raw;
         })(),
-        title: String(slide?.title || "").trim(),
-        subtitle: String(slide?.subtitle || "").trim(),
+        title: String(slide?.title || "").trim() || `School update ${index + 1}`,
+        subtitle:
+          String(slide?.subtitle || "").trim() ||
+          "Latest updates from Government Girls Higher Secondary School, Sagam.",
       }))
-      .filter((slide) => slide.title && slide.subtitle);
+      .filter((slide) => Boolean(slide.src));
 
     return normalized.length ? normalized : FALLBACK_SLIDES;
   }, [institute]);
