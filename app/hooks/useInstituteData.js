@@ -5,12 +5,44 @@ import { API_BASE } from "../lib/api";
 
 const INSTITUTE_CACHE_TTL_MS = 60 * 1000;
 const INSTITUTE_FETCH_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_INSTITUTE_FETCH_TIMEOUT_MS || 12000);
+const LOCAL_CACHE_KEY = "ghhs_institute_cache_v1";
 let cachedInstitute = null;
 let cachedAt = 0;
 let inflightInstituteRequest = null;
 
 function instituteCacheFresh() {
   return cachedInstitute && Date.now() - cachedAt < INSTITUTE_CACHE_TTL_MS;
+}
+
+function readLocalCache() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    const raw = localStorage.getItem(LOCAL_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    const at = Number(parsed?.at || 0);
+    if (!parsed?.data || !Number.isFinite(at) || at <= 0) {
+      return null;
+    }
+    return { data: parsed.data, at };
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalCache(data, at) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data, at }));
+  } catch {
+    // Ignore storage quota/privacy-mode errors.
+  }
 }
 
 async function loadInstitute() {
@@ -34,6 +66,7 @@ async function loadInstitute() {
       .then((data) => {
         cachedInstitute = data;
         cachedAt = Date.now();
+        writeLocalCache(data, cachedAt);
         return data;
       })
       .finally(() => {
@@ -51,6 +84,12 @@ export default function useInstituteData() {
   const [institute, setInstitute] = useState(() => {
     if (instituteCacheFresh()) {
       return cachedInstitute;
+    }
+    const local = readLocalCache();
+    if (local?.data) {
+      cachedInstitute = local.data;
+      cachedAt = local.at;
+      return local.data;
     }
     return null;
   });

@@ -439,15 +439,18 @@ function normalizeHeroSlides(items) {
   }
   return items
     .map((item, index) => {
-      const src = String(item?.src || "").trim();
+      const rawSrc = String(item?.src || "").trim();
+      const src = /^[a-f0-9]{12,64}$/i.test(rawSrc) ? `/api/media/${rawSrc}` : rawSrc;
       assertInlineImageSize(`Hero slide image #${index + 1}`, src);
+      const title = String(item?.title || "").trim();
+      const subtitle = String(item?.subtitle || "").trim();
       return {
         src,
-        title: String(item?.title || "").trim(),
-        subtitle: String(item?.subtitle || "").trim(),
+        title: title || `School update ${index + 1}`,
+        subtitle: subtitle || "Latest updates from Government Girls Higher Secondary School, Sagam.",
       };
     })
-    .filter((item) => item.src && item.title && item.subtitle);
+    .filter((item) => item.src);
 }
 
 function parseInlineImageDataUrl(value) {
@@ -1195,12 +1198,19 @@ export async function POST(request, context) {
           at: String(payload.at || new Date().toISOString()),
         });
       } else {
-        return error("Unknown monitoring event kind", 400);
+        return json({ success: false, ignored: true }, 202);
       }
 
-      return persistAndJson(store, { success: true });
+      try {
+        await saveStore(store);
+      } catch {
+        // Monitoring should not break user-facing flows when persistence is unavailable.
+        return json({ success: true, persisted: false }, 202);
+      }
+
+      return json({ success: true, persisted: true });
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Invalid payload", 400);
+      return json({ success: false, ignored: true }, 202);
     }
   }
 
@@ -1286,7 +1296,7 @@ export async function POST(request, context) {
     try {
       ensureSecureConfig();
     } catch (err) {
-      return safeAdminError(err);
+      return safeAdminError(err) || error(err instanceof Error ? err.message : "Server configuration error", 500);
     }
 
     const rateError = rateLimitOrReject(store, request, "admin-login", config.adminRateLimit);

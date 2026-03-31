@@ -30,7 +30,10 @@ export default function HeroSection({ institute }) {
 
     const normalized = rawSlides
       .map((slide) => ({
-        src: String(slide?.src || "").trim(),
+        src: (() => {
+          const raw = String(slide?.src || "").trim();
+          return /^[a-f0-9]{12,64}$/i.test(raw) ? `/api/media/${raw}` : raw;
+        })(),
         title: String(slide?.title || "").trim(),
         subtitle: String(slide?.subtitle || "").trim(),
       }))
@@ -43,6 +46,7 @@ export default function HeroSection({ institute }) {
   const [failedSlides, setFailedSlides] = useState({});
   const [loadedSlides, setLoadedSlides] = useState({});
   const [pageReady, setPageReady] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     if (!slides.length) return undefined;
@@ -70,6 +74,32 @@ export default function HeroSection({ institute }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return undefined;
+    }
+
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleChange = () => setReducedMotion(media.matches);
+    handleChange();
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !slides.length) {
+      return undefined;
+    }
+    const nextIndex = (activeSlide + 1) % slides.length;
+    const nextSrc = String(slides[nextIndex]?.src || "").trim();
+    if (!nextSrc || failedSlides[nextIndex]) {
+      return undefined;
+    }
+    const preloader = new window.Image();
+    preloader.src = nextSrc;
+    return undefined;
+  }, [activeSlide, slides, failedSlides]);
+
   return (
     <section
       className="relative h-[clamp(16rem,50vw,26rem)] overflow-hidden rounded-3xl border border-slate-200/30 bg-slate-900 shadow-[0_18px_40px_rgba(2,6,23,0.2)]"
@@ -85,8 +115,8 @@ export default function HeroSection({ institute }) {
         return (
           <div
             key={`${slide.src || "fallback"}-${index}`}
-            className={`absolute inset-0 transition-all duration-700 ${
-              activeSlide === index ? "scale-100 opacity-100" : "scale-105 opacity-0"
+            className={`absolute inset-0 transition-all ${reducedMotion ? "duration-150" : "duration-500"} ${
+              activeSlide === index ? "scale-100 opacity-100" : "scale-[1.02] opacity-0"
             }`}
           >
             {hasImage ? (
@@ -94,12 +124,12 @@ export default function HeroSection({ institute }) {
                 src={slide.src}
                 alt={slide.title}
                 fill
-                unoptimized
+                unoptimized={/^https?:\/\//i.test(slide.src)}
                 priority={index === 0}
                 sizes="100vw"
-                className={`object-cover transition-all duration-[1600ms] ease-out will-change-[filter,transform,opacity] ${
+                className={`object-cover transition-all ${reducedMotion ? "duration-150" : "duration-[900ms]"} ease-out will-change-[filter,transform,opacity] ${
                   isLoaded ? "opacity-100" : "opacity-0"
-                } ${enhanceQuality ? "blur-0 saturate-100 contrast-100 scale-100" : "blur-xl saturate-75 contrast-75 scale-[1.06]"}`}
+                } ${enhanceQuality ? "blur-0 saturate-100 contrast-100 scale-100" : "blur-md saturate-90 contrast-90 scale-[1.02]"}`}
                 onLoad={() => {
                   setLoadedSlides((prev) => ({ ...prev, [index]: true }));
                 }}
