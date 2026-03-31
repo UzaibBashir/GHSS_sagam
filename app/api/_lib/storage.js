@@ -1,9 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { getDb } from "./mongodb";
 
 const LOCAL_PUBLIC_ROOT = path.join(process.cwd(), "public", "uploads");
 const DEFAULT_STORAGE_DRIVER = (process.env.STORAGE_DRIVER || "local").trim().toLowerCase();
+
+function getMediaCollectionName() {
+  const base = String(process.env.MONGODB_STATE_COLLECTION || "app_state").trim() || "app_state";
+  return `${base}_media`;
+}
 
 function safeSegment(value, fallback = "file") {
   const cleaned = String(value || "").trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
@@ -57,6 +63,48 @@ async function saveToLocalStorage(params) {
 function toDataUrl(contentType, buffer) {
   const safeType = String(contentType || "application/octet-stream").trim().toLowerCase();
   return `data:${safeType};base64,${Buffer.from(buffer).toString("base64")}`;
+}
+
+async function saveToMongoMediaStorage(params) {
+  const { buffer, contentType, originalName, scope } = params;
+  const db = await getDb();
+  const collection = db.collection(getMediaCollectionName());
+  const id = randomUUID().replace(/-/g, "");
+  const key = buildObjectKey(scope, contentType, originalName);
+
+  await collection.insertOne({
+    _id: id,
+    key,
+    contentType,
+    size: Number(buffer.byteLength || 0),
+    data: Buffer.from(buffer).toString("base64"),
+    createdAt: new Date().toISOString(),
+  });
+
+  return {
+    key,
+    url: `/api/media/${id}`,
+  };
+}
+
+export async function loadStoredMedia(id) {
+  const mediaId = String(id || "").trim();
+  if (!/^[a-f0-9]{12,64}$/i.test(mediaId)) {
+    return null;
+  }
+
+  const db = await getDb();
+  const collection = db.collection(getMediaCollectionName());
+  const doc = await collection.findOne({ _id: mediaId });
+  if (!doc?.data) {
+    return null;
+  }
+
+  return {
+    contentType: String(doc.contentType || "application/octet-stream"),
+    size: Number(doc.size || 0),
+    buffer: Buffer.from(String(doc.data || ""), "base64"),
+  };
 }
 
 async function loadAwsS3Client() {
@@ -156,11 +204,16 @@ export async function saveUploadedBuffer(params) {
       }
 
       // Serverless deployments may not allow writing under /var/task/public.
-      // Fallback to inline data URL so uploads still work without crashing.
-      saved = {
-        key: `inline/${Date.now()}-${randomUUID().slice(0, 8)}`,
-        url: toDataUrl(payload.contentType, payload.buffer),
-      };
+      // Persist media in Mongo and expose it through /api/media/:id.
+      try {
+        saved = await saveToMongoMediaStorage(payload);
+      } catch {
+        // Last-resort fallback prevents hard failure when both filesystem and DB media storage are unavailable.
+        saved = {
+          key: `inline/${Date.now()}-${randomUUID().slice(0, 8)}`,
+          url: toDataUrl(payload.contentType, payload.buffer),
+        };
+      }
     }
   }
 

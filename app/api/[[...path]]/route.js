@@ -23,7 +23,7 @@ import {
   parseJsonBody,
 } from "../_lib/utils";
 import { getDb } from "../_lib/mongodb";
-import { saveUploadedBuffer } from "../_lib/storage";
+import { loadStoredMedia, saveUploadedBuffer } from "../_lib/storage";
 
 const PUBLIC_INSTITUTE_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300";
 const MAX_ADMISSION_MULTIPART_BYTES = Number(process.env.ADMISSION_MULTIPART_MAX_BYTES || 6 * 1024 * 1024);
@@ -448,6 +448,86 @@ function normalizeHeroSlides(items) {
       };
     })
     .filter((item) => item.src && item.title && item.subtitle);
+}
+
+function parseInlineImageDataUrl(value) {
+  const text = String(value || "").trim();
+  const match = text.match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
+  if (!match) {
+    return null;
+  }
+
+  const contentType = String(match[1] || "image/png").toLowerCase();
+  const base64 = String(match[2] || "").replace(/\s+/g, "");
+  if (!base64) {
+    return null;
+  }
+
+  return {
+    contentType,
+    buffer: Buffer.from(base64, "base64"),
+  };
+}
+
+async function persistInlineImageIfNeeded(value, scope) {
+  const text = String(value || "").trim();
+  if (!text.startsWith("data:image/")) {
+    return text;
+  }
+
+  const parsed = parseInlineImageDataUrl(text);
+  if (!parsed?.buffer?.length) {
+    return text;
+  }
+
+  const saved = await saveUploadedBuffer({
+    buffer: parsed.buffer,
+    contentType: parsed.contentType,
+    originalName: `${scope}.png`,
+    scope,
+    size: parsed.buffer.byteLength,
+    maxBytes: MAX_INLINE_IMAGE_BYTES,
+  });
+  return saved.url;
+}
+
+async function persistInstituteMedia(data) {
+  if (!data || typeof data !== "object") {
+    return data;
+  }
+
+  if (data.principal && typeof data.principal === "object") {
+    data.principal.photo = await persistInlineImageIfNeeded(data.principal.photo, "principal");
+  }
+
+  if (Array.isArray(data.faculties)) {
+    data.faculties = await Promise.all(
+      data.faculties.map(async (item, index) => ({
+        ...item,
+        photo: await persistInlineImageIfNeeded(item?.photo, `faculties-${index + 1}`),
+      }))
+    );
+  }
+
+  if (Array.isArray(data.home_student_achievements)) {
+    data.home_student_achievements = await Promise.all(
+      data.home_student_achievements.map(async (item, index) => ({
+        ...item,
+        photo: await persistInlineImageIfNeeded(item?.photo, `student-achievement-${index + 1}`),
+      }))
+    );
+  }
+
+  if (Array.isArray(data.hero_slides)) {
+    data.hero_slides = await Promise.all(
+      data.hero_slides.map(async (item, index) => ({
+        ...item,
+        src: await persistInlineImageIfNeeded(item?.src, `hero-slide-${index + 1}`),
+      }))
+    );
+  }
+
+  return data;
 }
 
 function normalizeAdmissionContent(payload) {
@@ -1028,6 +1108,26 @@ export async function GET(request, context) {
     return json((store.students || []).map(sanitizeStudentForAdmin));
   }
 
+  if (path[0] === "media" && path.length === 2) {
+    try {
+      const media = await loadStoredMedia(path[1]);
+      if (!media) {
+        return error("File not found", 404);
+      }
+
+      return new Response(media.buffer, {
+        status: 200,
+        headers: {
+          "Content-Type": media.contentType,
+          "Content-Length": String(media.size || media.buffer.byteLength || 0),
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Failed to load media", 500);
+    }
+  }
+
   if (path[1] === "notification-items" && path.length === 2) {
     return json(store.instituteData.notification_items);
   }
@@ -1470,6 +1570,8 @@ export async function PATCH(request, context) {
       if (payload.admission_content !== undefined) {
         data.admission_content = normalizeAdmissionContent(payload.admission_content);
       }
+
+      await persistInstituteMedia(data);
 
       return persistAndJson(store, { success: true, institute: getAdminInstituteData(store) });
     }
