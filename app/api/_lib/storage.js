@@ -5,6 +5,7 @@ import { getDb } from "./mongodb";
 
 const LOCAL_PUBLIC_ROOT = path.join(process.cwd(), "public", "uploads");
 const DEFAULT_STORAGE_DRIVER = (process.env.STORAGE_DRIVER || "local").trim().toLowerCase();
+const IS_PRODUCTION = (process.env.NODE_ENV || "").toLowerCase() === "production";
 
 function getMediaCollectionName() {
   const base = String(process.env.MONGODB_STATE_COLLECTION || "app_state").trim() || "app_state";
@@ -194,6 +195,15 @@ export async function saveUploadedBuffer(params) {
   if (DEFAULT_STORAGE_DRIVER === "s3") {
     saved = await saveToS3Storage(payload);
   } else {
+    if (IS_PRODUCTION) {
+      try {
+        saved = await saveToMongoMediaStorage(payload);
+      } catch (err) {
+        throw new Error(
+          "Persistent upload storage failed in production. Configure S3 storage or check MongoDB connectivity."
+        );
+      }
+    } else {
     try {
       saved = await saveToLocalStorage(payload);
     } catch (err) {
@@ -214,6 +224,7 @@ export async function saveUploadedBuffer(params) {
           url: toDataUrl(payload.contentType, payload.buffer),
         };
       }
+    }
     }
   }
 
