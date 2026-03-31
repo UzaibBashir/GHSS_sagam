@@ -67,29 +67,40 @@ async function uploadImageBlob(blob, originalName = "upload.webp") {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE}/admin/uploads`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData,
-  });
-
-  let payload = null;
   try {
-    payload = await response.json();
-  } catch {
-    payload = null;
-  }
+    const response = await fetch(`${API_BASE}/admin/uploads`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
 
-  if (!response.ok) {
-    throw new Error(payload?.detail || "Image upload failed");
-  }
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
 
-  const url = String(payload?.upload?.url || "").trim();
-  if (!url) {
-    throw new Error("Image upload failed");
-  }
+    if (response.ok) {
+      const url = String(payload?.upload?.url || "").trim();
+      if (url) {
+        return url;
+      }
+    }
 
-  return url;
+    // Auth failures should still surface so the user can login again.
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(payload?.detail || "Admin session expired. Please sign in again.");
+    }
+
+    // Non-auth upload failures fallback to inline URL so edits are not blocked.
+    return readAsDataUrl(file);
+  } catch (error) {
+    if (/session expired|sign in again|unauthorized|forbidden/i.test(String(error?.message || ""))) {
+      throw error;
+    }
+    return readAsDataUrl(file);
+  }
 }
 
 export async function fileToOptimizedDataUrl(file, options = {}) {

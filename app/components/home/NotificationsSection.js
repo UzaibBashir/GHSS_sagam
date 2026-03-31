@@ -14,7 +14,12 @@ function formatDateLabel(value) {
 }
 
 export default function NotificationsSection({ institute }) {
-  const items = institute?.notification_items || [];
+  const items = [...(institute?.notification_items || [])].sort((a, b) => {
+    const aTime = Date.parse(String(a?.date || ""));
+    const bTime = Date.parse(String(b?.date || ""));
+    if (!Number.isNaN(aTime) && !Number.isNaN(bTime)) return bTime - aTime;
+    return 0;
+  });
 
   return (
     <section
