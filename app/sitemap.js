@@ -1,4 +1,4 @@
-const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://ghhssagam.in").trim().replace(/\/+$/, "");
+const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://ghss-sagam.vercel.app").trim().replace(/\/+$/, "");
 
 export default function sitemap() {
   const now = new Date();

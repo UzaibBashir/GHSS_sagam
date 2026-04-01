@@ -2,7 +2,7 @@ import { Cormorant_Garamond, Manrope } from "next/font/google";
 import WebVitalsReporter from "./components/common/WebVitalsReporter";
 import "./globals.css";
 
-const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://ghhssagam.in").trim().replace(/\/+$/, "");
+const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://ghss-sagam.vercel.app").trim().replace(/\/+$/, "");
 const GOOGLE_VERIFICATION_TOKEN =
   String(process.env.GOOGLE_SITE_VERIFICATION || "_zVRk9oY29KlK4JgIhmHlNLQAlrMtPidCKhXNN8NduI").trim();
 
