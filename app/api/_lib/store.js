@@ -42,11 +42,11 @@ const DEFAULT_INSTITUTE_DATA = {
   streams_subjects: [
     {
       stream: "Medical",
-      subjects: ["Biology", "Chemistry", "English", "Environmental Science"],
+      subjects: ["Biology", "Chemistry", "Physics", "English"],
     },
     {
       stream: "Non-Medical",
-      subjects: ["Physics", "Chemistry", "Mathematics", "English"],
+      subjects: ["Mathematics", "Physics", "Chemistry", "English"],
     },
     {
       stream: "Arts",
@@ -157,19 +157,24 @@ const DEFAULT_INSTITUTE_DATA = {
             subjects: [
               { name: "Biology", drive: "https://drive.google.com/drive/folders/biology-xi" },
               { name: "Chemistry", drive: "https://drive.google.com/drive/folders/chemistry-xi" },
+              { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xi" },
+              { name: "English", drive: "https://drive.google.com/drive/folders/english-xi" },
             ],
           },
           {
             stream: "Non-Medical",
             subjects: [
-              { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xi" },
               { name: "Mathematics", drive: "https://drive.google.com/drive/folders/maths-xi" },
+              { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xi" },
+              { name: "Chemistry", drive: "https://drive.google.com/drive/folders/chemistry-xi" },
+              { name: "English", drive: "https://drive.google.com/drive/folders/english-xi" },
             ],
           },
           {
             stream: "Arts",
             subjects: [
               { name: "History", drive: "https://drive.google.com/drive/folders/history-xi" },
+              { name: "English", drive: "https://drive.google.com/drive/folders/english-xi" },
             ],
           },
         ],
@@ -182,19 +187,24 @@ const DEFAULT_INSTITUTE_DATA = {
             subjects: [
               { name: "Biology", drive: "https://drive.google.com/drive/folders/biology-xii" },
               { name: "Chemistry", drive: "https://drive.google.com/drive/folders/chemistry-xii" },
+              { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xii" },
+              { name: "English", drive: "https://drive.google.com/drive/folders/english-xii" },
             ],
           },
           {
             stream: "Non-Medical",
             subjects: [
-              { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xii" },
               { name: "Mathematics", drive: "https://drive.google.com/drive/folders/maths-xii" },
+              { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xii" },
+              { name: "Chemistry", drive: "https://drive.google.com/drive/folders/chemistry-xii" },
+              { name: "English", drive: "https://drive.google.com/drive/folders/english-xii" },
             ],
           },
           {
             stream: "Arts",
             subjects: [
               { name: "Political Science", drive: "https://drive.google.com/drive/folders/polscience-xii" },
+              { name: "English", drive: "https://drive.google.com/drive/folders/english-xii" },
             ],
           },
         ],
@@ -379,6 +389,58 @@ function getBootstrapStudentsFromEnv() {
 
 const DEFAULT_STUDENTS = getBootstrapStudentsFromEnv();
 
+function getBootstrapTeachersFromEnv() {
+  const raw = String(process.env.TEACHER_BOOTSTRAP_JSON || "").trim();
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((item) => {
+        const username = String(item?.username || "").trim();
+        const name = String(item?.name || "").trim();
+        const className = String(item?.className || "").trim();
+        const stream = String(item?.stream || "").trim();
+        const subjects = Array.isArray(item?.subjects)
+          ? item.subjects.map((subject) => String(subject || "").trim()).filter(Boolean)
+          : [];
+        const plainPassword = String(item?.password || "").trim();
+        const providedHash = String(item?.passwordHash || "").trim();
+
+        const passwordHash =
+          providedHash && isPasswordHash(providedHash)
+            ? providedHash
+            : plainPassword
+              ? hashPassword(plainPassword)
+              : "";
+
+        if (!username || !name || !className || !stream || !subjects.length || !passwordHash) {
+          return null;
+        }
+
+        return {
+          username,
+          name,
+          className,
+          stream,
+          subjects,
+          passwordHash,
+        };
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+const DEFAULT_TEACHERS = getBootstrapTeachersFromEnv();
+
 const DEFAULT_STATE = {
   contacts: [],
   admissions: [],
@@ -391,6 +453,7 @@ const DEFAULT_STATE = {
     apiLatency: [],
   },
   students: structuredClone(DEFAULT_STUDENTS),
+  teachers: structuredClone(DEFAULT_TEACHERS),
   instituteData: structuredClone(DEFAULT_INSTITUTE_DATA),
   __meta: {
     version: 0,
@@ -600,6 +663,50 @@ function resetStudentShape(store) {
   }
 }
 
+function resetTeacherShape(store) {
+  if (!Array.isArray(store.teachers)) {
+    store.teachers = [];
+  }
+
+  store.teachers = (store.teachers || [])
+    .map((item) => {
+      const username = String(item?.username || "").trim();
+      const name = String(item?.name || "").trim();
+      const className = String(item?.className || "").trim();
+      const stream = String(item?.stream || "").trim();
+      const subjects = Array.isArray(item?.subjects)
+        ? item.subjects.map((subject) => String(subject || "").trim()).filter(Boolean)
+        : [];
+      const legacyPassword = String(item?.password || "").trim();
+      const existingHash = String(item?.passwordHash || "").trim();
+
+      let passwordHash = existingHash;
+      if (!passwordHash) {
+        if (isPasswordHash(legacyPassword)) {
+          passwordHash = legacyPassword;
+        } else if (legacyPassword) {
+          passwordHash = hashPassword(legacyPassword);
+        }
+      } else if (!isPasswordHash(passwordHash)) {
+        passwordHash = hashPassword(passwordHash);
+      }
+
+      if (!username || !name || !className || !stream || !subjects.length || !passwordHash) {
+        return null;
+      }
+
+      return {
+        username,
+        name,
+        className,
+        stream,
+        subjects,
+        passwordHash,
+      };
+    })
+    .filter(Boolean);
+}
+
 function resetRateLimitShape(store) {
   if (!store.rateLimits || typeof store.rateLimits !== "object") {
     store.rateLimits = {};
@@ -674,6 +781,7 @@ function normalizeStoreShape(store) {
   resetHomeContentShape(store);
   resetFacultyShape(store);
   resetStudentShape(store);
+  resetTeacherShape(store);
   resetAdmissionsShape(store);
   resetRateLimitShape(store);
   resetBackupsShape(store);
@@ -702,6 +810,7 @@ function getCollectionNames() {
     contacts: `${base}_contacts`,
     admissions: `${base}_admissions`,
     students: `${base}_students`,
+    teachers: `${base}_teachers`,
     instituteData: `${base}_institute`,
     adminSessions: `${base}_admin_sessions`,
     loginFailures: `${base}_login_failures`,
@@ -726,6 +835,7 @@ async function readCollectionState(db) {
     contactsDoc,
     admissionsDoc,
     studentsDoc,
+    teachersDoc,
     instituteDoc,
     adminSessionsDoc,
     loginFailuresDoc,
@@ -737,6 +847,7 @@ async function readCollectionState(db) {
     findMainDoc(db.collection(names.contacts), "Read contacts"),
     findMainDoc(db.collection(names.admissions), "Read admissions"),
     findMainDoc(db.collection(names.students), "Read students"),
+    findMainDoc(db.collection(names.teachers), "Read teachers"),
     findMainDoc(db.collection(names.instituteData), "Read institute data"),
     findMainDoc(db.collection(names.adminSessions), "Read admin sessions"),
     findMainDoc(db.collection(names.loginFailures), "Read login failures"),
@@ -751,6 +862,7 @@ async function readCollectionState(db) {
       contacts: contactsDoc?.items || [],
       admissions: admissionsDoc?.items || [],
       students: studentsDoc?.items || [],
+      teachers: teachersDoc?.items || [],
       instituteData: instituteDoc?.value || {},
       adminSessions: adminSessionsDoc?.value || {},
       loginFailures: loginFailuresDoc?.value || {},
@@ -821,6 +933,13 @@ async function writeCollectionState(db, normalized, expectedVersion) {
         .updateOne({ _id: "main" }, { $set: { items: normalized.students, version: nextVersion, updatedAt: now } }, { upsert: true }),
       dbOperationTimeoutMs,
       "Write students"
+    ),
+    withTimeout(
+      db
+        .collection(names.teachers)
+        .updateOne({ _id: "main" }, { $set: { items: normalized.teachers, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write teachers"
     ),
     withTimeout(
       db

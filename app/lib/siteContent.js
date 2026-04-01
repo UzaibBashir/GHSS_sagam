@@ -207,9 +207,9 @@ export const ACADEMICS_CONTENT = {
     { name: "Mr. I. Bashir", role: "Office Assistant" },
   ],
   streams: [
-    { stream: "Medical", subjects: "Biology, Chemistry, English, and related higher secondary subjects" },
-    { stream: "Non-Medical", subjects: "Physics, Chemistry, Mathematics, English, and related subjects" },
-    { stream: "Arts", subjects: "Humanities and language subjects as prescribed by the board" },
+    { stream: "Medical", subjects: "Biology, Chemistry, Physics, and English" },
+    { stream: "Non-Medical", subjects: "Mathematics, Physics, Chemistry, and English" },
+    { stream: "Arts", subjects: "Humanities subjects with English" },
   ],
   timetable: [
     { period: "1", time: "09:00 - 09:45", activity: "Core Subject Session" },
@@ -291,13 +291,17 @@ export const ACADEMIC_MATERIALS = {
           subjects: [
             { name: "Biology", drive: "https://drive.google.com/drive/folders/biology-xi" },
             { name: "Chemistry", drive: "https://drive.google.com/drive/folders/chemistry-xi" },
+            { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xi" },
+            { name: "English", drive: "https://drive.google.com/drive/folders/english-xi" },
           ],
         },
         {
           stream: "Non-Medical",
           subjects: [
-            { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xi" },
             { name: "Mathematics", drive: "https://drive.google.com/drive/folders/maths-xi" },
+            { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xi" },
+            { name: "Chemistry", drive: "https://drive.google.com/drive/folders/chemistry-xi" },
+            { name: "English", drive: "https://drive.google.com/drive/folders/english-xi" },
           ],
         },
         {
@@ -305,6 +309,7 @@ export const ACADEMIC_MATERIALS = {
           subjects: [
             { name: "History", drive: "https://drive.google.com/drive/folders/history-xi" },
             { name: "Political Science", drive: "https://drive.google.com/drive/folders/polscience-xi" },
+            { name: "English", drive: "https://drive.google.com/drive/folders/english-xi" },
           ],
         },
       ],
@@ -317,13 +322,17 @@ export const ACADEMIC_MATERIALS = {
           subjects: [
             { name: "Biology", drive: "https://drive.google.com/drive/folders/biology-xii" },
             { name: "Chemistry", drive: "https://drive.google.com/drive/folders/chemistry-xii" },
+            { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xii" },
+            { name: "English", drive: "https://drive.google.com/drive/folders/english-xii" },
           ],
         },
         {
           stream: "Non-Medical",
           subjects: [
-            { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xii" },
             { name: "Mathematics", drive: "https://drive.google.com/drive/folders/maths-xii" },
+            { name: "Physics", drive: "https://drive.google.com/drive/folders/physics-xii" },
+            { name: "Chemistry", drive: "https://drive.google.com/drive/folders/chemistry-xii" },
+            { name: "English", drive: "https://drive.google.com/drive/folders/english-xii" },
           ],
         },
         {
@@ -331,6 +340,7 @@ export const ACADEMIC_MATERIALS = {
           subjects: [
             { name: "History", drive: "https://drive.google.com/drive/folders/history-xii" },
             { name: "Political Science", drive: "https://drive.google.com/drive/folders/polscience-xii" },
+            { name: "English", drive: "https://drive.google.com/drive/folders/english-xii" },
           ],
         },
       ],

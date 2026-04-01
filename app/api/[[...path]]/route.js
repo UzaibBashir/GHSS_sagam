@@ -10,6 +10,7 @@ import {
   makeLoginBucketKey,
   verifyAdminCredentials,
   verifyStudentCredentials,
+  verifyTeacherCredentials,
   verifyToken,
 } from "../_lib/auth";
 import { checkRateLimit, getStore, saveStore } from "../_lib/store";
@@ -44,6 +45,7 @@ function extractBackupPayload(store) {
     contacts: structuredClone(store.contacts || []),
     admissions: structuredClone(store.admissions || []),
     students: structuredClone(store.students || []),
+    teachers: structuredClone(store.teachers || []),
     instituteData: structuredClone(store.instituteData || {}),
   };
 }
@@ -63,6 +65,7 @@ function applyBackupSnapshot(store, snapshot) {
   store.contacts = Array.isArray(payload.contacts) ? structuredClone(payload.contacts) : [];
   store.admissions = Array.isArray(payload.admissions) ? structuredClone(payload.admissions) : [];
   store.students = Array.isArray(payload.students) ? structuredClone(payload.students) : [];
+  store.teachers = Array.isArray(payload.teachers) ? structuredClone(payload.teachers) : [];
   store.instituteData = payload.instituteData && typeof payload.instituteData === "object" ? structuredClone(payload.instituteData) : {};
 }
 
@@ -264,6 +267,39 @@ function sanitizeStudentForAdmin(student) {
     name: String(student?.name || "").trim(),
     className: String(student?.className || "").trim(),
     stream: String(student?.stream || "").trim(),
+    password: "",
+  };
+}
+
+function normalizeTeacherPayload(payload, options = {}) {
+  const requirePassword = options.requirePassword !== false;
+  const passwordRaw = String(payload?.password || "").trim();
+  const subjects = Array.isArray(payload?.subjects)
+    ? payload.subjects.map((subject) => String(subject || "").trim()).filter(Boolean)
+    : [];
+  if (requirePassword && !passwordRaw) {
+    throw new Error("Password cannot be empty");
+  }
+  if (!subjects.length) {
+    throw new Error("At least one assigned subject is required");
+  }
+  return {
+    username: assertNonEmpty("Teacher username", payload.username),
+    password: passwordRaw,
+    name: assertNonEmpty("Teacher name", payload.name),
+    className: assertNonEmpty("Class", payload.className),
+    stream: assertNonEmpty("Stream", payload.stream),
+    subjects,
+  };
+}
+
+function sanitizeTeacherForAdmin(teacher) {
+  return {
+    username: String(teacher?.username || "").trim(),
+    name: String(teacher?.name || "").trim(),
+    className: String(teacher?.className || "").trim(),
+    stream: String(teacher?.stream || "").trim(),
+    subjects: Array.isArray(teacher?.subjects) ? teacher.subjects.map((subject) => String(subject || "").trim()).filter(Boolean) : [],
     password: "",
   };
 }
@@ -847,6 +883,137 @@ function normalizeOptionalNotificationLink(value) {
   return text;
 }
 
+function normalizeTeacherMaterialPayload(payload, options = {}) {
+  const requireAll = options.requireAll !== false;
+  const type = String(payload?.type || "").trim().toLowerCase();
+  if ((requireAll || type) && !["pdf", "image", "text", "link"].includes(type)) {
+    throw new Error("Type must be one of: pdf, image, text, link");
+  }
+
+  const className = payload?.class_name !== undefined ? assertNonEmpty("Class", payload.class_name) : "";
+  const stream = payload?.stream !== undefined ? assertNonEmpty("Stream", payload.stream) : "";
+  const subject = payload?.subject !== undefined ? assertNonEmpty("Subject", payload.subject) : "";
+  const title = payload?.title !== undefined ? assertNonEmpty("Title", payload.title) : "";
+  const linkUrl = payload?.link_url !== undefined ? normalizeOptionalNotificationLink(payload.link_url) : "";
+  const textContent = payload?.text_content !== undefined ? String(payload.text_content || "").trim() : "";
+  const attachment = payload?.attachment !== undefined ? normalizeOptionalNotificationAttachment(payload.attachment) : "";
+
+  if ((requireAll || type === "link") && type === "link" && !linkUrl) {
+    throw new Error("Link URL is required for link type");
+  }
+  if ((requireAll || type === "text") && type === "text" && !textContent) {
+    throw new Error("Text content is required for text type");
+  }
+  if ((requireAll || type === "pdf" || type === "image") && (type === "pdf" || type === "image") && !attachment) {
+    throw new Error("Attachment is required for pdf/image type");
+  }
+
+  return {
+    class_name: className,
+    stream,
+    subject,
+    type,
+    title,
+    link_url: linkUrl,
+    text_content: textContent,
+    attachment,
+  };
+}
+
+function findTeacherByUsername(store, username) {
+  return (store.teachers || []).find(
+    (item) => normalizeComparable(item?.username) === normalizeComparable(username)
+  );
+}
+
+function teacherCanManageSubject(teacher, className, stream, subject) {
+  if (!teacher) return false;
+  const classOk = normalizeComparable(teacher.className) === normalizeComparable(className);
+  const streamOk = normalizeComparable(teacher.stream) === normalizeComparable(stream);
+  const subjectOk = (teacher.subjects || []).some(
+    (item) => normalizeComparable(item) === normalizeComparable(subject)
+  );
+  return classOk && streamOk && subjectOk;
+}
+
+function ensureAcademicMaterialsShape(store) {
+  if (!store.instituteData.academic_content || typeof store.instituteData.academic_content !== "object") {
+    store.instituteData.academic_content = { noticeboard: [], timetable: [], materials: [] };
+  }
+  if (!Array.isArray(store.instituteData.academic_content.materials)) {
+    store.instituteData.academic_content.materials = [];
+  }
+}
+
+function getOrCreateMaterialSubjectNode(materials, className, streamName, subjectName) {
+  let classNode = materials.find(
+    (item) => normalizeComparable(item?.class_name) === normalizeComparable(className)
+  );
+  if (!classNode) {
+    classNode = { class_name: className, streams: [] };
+    materials.push(classNode);
+  }
+  if (!Array.isArray(classNode.streams)) {
+    classNode.streams = [];
+  }
+
+  let streamNode = classNode.streams.find(
+    (item) => normalizeComparable(item?.stream) === normalizeComparable(streamName)
+  );
+  if (!streamNode) {
+    streamNode = { stream: streamName, subjects: [] };
+    classNode.streams.push(streamNode);
+  }
+  if (!Array.isArray(streamNode.subjects)) {
+    streamNode.subjects = [];
+  }
+
+  let subjectNode = streamNode.subjects.find(
+    (item) => normalizeComparable(item?.name) === normalizeComparable(subjectName)
+  );
+  if (!subjectNode) {
+    subjectNode = { name: subjectName, drive: "", resources: [] };
+    streamNode.subjects.push(subjectNode);
+  }
+  if (!Array.isArray(subjectNode.resources)) {
+    subjectNode.resources = [];
+  }
+  if (subjectNode.drive === undefined) {
+    subjectNode.drive = "";
+  }
+  return subjectNode;
+}
+
+function findMaterialResourceById(materials, resourceId) {
+  for (const classNode of materials || []) {
+    for (const streamNode of classNode?.streams || []) {
+      for (const subjectNode of streamNode?.subjects || []) {
+        for (let i = 0; i < (subjectNode?.resources || []).length; i += 1) {
+          if (subjectNode.resources[i]?.id === resourceId) {
+            return {
+              classNode,
+              streamNode,
+              subjectNode,
+              resource: subjectNode.resources[i],
+              index: i,
+            };
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function ensureUniqueTeacherUsername(teachers, username, currentUsername = "") {
+  const duplicate = (teachers || []).find(
+    (item) => item.username === username && item.username !== currentUsername
+  );
+  if (duplicate) {
+    throw new Error("A teacher with this username already exists.");
+  }
+}
+
 async function saveAdminImageUpload(file) {
   const mimeType = String(file?.type || "").toLowerCase();
   if (!mimeType.startsWith("image/")) {
@@ -1037,6 +1204,70 @@ export async function GET(request, context) {
     return error("Not found", 404);
   }
 
+  if (path[0] === "teacher") {
+    try {
+      ensureSecureConfig();
+    } catch (err) {
+      return safeAdminError(err) || error(err instanceof Error ? err.message : "Server configuration error", 500);
+    }
+
+    const authError = unauthorizedIfNeeded(request, store, "teacher");
+    if (authError) {
+      return authError;
+    }
+
+    const verified = verifyToken(store, request.headers.get("authorization") || "", "teacher");
+    const teacher = findTeacherByUsername(store, verified?.session?.username || "");
+    if (!teacher) {
+      return error("Teacher profile not found", 404);
+    }
+
+    if (path[1] === "session" && path.length === 2) {
+      return json({
+        authenticated: true,
+        teacher: {
+          username: teacher.username,
+          name: teacher.name,
+          className: teacher.className,
+          stream: teacher.stream,
+          subjects: teacher.subjects || [],
+        },
+      });
+    }
+
+    if (path[1] === "academics" && path[2] === "materials" && path.length === 3) {
+      ensureAcademicMaterialsShape(store);
+      const classKey = normalizeComparable(teacher.className);
+      const streamKey = normalizeComparable(teacher.stream);
+      const allowedSubjects = new Set((teacher.subjects || []).map((item) => normalizeComparable(item)));
+      const filteredMaterials = (store.instituteData.academic_content.materials || [])
+        .filter((item) => normalizeComparable(item.class_name) === classKey)
+        .map((item) => ({
+          ...item,
+          streams: (item.streams || [])
+            .filter((streamItem) => normalizeComparable(streamItem.stream) === streamKey)
+            .map((streamItem) => ({
+              ...streamItem,
+              subjects: (streamItem.subjects || [])
+                .filter((subjectItem) => allowedSubjects.has(normalizeComparable(subjectItem.name)))
+                .map((subjectItem) => ({
+                  ...subjectItem,
+                  resources: (subjectItem.resources || []).map((resource) => ({ ...resource })),
+                })),
+            })),
+        }));
+
+      return json({
+        teacher: sanitizeTeacherForAdmin(teacher),
+        academic_content: {
+          materials: filteredMaterials,
+        },
+      });
+    }
+
+    return error("Not found", 404);
+  }
+
   if (path[0] === "media" && path.length === 2) {
     try {
       const media = await loadStoredMedia(path[1]);
@@ -1082,6 +1313,7 @@ export async function GET(request, context) {
       notificationItems: store.instituteData.notification_items || [],
       academicContent: store.instituteData.academic_content || { noticeboard: [], timetable: [], materials: [] },
       students: (store.students || []).map(sanitizeStudentForAdmin),
+      teachers: (store.teachers || []).map(sanitizeTeacherForAdmin),
       notices: (store.instituteData.notices || []).map((notice, index) => ({ index, text: notice.text })),
       downloads: (store.instituteData.downloads || []).map((item, index) => ({ index, ...item })),
       institute: includeInstitute ? getAdminInstituteData(store) : null,
@@ -1101,6 +1333,7 @@ export async function GET(request, context) {
       createdAt: item.createdAt,
       admissions: item.payload?.admissions?.length || 0,
       students: item.payload?.students?.length || 0,
+      teachers: item.payload?.teachers?.length || 0,
       contacts: item.payload?.contacts?.length || 0,
     }));
     return json(snapshots.reverse());
@@ -1129,6 +1362,10 @@ export async function GET(request, context) {
 
   if (path[1] === "students" && path.length === 2) {
     return json((store.students || []).map(sanitizeStudentForAdmin));
+  }
+
+  if (path[1] === "teachers" && path.length === 2) {
+    return json((store.teachers || []).map(sanitizeTeacherForAdmin));
   }
 
   if (path[1] === "notification-items" && path.length === 2) {
@@ -1335,6 +1572,88 @@ export async function POST(request, context) {
     }
   }
 
+  if (path[0] === "teacher" && path[1] === "login" && path.length === 2) {
+    try {
+      ensureSecureConfig();
+    } catch (err) {
+      return safeAdminError(err) || error(err instanceof Error ? err.message : "Server configuration error", 500);
+    }
+
+    const rateError = rateLimitOrReject(store, request, "teacher-login", config.studentRateLimit);
+    if (rateError) {
+      return persistAndResponse(store, rateError);
+    }
+
+    try {
+      const payload = await parseJsonBody(request);
+      const username = String(payload.username || "").trim();
+      const password = String(payload.password || "");
+      const teacher = verifyTeacherCredentials(store, username, password);
+
+      if (!teacher) {
+        return persistAndResponse(store, error("Invalid username or password", 401));
+      }
+
+      const session = createSession({ role: "teacher", ...teacher });
+      return persistAndJson(store, { success: true, token: session.token, expires_in: session.expiresIn, teacher });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Login failed", 400);
+    }
+  }
+
+  if (path[0] === "teacher" && path[1] === "academics" && path[2] === "materials" && path.length === 3) {
+    try {
+      ensureSecureConfig();
+    } catch (err) {
+      return safeAdminError(err) || error(err instanceof Error ? err.message : "Server configuration error", 500);
+    }
+
+    const authError = unauthorizedIfNeeded(request, store, "teacher");
+    if (authError) {
+      return authError;
+    }
+
+    try {
+      const verified = verifyToken(store, request.headers.get("authorization") || "", "teacher");
+      const teacher = findTeacherByUsername(store, verified?.session?.username || "");
+      if (!teacher) {
+        return error("Teacher profile not found", 404);
+      }
+
+      const payload = await parseJsonBody(request);
+      const material = normalizeTeacherMaterialPayload(payload, { requireAll: true });
+      if (!teacherCanManageSubject(teacher, material.class_name, material.stream, material.subject)) {
+        return error("You can only manage assigned subjects.", 403);
+      }
+
+      ensureAcademicMaterialsShape(store);
+      const materials = store.instituteData.academic_content.materials;
+      const subjectNode = getOrCreateMaterialSubjectNode(
+        materials,
+        material.class_name,
+        material.stream,
+        material.subject
+      );
+      const resource = {
+        id: createId("res"),
+        type: material.type,
+        title: material.title,
+        link_url: material.link_url,
+        text_content: material.text_content,
+        attachment: material.attachment,
+        subject: material.subject,
+        class_name: material.class_name,
+        stream: material.stream,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      subjectNode.resources.unshift(resource);
+      return persistAndJson(store, { success: true, resource });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Invalid payload", 400);
+    }
+  }
+
   if (path[0] !== "admin") {
     return error("Not found", 404);
   }
@@ -1420,6 +1739,24 @@ export async function POST(request, context) {
       };
       store.students.unshift(savedStudent);
       return persistAndJson(store, { success: true, student: sanitizeStudentForAdmin(savedStudent) });
+    }
+
+    if (path[1] === "teachers" && path.length === 2) {
+      const teacher = normalizeTeacherPayload(payload, { requirePassword: true });
+      if (!Array.isArray(store.teachers)) {
+        store.teachers = [];
+      }
+      ensureUniqueTeacherUsername(store.teachers, teacher.username);
+      const savedTeacher = {
+        username: teacher.username,
+        name: teacher.name,
+        className: teacher.className,
+        stream: teacher.stream,
+        subjects: teacher.subjects,
+        passwordHash: hashPassword(teacher.password),
+      };
+      store.teachers.unshift(savedTeacher);
+      return persistAndJson(store, { success: true, teacher: sanitizeTeacherForAdmin(savedTeacher) });
     }
 
     if (path[1] === "notices" && path.length === 2) {
@@ -1642,6 +1979,56 @@ export async function PUT(request, context) {
     return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
   }
 
+  if (path[0] === "teacher" && path[1] === "academics" && path[2] === "materials" && path.length === 4) {
+    try {
+      ensureSecureConfig();
+    } catch (err) {
+      return safeAdminError(err);
+    }
+
+    const authError = unauthorizedIfNeeded(request, store, "teacher");
+    if (authError) {
+      return authError;
+    }
+
+    try {
+      const verified = verifyToken(store, request.headers.get("authorization") || "", "teacher");
+      const teacher = findTeacherByUsername(store, verified?.session?.username || "");
+      if (!teacher) {
+        return error("Teacher profile not found", 404);
+      }
+
+      const payload = await parseJsonBody(request);
+      const update = normalizeTeacherMaterialPayload(payload, { requireAll: false });
+      ensureAcademicMaterialsShape(store);
+      const found = findMaterialResourceById(store.instituteData.academic_content.materials, path[3]);
+      if (!found) {
+        return error("Resource not found", 404);
+      }
+      const target = found.resource;
+
+      const nextClass = update.class_name || target.class_name;
+      const nextStream = update.stream || target.stream;
+      const nextSubject = update.subject || target.subject;
+      if (!teacherCanManageSubject(teacher, nextClass, nextStream, nextSubject)) {
+        return error("You can only manage assigned subjects.", 403);
+      }
+
+      if (update.type) target.type = update.type;
+      if (update.title) target.title = update.title;
+      if (update.link_url !== "") target.link_url = update.link_url;
+      if (update.text_content !== "") target.text_content = update.text_content;
+      if (update.attachment !== "") target.attachment = update.attachment;
+      target.class_name = nextClass;
+      target.stream = nextStream;
+      target.subject = nextSubject;
+      target.updated_at = new Date().toISOString();
+      return persistAndJson(store, { success: true, resource: target });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Invalid payload", 400);
+    }
+  }
+
   if (path[0] !== "admin") {
     return error("Not found", 404);
   }
@@ -1683,6 +2070,34 @@ export async function PUT(request, context) {
       };
       store.students[index] = savedStudent;
       return persistAndJson(store, { success: true, student: sanitizeStudentForAdmin(savedStudent) });
+    }
+    if (path[1] === "teachers" && path.length === 3) {
+      const teacher = normalizeTeacherPayload(payload, { requirePassword: false });
+      if (!Array.isArray(store.teachers)) {
+        store.teachers = [];
+      }
+      const index = store.teachers.findIndex((item) => item.username === path[2]);
+      if (index === -1) {
+        return error("Teacher not found", 404);
+      }
+      ensureUniqueTeacherUsername(store.teachers, teacher.username, path[2]);
+      const existing = store.teachers[index] || {};
+      const nextPasswordHash = teacher.password
+        ? hashPassword(teacher.password)
+        : String(existing.passwordHash || existing.password || "").trim();
+      if (!nextPasswordHash) {
+        return error("Password cannot be empty", 400);
+      }
+      const savedTeacher = {
+        username: teacher.username,
+        name: teacher.name,
+        className: teacher.className,
+        stream: teacher.stream,
+        subjects: teacher.subjects,
+        passwordHash: nextPasswordHash,
+      };
+      store.teachers[index] = savedTeacher;
+      return persistAndJson(store, { success: true, teacher: sanitizeTeacherForAdmin(savedTeacher) });
     }
     if (path[1] === "notices" && path.length === 3) {
       const index = parseIndex(path[2], "Notice");
@@ -1787,6 +2202,40 @@ export async function DELETE(request, context) {
     return error(err instanceof Error ? `Database connection failed: ${err.message}` : "Database connection failed", 500);
   }
 
+  if (path[0] === "teacher" && path[1] === "academics" && path[2] === "materials" && path.length === 4) {
+    try {
+      ensureSecureConfig();
+    } catch (err) {
+      return safeAdminError(err);
+    }
+
+    const authError = unauthorizedIfNeeded(request, store, "teacher");
+    if (authError) {
+      return authError;
+    }
+
+    try {
+      const verified = verifyToken(store, request.headers.get("authorization") || "", "teacher");
+      const teacher = findTeacherByUsername(store, verified?.session?.username || "");
+      if (!teacher) {
+        return error("Teacher profile not found", 404);
+      }
+
+      ensureAcademicMaterialsShape(store);
+      const found = findMaterialResourceById(store.instituteData.academic_content.materials, path[3]);
+      if (!found) {
+        return error("Resource not found", 404);
+      }
+      if (!teacherCanManageSubject(teacher, found.resource.class_name, found.resource.stream, found.resource.subject)) {
+        return error("You can only manage assigned subjects.", 403);
+      }
+      found.subjectNode.resources.splice(found.index, 1);
+      return persistAndJson(store, { success: true, message: "Material resource deleted." });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Invalid request", 400);
+    }
+  }
+
   if (path[0] !== "admin") {
     return error("Not found", 404);
   }
@@ -1819,6 +2268,15 @@ export async function DELETE(request, context) {
       }
       store.students.splice(index, 1);
       return persistAndJson(store, { success: true, message: "Student removed." });
+    }
+
+    if (path[1] === "teachers" && path.length === 3) {
+      const index = (store.teachers || []).findIndex((item) => item.username === path[2]);
+      if (index === -1) {
+        return error("Teacher not found", 404);
+      }
+      store.teachers.splice(index, 1);
+      return persistAndJson(store, { success: true, message: "Teacher removed." });
     }
 
     if (path[1] === "notices" && path.length === 3) {

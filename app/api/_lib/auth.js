@@ -14,6 +14,7 @@ export const config = {
   adminPassword: process.env.ADMIN_PASSWORD || "change-me-123",
   tokenTtlSeconds: Number(process.env.ADMIN_TOKEN_TTL_SECONDS || 60 * 60 * 8),
   studentTokenTtlSeconds: Number(process.env.STUDENT_TOKEN_TTL_SECONDS || 60 * 60 * 4),
+  teacherTokenTtlSeconds: Number(process.env.TEACHER_TOKEN_TTL_SECONDS || 60 * 60 * 6),
   failedLoginLimit: Number(process.env.ADMIN_FAILED_LOGIN_LIMIT || 5),
   lockoutSeconds: Number(process.env.ADMIN_LOCKOUT_SECONDS || 60 * 5),
   sessionSecret: process.env.ADMIN_SESSION_SECRET || "",
@@ -152,12 +153,18 @@ export function clearSessions() {
 export function createSession(subject = {}) {
   const now = Math.floor(Date.now() / 1000);
   const role = subject.role || "admin";
-  const expiresIn = role === "student" ? config.studentTokenTtlSeconds : config.tokenTtlSeconds;
+  const expiresIn =
+    role === "student"
+      ? config.studentTokenTtlSeconds
+      : role === "teacher"
+        ? config.teacherTokenTtlSeconds
+        : config.tokenTtlSeconds;
   const payload = Buffer.from(
     JSON.stringify({
       exp: now + expiresIn,
       nonce: randomBytes(12).toString("base64url"),
       role,
+      username: subject.username || "",
       rollNumber: subject.rollNumber || "",
       name: subject.name || "",
       stream: subject.stream || "",
@@ -224,5 +231,25 @@ export function verifyStudentCredentials(store, rollNumber, password) {
     name: student.name,
     className: student.className,
     stream: student.stream,
+  };
+}
+
+export function verifyTeacherCredentials(store, username, password) {
+  const teacher = (store.teachers || []).find((item) => secureEquals(item.username, username));
+  if (!teacher) {
+    return null;
+  }
+
+  const storedPassword = teacher.passwordHash || teacher.password || "";
+  if (!verifyPasswordValue(password, storedPassword)) {
+    return null;
+  }
+
+  return {
+    username: teacher.username,
+    name: teacher.name,
+    className: teacher.className,
+    stream: teacher.stream,
+    subjects: Array.isArray(teacher.subjects) ? teacher.subjects : [],
   };
 }

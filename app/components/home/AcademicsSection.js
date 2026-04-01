@@ -199,20 +199,29 @@ export default function AcademicsSection({ institute, studentContext = null }) {
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(selectedStreamData?.subjects || []).map((subject) => (
             <article
-              key={subject.name + subject.drive}
+              key={subject.name + (subject.drive || "")}
               className="rounded-[1.4rem] border border-slate-200/80 bg-white/86 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.05)]"
             >
               <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-teal-700 uppercase">Subject Resource</p>
               <h4 className="mt-3 text-lg font-bold text-slate-900">{subject.name}</h4>
               <p className="mt-2 text-sm leading-6 text-slate-600">Access classroom folders, notes, and learning support prepared for this subject.</p>
-              <a
+              {subject.drive ? <a
                 href={subject.drive}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-4 inline-flex rounded-full bg-linear-to-r from-amber-400 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-950 shadow-[0_14px_24px_rgba(212,166,70,0.22)] transition hover:-translate-y-0.5"
               >
                 Open Drive Folder
-              </a>
+              </a> : null}
+              {(subject.resources || []).length ? <div className="mt-4 space-y-2">
+                {(subject.resources || []).map((resource) => <div key={resource.id || `${subject.name}-${resource.title}`} className="rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{resource.type || "file"}</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{resource.title || "Untitled resource"}</p>
+                  {resource.type === "text" ? <p className="mt-1 text-sm text-slate-600">{resource.text_content || ""}</p> : null}
+                  {(resource.type === "link" && resource.link_url) ? <a href={resource.link_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">Open Link</a> : null}
+                  {(resource.type !== "text" && resource.type !== "link" && resource.attachment) ? <a href={resource.attachment} target="_blank" rel="noreferrer" className="mt-2 inline-flex rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">Open File</a> : null}
+                </div>)}
+              </div> : null}
             </article>
           ))}
         </div>

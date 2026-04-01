@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-const APP_DOWNLOAD_URL = process.env.NEXT_PUBLIC_APP_DOWNLOAD_URL || "https://play.google.com/store";
+const APP_DOWNLOAD_PAGE = "/download";
 
 const links = [
   { label: "Home", href: "/" },
@@ -106,9 +106,7 @@ export default function Navbar() {
             </Link>
           ))}
           <a
-            href={APP_DOWNLOAD_URL}
-            target="_blank"
-            rel="noreferrer"
+            href={APP_DOWNLOAD_PAGE}
             onClick={closeMenu}
             className="mt-1 inline-flex items-center justify-center rounded-full border border-amber-300/40 bg-amber-300/90 px-3.5 py-1.6 font-bold text-slate-900 shadow-[0_10px_18px_rgba(212,166,70,0.3)] transition hover:-translate-y-px hover:bg-amber-300/95 max-[900px]:rounded-xl max-[900px]:border-amber-200/40 max-[900px]:px-3.5 max-[900px]:py-2 max-[900px]:text-left"
           >

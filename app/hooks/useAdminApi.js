@@ -139,6 +139,32 @@ export default function useAdminApi(token) {
     return parseResponse(res, "Could not delete student.");
   };
 
+  const addTeacher = async (payload) => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/teachers`, {
+      method: "POST",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not add teacher.");
+  };
+
+  const updateTeacher = async (username, payload) => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/teachers/${encodeURIComponent(username)}`, {
+      method: "PUT",
+      headers: withAuth({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update teacher.");
+  };
+
+  const removeTeacher = async (username) => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/teachers/${encodeURIComponent(username)}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete teacher.");
+  };
+
   const updateControls = async (payload) => {
     const res = await fetchWithTimeout(`${API_BASE}/admin/controls`, {
       method: "PATCH",
@@ -261,6 +287,49 @@ export default function useAdminApi(token) {
     return parseResponse(res, "Could not update study materials.");
   };
 
+  const teacherLogin = async (username, password) => {
+    const res = await fetchWithTimeout(`${API_BASE}/teacher/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: String(username || "").trim(), password: String(password || "") }),
+    });
+    return parseResponse(res, "Teacher login failed");
+  };
+
+  const loadTeacherMaterials = async (teacherToken) => {
+    const res = await fetchWithTimeout(`${API_BASE}/teacher/academics/materials`, {
+      headers: { Authorization: `Bearer ${teacherToken}` },
+      cache: "no-store",
+    });
+    return parseResponse(res, "Could not load teacher materials.");
+  };
+
+  const addTeacherMaterial = async (teacherToken, payload) => {
+    const res = await fetchWithTimeout(`${API_BASE}/teacher/academics/materials`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${teacherToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not add teacher material.");
+  };
+
+  const updateTeacherMaterial = async (teacherToken, id, payload) => {
+    const res = await fetchWithTimeout(`${API_BASE}/teacher/academics/materials/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${teacherToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(res, "Could not update teacher material.");
+  };
+
+  const removeTeacherMaterial = async (teacherToken, id) => {
+    const res = await fetchWithTimeout(`${API_BASE}/teacher/academics/materials/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${teacherToken}` },
+    });
+    return parseResponse(res, "Could not delete teacher material.");
+  };
+
   const addNotice = async (payload) => {
     const res = await fetchWithTimeout(`${API_BASE}/admin/notices`, {
       method: "POST",
@@ -363,6 +432,9 @@ export default function useAdminApi(token) {
     addStudent,
     updateStudent,
     removeStudent,
+    addTeacher,
+    updateTeacher,
+    removeTeacher,
     updateControls,
     updateInstitute,
     updateAdmission,
@@ -377,6 +449,11 @@ export default function useAdminApi(token) {
     updateTimetableItem,
     removeTimetableItem,
     updateMaterials,
+    teacherLogin,
+    loadTeacherMaterials,
+    addTeacherMaterial,
+    updateTeacherMaterial,
+    removeTeacherMaterial,
     addNotice,
     updateNotice,
     removeNotice,
