@@ -4,7 +4,7 @@ import "./globals.css";
 
 const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://ghss-sagam.vercel.app").trim().replace(/\/+$/, "");
 const GOOGLE_VERIFICATION_TOKEN =
-  String(process.env.GOOGLE_SITE_VERIFICATION || "_zVRk9oY29KlK4JgIhmHlNLQAlrMtPidCKhXNN8NduI").trim();
+  String(process.env.GOOGLE_SITE_VERIFICATION || "E4vrrBTQEXKHQaEY-SnVq8srazdhzaNsFhEPifqGD4k").trim();
 
 const manrope = Manrope({
   subsets: ["latin"],
