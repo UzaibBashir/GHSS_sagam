@@ -5,22 +5,25 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 const AUTO_SLIDE_MS = 4500;
+const DEFAULT_SLIDE_TITLE = "GGHS, Sagam";
+const DEFAULT_SLIDE_SUBTITLE =
+  "Government Girls Higher Secondary School, Sagam serves the community by providing focused higher secondary education for girls in a safe, disciplined, and encouraging environment";
 
 const FALLBACK_SLIDES = [
   {
     src: "",
-    title: "Empowering Girls Through Education and Opportunity",
-    subtitle: "Admissions open for Medical, Non-Medical, and Arts streams.",
+    title: DEFAULT_SLIDE_TITLE,
+    subtitle: DEFAULT_SLIDE_SUBTITLE,
   },
   {
     src: "",
-    title: "Disciplined Learning with Dedicated Faculty Support",
-    subtitle: "A focused higher-secondary environment for academic growth.",
+    title: DEFAULT_SLIDE_TITLE,
+    subtitle: DEFAULT_SLIDE_SUBTITLE,
   },
   {
     src: "",
-    title: "Build Your Future with Confidence at GGHSS Sagam",
-    subtitle: "Apply online and track your application status easily.",
+    title: DEFAULT_SLIDE_TITLE,
+    subtitle: DEFAULT_SLIDE_SUBTITLE,
   },
 ];
 
@@ -34,10 +37,8 @@ export default function HeroSection({ institute }) {
           const raw = String(slide?.src || "").trim();
           return /^[a-f0-9]{12,64}$/i.test(raw) ? `/api/media/${raw}` : raw;
         })(),
-        title: String(slide?.title || "").trim() || `School update ${index + 1}`,
-        subtitle:
-          String(slide?.subtitle || "").trim() ||
-          "Latest updates from Government Girls Higher Secondary School, Sagam.",
+        title: String(slide?.title || "").trim() || DEFAULT_SLIDE_TITLE,
+        subtitle: String(slide?.subtitle || "").trim() || DEFAULT_SLIDE_SUBTITLE,
       }))
       .filter((slide) => Boolean(slide.src));
 

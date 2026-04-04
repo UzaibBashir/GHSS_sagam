@@ -252,10 +252,13 @@ function normalizeStudentPayload(payload, options = {}) {
   if (requirePassword && !passwordRaw) {
     throw new Error("Password cannot be empty");
   }
+  const userId = assertNonEmpty("User ID", payload.userId ?? payload.rollNumber);
   return {
-    rollNumber: assertNonEmpty("Roll number", payload.rollNumber),
+    userId,
+    rollNumber: userId,
     password: passwordRaw,
     name: assertNonEmpty("Student name", payload.name),
+    dob: assertNonEmpty("Date of birth", payload.dob),
     className: assertNonEmpty("Class", payload.className),
     stream: assertNonEmpty("Stream", payload.stream),
   };
@@ -263,8 +266,10 @@ function normalizeStudentPayload(payload, options = {}) {
 
 function sanitizeStudentForAdmin(student) {
   return {
-    rollNumber: String(student?.rollNumber || "").trim(),
+    userId: String(student?.userId || student?.rollNumber || "").trim(),
+    rollNumber: String(student?.rollNumber || student?.userId || "").trim(),
     name: String(student?.name || "").trim(),
+    dob: String(student?.dob || "").trim(),
     className: String(student?.className || "").trim(),
     stream: String(student?.stream || "").trim(),
     password: "",
@@ -284,7 +289,7 @@ function normalizeTeacherPayload(payload, options = {}) {
     throw new Error("At least one assigned subject is required");
   }
   return {
-    username: assertNonEmpty("Teacher username", payload.username),
+    username: assertNonEmpty("Teacher user ID", payload.userId ?? payload.username),
     password: passwordRaw,
     name: assertNonEmpty("Teacher name", payload.name),
     className: assertNonEmpty("Class", payload.className),
@@ -295,6 +300,7 @@ function normalizeTeacherPayload(payload, options = {}) {
 
 function sanitizeTeacherForAdmin(teacher) {
   return {
+    userId: String(teacher?.username || teacher?.userId || "").trim(),
     username: String(teacher?.username || "").trim(),
     name: String(teacher?.name || "").trim(),
     className: String(teacher?.className || "").trim(),
@@ -482,8 +488,10 @@ function normalizeHeroSlides(items) {
       const subtitle = String(item?.subtitle || "").trim();
       return {
         src,
-        title: title || `School update ${index + 1}`,
-        subtitle: subtitle || "Latest updates from Government Girls Higher Secondary School, Sagam.",
+        title: title || "GGHS, Sagam",
+        subtitle:
+          subtitle ||
+          "Government Girls Higher Secondary School, Sagam serves the community by providing focused higher secondary education for girls in a safe, disciplined, and encouraging environment",
       };
     })
     .filter((item) => item.src);
@@ -832,11 +840,15 @@ function matchesAdmissionDob(admission, dob) {
 
 
 function ensureUniqueRollNumber(students, rollNumber, currentRollNumber = "") {
+  const key = String(rollNumber || "").trim();
+  const currentKey = String(currentRollNumber || "").trim();
   const duplicate = students.find(
-    (item) => item.rollNumber === rollNumber && item.rollNumber !== currentRollNumber
+    (item) =>
+      String(item.userId || item.rollNumber || "").trim() === key &&
+      String(item.userId || item.rollNumber || "").trim() !== currentKey
   );
   if (duplicate) {
-    throw new Error("A student with this roll number already exists.");
+    throw new Error("A student with this user ID already exists.");
   }
 }
 
@@ -922,7 +934,8 @@ function normalizeTeacherMaterialPayload(payload, options = {}) {
 
 function findTeacherByUsername(store, username) {
   return (store.teachers || []).find(
-    (item) => normalizeComparable(item?.username) === normalizeComparable(username)
+    (item) =>
+      normalizeComparable(item?.username || item?.userId) === normalizeComparable(username)
   );
 }
 
@@ -1006,8 +1019,12 @@ function findMaterialResourceById(materials, resourceId) {
 }
 
 function ensureUniqueTeacherUsername(teachers, username, currentUsername = "") {
+  const key = String(username || "").trim();
+  const currentKey = String(currentUsername || "").trim();
   const duplicate = (teachers || []).find(
-    (item) => item.username === username && item.username !== currentUsername
+    (item) =>
+      String(item.username || item.userId || "").trim() === key &&
+      String(item.username || item.userId || "").trim() !== currentKey
   );
   if (duplicate) {
     throw new Error("A teacher with this username already exists.");
@@ -1154,8 +1171,10 @@ export async function GET(request, context) {
       return json({
         authenticated: true,
         student: {
+          userId: verified.session.userId || verified.session.rollNumber,
           rollNumber: verified.session.rollNumber,
           name: verified.session.name,
+          dob: verified.session.dob || "",
           className: verified.session.className,
           stream: verified.session.stream,
         },
@@ -1179,8 +1198,10 @@ export async function GET(request, context) {
 
       return json({
         student: {
+          userId: verified.session.userId || verified.session.rollNumber,
           rollNumber: verified.session.rollNumber,
           name: verified.session.name,
+          dob: verified.session.dob || "",
           className: verified.session.className,
           stream: verified.session.stream,
         },
@@ -1508,17 +1529,17 @@ export async function POST(request, context) {
 
     try {
       const payload = await parseJsonBody(request);
-      const rollNumber = String(payload.rollNumber || "").trim();
+      const userId = String(payload.userId || payload.rollNumber || "").trim();
       const password = String(payload.password || "");
       const className = String(payload.className || "").trim();
       const stream = String(payload.stream || "").trim();
-      const student = verifyStudentCredentials(store, rollNumber, password);
+      const student = verifyStudentCredentials(store, userId, password);
 
       if (!student) {
-        return persistAndResponse(store, error("Invalid roll number or password", 401));
+        return persistAndResponse(store, error("Invalid user ID or password", 401));
       }
 
-      if (student.className !== className || student.stream !== stream) {
+      if ((className && student.className !== className) || (stream && student.stream !== stream)) {
         return persistAndResponse(store, error("Selected class or stream does not match the student record", 401));
       }
 
@@ -1729,10 +1750,12 @@ export async function POST(request, context) {
 
     if (path[1] === "students" && path.length === 2) {
       const student = normalizeStudentPayload(payload, { requirePassword: true });
-      ensureUniqueRollNumber(store.students, student.rollNumber);
+      ensureUniqueRollNumber(store.students, student.userId);
       const savedStudent = {
+        userId: student.userId,
         rollNumber: student.rollNumber,
         name: student.name,
+        dob: student.dob,
         className: student.className,
         stream: student.stream,
         passwordHash: hashPassword(student.password),
@@ -1748,6 +1771,7 @@ export async function POST(request, context) {
       }
       ensureUniqueTeacherUsername(store.teachers, teacher.username);
       const savedTeacher = {
+        userId: teacher.username,
         username: teacher.username,
         name: teacher.name,
         className: teacher.className,
@@ -2049,11 +2073,13 @@ export async function PUT(request, context) {
 
     if (path[1] === "students" && path.length === 3) {
       const student = normalizeStudentPayload(payload, { requirePassword: false });
-      const index = store.students.findIndex((item) => item.rollNumber === path[2]);
+      const index = store.students.findIndex(
+        (item) => String(item.userId || item.rollNumber || "").trim() === String(path[2] || "").trim()
+      );
       if (index === -1) {
         return error("Student not found", 404);
       }
-      ensureUniqueRollNumber(store.students, student.rollNumber, path[2]);
+      ensureUniqueRollNumber(store.students, student.userId, path[2]);
       const existing = store.students[index] || {};
       const nextPasswordHash = student.password
         ? hashPassword(student.password)
@@ -2062,8 +2088,10 @@ export async function PUT(request, context) {
         return error("Password cannot be empty", 400);
       }
       const savedStudent = {
+        userId: student.userId,
         rollNumber: student.rollNumber,
         name: student.name,
+        dob: student.dob,
         className: student.className,
         stream: student.stream,
         passwordHash: nextPasswordHash,
@@ -2076,7 +2104,9 @@ export async function PUT(request, context) {
       if (!Array.isArray(store.teachers)) {
         store.teachers = [];
       }
-      const index = store.teachers.findIndex((item) => item.username === path[2]);
+      const index = store.teachers.findIndex(
+        (item) => String(item.username || item.userId || "").trim() === String(path[2] || "").trim()
+      );
       if (index === -1) {
         return error("Teacher not found", 404);
       }
@@ -2089,6 +2119,7 @@ export async function PUT(request, context) {
         return error("Password cannot be empty", 400);
       }
       const savedTeacher = {
+        userId: teacher.username,
         username: teacher.username,
         name: teacher.name,
         className: teacher.className,
@@ -2262,7 +2293,9 @@ export async function DELETE(request, context) {
     }
 
     if (path[1] === "students" && path.length === 3) {
-      const index = store.students.findIndex((item) => item.rollNumber === path[2]);
+      const index = store.students.findIndex(
+        (item) => String(item.userId || item.rollNumber || "").trim() === String(path[2] || "").trim()
+      );
       if (index === -1) {
         return error("Student not found", 404);
       }
@@ -2271,7 +2304,9 @@ export async function DELETE(request, context) {
     }
 
     if (path[1] === "teachers" && path.length === 3) {
-      const index = (store.teachers || []).findIndex((item) => item.username === path[2]);
+      const index = (store.teachers || []).findIndex(
+        (item) => String(item.username || item.userId || "").trim() === String(path[2] || "").trim()
+      );
       if (index === -1) {
         return error("Teacher not found", 404);
       }

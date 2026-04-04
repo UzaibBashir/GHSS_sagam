@@ -9,7 +9,7 @@ import HomeHighlightsSection from "../components/home/HomeHighlightsSection";
 import HomeFooter from "../components/layout/HomeFooter";
 import Navbar from "../components/layout/Navbar";
 import useInstituteData from "../hooks/useInstituteData";
-import { ABOUT_PAGE_CONTENT, HOME_ABOUT_CONTENT } from "../lib/siteContent";
+import { HOME_ABOUT_CONTENT } from "../lib/siteContent";
 import { PAGE_MAIN } from "../lib/uiClasses";
 
 export default function AboutPage() {
@@ -23,6 +23,26 @@ export default function AboutPage() {
   const staff = institute?.staff || [];
   const facilities = institute?.facilities || [];
   const details = institute?.institute_details?.length ? institute.institute_details : HOME_ABOUT_CONTENT.basicDetails;
+  const aboutDescription = institute?.description || institute?.about_us || HOME_ABOUT_CONTENT.intro;
+  const missionItems =
+    Array.isArray(institute?.home_highlights?.reasons) && institute.home_highlights.reasons.length
+      ? institute.home_highlights.reasons
+      : HOME_ABOUT_CONTENT.mission;
+  const principalMessage = institute?.principal?.message || institute?.about_us || HOME_ABOUT_CONTENT.intro;
+  const principalPriorities =
+    Array.isArray(institute?.home_front_desk?.items) && institute.home_front_desk.items.length
+      ? institute.home_front_desk.items
+      : HOME_ABOUT_CONTENT.mission;
+  const administrationItems = staff.length
+    ? staff.map((item) => `${item.name || "Staff"} - ${item.role || "Role not set"}`)
+    : ["Administration details will appear here once added from the admin panel."];
+  const achievementItems =
+    Array.isArray(institute?.home_student_achievements) && institute.home_student_achievements.length
+      ? institute.home_student_achievements.map((item) => ({
+          title: item.title || item.name || "Student Achievement",
+          description: item.description || "Achievement details will appear here.",
+        }))
+      : [{ title: "No achievements added yet", description: "Add student achievements from the admin panel to show them here." }];
 
   return (
     <div className="min-h-screen">
@@ -35,11 +55,11 @@ export default function AboutPage() {
         ) : null}
         <PageHero
           eyebrow="About The Institute"
-          title="A dedicated public institution for girls' higher secondary education in Sagam"
+          title="A dedicated public institution for girls' education from classes IX to XII in Sagam"
           description={institute?.about_us || HOME_ABOUT_CONTENT.intro}
           stats={[
             { value: "3", label: "Academic Streams" },
-            { value: "XI-XII", label: "Higher Secondary Classes" },
+            { value: "IX-XII", label: "Classes Covered" },
             { value: "Girls First", label: "Safe Learning Focus" },
             { value: "Community", label: "Local Educational Service" },
           ]}
@@ -60,8 +80,7 @@ export default function AboutPage() {
             <p className="section-kicker">Institutional Overview</p>
             <h2 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">Why families trust {instituteName}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 break-words text-left w-full">
-              The institute combines academic discipline, caring mentorship, and a supportive environment that helps
-              girls prepare for board examinations, scholarships, and future studies with confidence.
+              {aboutDescription}
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <article className="rounded-[1.5rem] border border-slate-200/80 bg-white/82 p-4">
@@ -78,7 +97,7 @@ export default function AboutPage() {
           <div className="rounded-[1.7rem] border border-slate-200/80 bg-white/82 p-5 shadow-[0_18px_36px_rgba(15,23,42,0.05)]">
             <p className="text-[0.72rem] font-extrabold tracking-[0.16em] text-teal-700 uppercase">Mission In Action</p>
             <ul className="mt-4 grid gap-3">
-              {HOME_ABOUT_CONTENT.mission.map((item) => (
+              {missionItems.map((item) => (
                 <li key={item} className="rounded-[1.2rem] border border-slate-200/70 bg-slate-50/85 px-4 py-3 text-sm leading-6 text-slate-700">
                   {item}
                 </li>
@@ -94,9 +113,9 @@ export default function AboutPage() {
             <h2 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">
               Leadership rooted in care, discipline, and aspiration
             </h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600 overflow-hidden whitespace-nowrap"><span className="marquee-track">{ABOUT_PAGE_CONTENT.principalDesk.message}</span></p>
+            <p className="mt-3 text-sm leading-7 text-slate-600 overflow-hidden whitespace-nowrap"><span className="marquee-track">{principalMessage}</span></p>
             <ul className="mt-5 grid gap-3">
-              {ABOUT_PAGE_CONTENT.principalDesk.priorities.map((item) => (
+              {principalPriorities.map((item) => (
                 <li key={item} className="rounded-[1.2rem] border border-slate-200/70 bg-white/82 px-4 py-3 text-sm text-slate-700">
                   {item}
                 </li>
@@ -116,13 +135,13 @@ export default function AboutPage() {
           </article>
         </section>
 
-        <HomeHighlightsSection />
+        <HomeHighlightsSection institute={institute} />
 
         <div className="grid gap-6 md:grid-cols-2">
           <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 min-w-0">
             <h2 className="font-display text-2xl font-semibold text-slate-950">Administration</h2>
             <ul className="mt-4 grid gap-3">
-              {ABOUT_PAGE_CONTENT.administration.map((item) => (
+              {administrationItems.map((item) => (
                 <li key={item} className="rounded-[1.2rem] border border-slate-200/70 bg-white/82 px-4 py-3 text-sm text-slate-700">
                   {item}
                 </li>
@@ -172,9 +191,10 @@ export default function AboutPage() {
         <section className="glass-panel rounded-[2rem] border border-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.07)] max-md:p-4 min-w-0">
           <h2 className="font-display text-2xl font-semibold text-slate-950">Achievements</h2>
           <ul className="mt-4 grid gap-3 md:grid-cols-3">
-            {ABOUT_PAGE_CONTENT.achievements.map((item) => (
-              <li key={item} className="rounded-[1.2rem] border border-slate-200/70 bg-white/82 px-4 py-4 text-sm leading-6 text-slate-700">
-                {item}
+            {achievementItems.map((item, index) => (
+              <li key={`${item.title}-${index}`} className="rounded-[1.2rem] border border-slate-200/70 bg-white/82 px-4 py-4 text-sm leading-6 text-slate-700">
+                <p className="font-bold text-slate-900">{item.title}</p>
+                <p className="mt-1">{item.description}</p>
               </li>
             ))}
           </ul>

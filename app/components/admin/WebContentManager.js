@@ -24,12 +24,13 @@ const EMPTY = {
 
 const EMPTY_SLIDE = {
   src: "",
-  title: "School update",
-  subtitle: "Latest updates from Government Girls Higher Secondary School, Sagam.",
+  title: "GGHS, Sagam",
+  subtitle:
+    "Government Girls Higher Secondary School, Sagam serves the community by providing focused higher secondary education for girls in a safe, disciplined, and encouraging environment",
 };
 const EMPTY_STAT = { value: "", label: "" };
 const EMPTY_RESOURCE = { title: "", description: "", href: "", label: "" };
-const EMPTY_STUDENT_ACHIEVEMENT = { name: "", className: "", title: "", description: "", photo: "" };
+const EMPTY_STUDENT_ACHIEVEMENT = { name: "", title: "", description: "", photo: "" };
 
 function parseLines(text) {
   return String(text || "")
@@ -46,13 +47,12 @@ function normalizeStudentAchievements(items) {
   return (items || [])
     .map((item) => ({
       name: String(item?.name || "").trim(),
-      className: String(item?.className || "").trim(),
       title: String(item?.title || "").trim(),
       description: String(item?.description || "").trim(),
       photo: String(item?.photo || "").trim(),
     }))
     .filter((item) => item.title && item.description)
-    .map((item) => ({ ...item, name: item.name || "Student Achievement", className: item.className || "Student Recognition" }));
+    .map((item) => ({ ...item, name: item.name || "Student Achievement" }));
 }
 
 
@@ -159,10 +159,10 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
                       slides[index] = {
                         ...current,
                         src: dataUrl,
-                        title: String(current.title || "").trim() || `School update ${index + 1}`,
+                        title: String(current.title || "").trim() || "GGHS, Sagam",
                         subtitle:
                           String(current.subtitle || "").trim() ||
-                          "Latest updates from Government Girls Higher Secondary School, Sagam.",
+                          "Government Girls Higher Secondary School, Sagam serves the community by providing focused higher secondary education for girls in a safe, disciplined, and encouraging environment",
                       };
                       setDraft((prev) => ({ ...prev, hero_slides: slides }));
                       setUploadMessage("Slide image uploaded. Click 'Confirm changes' and confirm in overlay.");
@@ -219,7 +219,7 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
                 ...prev,
                 hero_slides: [
                   ...(prev.hero_slides || []),
-                  { ...EMPTY_SLIDE, title: `School update ${(prev.hero_slides || []).length + 1}` },
+                  { ...EMPTY_SLIDE },
                 ],
               }))
             }
@@ -334,7 +334,7 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
           {(draft.home_student_achievements || []).map((item, index) => (
             <div key={`student-achievement-${index}`} className="rounded-xl border border-slate-200 bg-white p-3">
               <div className="grid gap-3">
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3">
                   <label className={ADMIN_LABEL}>
                     Student name
                     <input
@@ -343,18 +343,6 @@ export default function WebContentManager({ institute, onSave, view = "all" }) {
                       onChange={(event) => {
                         const items = [...(draft.home_student_achievements || [])];
                         items[index] = { ...items[index], name: event.target.value };
-                        setDraft((prev) => ({ ...prev, home_student_achievements: items }));
-                      }}
-                    />
-                  </label>
-                  <label className={ADMIN_LABEL}>
-                    Class / stream
-                    <input
-                      className={ADMIN_INPUT}
-                      value={item.className || ""}
-                      onChange={(event) => {
-                        const items = [...(draft.home_student_achievements || [])];
-                        items[index] = { ...items[index], className: event.target.value };
                         setDraft((prev) => ({ ...prev, home_student_achievements: items }));
                       }}
                     />

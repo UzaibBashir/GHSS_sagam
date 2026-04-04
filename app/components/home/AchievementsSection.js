@@ -7,19 +7,16 @@ import { HOME_AWARDS } from "../../lib/siteContent";
 const DEFAULT_STUDENT_ACHIEVEMENTS = [
   {
     name: "Aaliya Bashir",
-    className: "Class XII, Medical",
     title: "Top Board Performer",
     description: "Secured distinction in board exams with excellent subject-wise consistency.",
   },
   {
     name: "Sana Jan",
-    className: "Class XI, Non-Medical",
     title: "Science Fair Winner",
     description: "Won district-level science fair for an innovative low-cost model project.",
   },
   {
     name: "Insha Yousuf",
-    className: "Class XII, Arts",
     title: "Debate Champion",
     description: "Recognized for outstanding communication and leadership in inter-school debates.",
   },
@@ -44,7 +41,6 @@ function normalizeAchievementItems(rawItems) {
     if (typeof item === "string") {
       return {
         name: `Student Achievement ${index + 1}`,
-        className: "Student Recognition",
         title: "Award and Achievement",
         description: item,
         photo: "",
@@ -56,7 +52,6 @@ function normalizeAchievementItems(rawItems) {
 
     return {
       name: String(item?.name || `Student Achievement ${index + 1}`).trim(),
-      className: String(item?.className || item?.class || item?.stream || "Student Recognition").trim(),
       title,
       description: description || title,
       photo: String(item?.photo || "").trim(),
@@ -152,7 +147,6 @@ export default function AchievementsSection({ institute }) {
 
             <div className="mt-4 space-y-1.5">
               <h3 className="text-lg font-extrabold text-slate-950">{item.name}</h3>
-              <p className="text-xs font-bold tracking-[0.08em] text-amber-800 uppercase">{item.className}</p>
               <p className="text-sm font-semibold text-slate-900">{item.title}</p>
               <p className="text-sm leading-6 text-slate-700">{item.description}</p>
             </div>

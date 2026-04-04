@@ -165,8 +165,10 @@ export function createSession(subject = {}) {
       nonce: randomBytes(12).toString("base64url"),
       role,
       username: subject.username || "",
+      userId: subject.userId || "",
       rollNumber: subject.rollNumber || "",
       name: subject.name || "",
+      dob: subject.dob || "",
       stream: subject.stream || "",
       className: subject.className || "",
     })
@@ -215,8 +217,10 @@ export function verifyAdminCredentials(username, password) {
   return secureEquals(username, config.adminUsername) && verifyPasswordValue(password, config.adminPassword);
 }
 
-export function verifyStudentCredentials(store, rollNumber, password) {
-  const student = (store.students || []).find((item) => secureEquals(item.rollNumber, rollNumber));
+export function verifyStudentCredentials(store, userId, password) {
+  const student = (store.students || []).find((item) =>
+    secureEquals(item.userId || item.rollNumber || "", userId)
+  );
   if (!student) {
     return null;
   }
@@ -227,15 +231,19 @@ export function verifyStudentCredentials(store, rollNumber, password) {
   }
 
   return {
+    userId: student.userId || student.rollNumber,
     rollNumber: student.rollNumber,
     name: student.name,
+    dob: student.dob || "",
     className: student.className,
     stream: student.stream,
   };
 }
 
 export function verifyTeacherCredentials(store, username, password) {
-  const teacher = (store.teachers || []).find((item) => secureEquals(item.username, username));
+  const teacher = (store.teachers || []).find((item) =>
+    secureEquals(item.username || item.userId || "", username)
+  );
   if (!teacher) {
     return null;
   }
@@ -246,7 +254,8 @@ export function verifyTeacherCredentials(store, username, password) {
   }
 
   return {
-    username: teacher.username,
+    username: teacher.username || teacher.userId,
+    userId: teacher.username || teacher.userId,
     name: teacher.name,
     className: teacher.className,
     stream: teacher.stream,

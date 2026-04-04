@@ -14,11 +14,11 @@ const EMPTY_STUDENT = {
   rollNumber: "",
   password: "",
   name: "",
-  className: "Class XI",
+  className: "Class IX",
   stream: "Medical",
 };
 
-const CLASS_OPTIONS = ["Class XI", "Class XII"];
+const CLASS_OPTIONS = ["Class IX", "Class X", "Class XI", "Class XII"];
 const STREAM_OPTIONS = ["Medical", "Non-Medical", "Arts"];
 const PAGE_SIZE = 10;
 

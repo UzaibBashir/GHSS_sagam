@@ -6,12 +6,17 @@ import Navbar from "../components/layout/Navbar";
 import useInstituteData from "../hooks/useInstituteData";
 import { PAGE_MAIN } from "../lib/uiClasses";
 
-const LOGIN_FORM_URL = process.env.NEXT_PUBLIC_GHSS_LOGIN_FORM_URL || "https://docs.google.com/forms/";
+const DEFAULT_LOGIN_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSepSJl2XadqFsZbrIeiofiXQvvTjjjvtwITCu_3Bt2uh6Vg7A/viewform?usp=sharing&ouid=101748125919439010298";
 
 export default function AcademicsPage() {
   const { institute, loading } = useInstituteData();
   const controls = institute?.site_controls;
   const academicsEnabled = controls?.academics_page_enabled ?? true;
+  const configuredFormUrl = String(institute?.admission_form_url || controls?.admission_form_url || "").trim();
+  const loginFormUrl =
+    configuredFormUrl && configuredFormUrl !== "/admission"
+      ? configuredFormUrl
+      : process.env.NEXT_PUBLIC_GHSS_LOGIN_FORM_URL || DEFAULT_LOGIN_FORM_URL;
 
   return (
     <div className="min-h-screen">
@@ -33,7 +38,7 @@ export default function AcademicsPage() {
             { value: "Login", label: "Credentials Issued" },
           ]}
           actions={[
-            { label: "Open Credential Form", href: LOGIN_FORM_URL },
+            { label: "Open Credential Form", href: loginFormUrl },
             { label: "Go To Admission", href: "/admission", variant: "secondary" },
           ]}
         />
@@ -53,7 +58,7 @@ export default function AcademicsPage() {
               Students of GHSS should submit their details using the Google Form below. After verification, login credentials will be shared by the school.
             </p>
             <a
-              href={LOGIN_FORM_URL}
+              href={loginFormUrl}
               target="_blank"
               rel="noreferrer"
               className="mt-5 inline-flex rounded-full bg-linear-to-r from-amber-400 to-yellow-500 px-6 py-3 text-sm font-extrabold text-slate-950 shadow-[0_16px_28px_rgba(212,166,70,0.26)] transition hover:-translate-y-0.5"

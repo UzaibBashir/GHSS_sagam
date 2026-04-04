@@ -1,6 +1,6 @@
 export const HOME_ABOUT_CONTENT = {
   intro:
-    "Government Girls Higher Secondary School, Sagam is committed to providing quality education for girls through disciplined learning, moral development, and academic guidance in higher secondary studies.",
+    "Government Girls Higher Secondary School, Sagam is committed to providing quality education for girls through disciplined learning, moral development, and academic guidance from classes 9th to 12th.",
   vision:
     "To empower young women with knowledge, confidence, values, and a sense of responsibility toward society.",
   motto: "From Darkness to Light",
@@ -12,6 +12,7 @@ export const HOME_ABOUT_CONTENT = {
   basicDetails: [
     "Institution: Government Girls Higher Secondary School, Sagam",
     "Affiliation: Jammu and Kashmir Board of School Education",
+    "Classes: 9th to 12th",
     "Streams Offered: Medical, Non-Medical, and Arts",
     "Focus: Girls' education, board preparation, scholarships, and all-round development",
   ],
@@ -21,11 +22,11 @@ export const HOME_HIGHLIGHTS = {
   stats: [
     { value: "1000+", label: "Girls Enrolled" },
     { value: "30+", label: "Teachers and Staff" },
-    { value: "90%+", label: "Higher Secondary Success" },
+    { value: "IX-XII", label: "Classes Covered" },
     { value: "3", label: "Streams Offered" },
   ],
   reasons: [
-    "Dedicated higher secondary teaching for Medical, Non-Medical, and Arts students.",
+    "Dedicated teaching from classes 9th to 12th, with stream specialization in senior classes.",
     "A disciplined government institution supporting girls' education and progression.",
     "Academic mentoring, scholarships guidance, and a supportive campus atmosphere.",
   ],
@@ -120,10 +121,10 @@ export const NOTIFICATION_ITEMS = [
     id: "n-001",
     category: "Admissions",
     date: "2026-04-03",
-    title: "Admissions Open for Higher Secondary Classes",
+    title: "Admissions Open for Classes 9th to 12th",
     summary: "Admission process is open for eligible students in the new academic session.",
     details:
-      "Students seeking admission to Medical, Non-Medical, and Arts streams should complete the admission process within the announced dates.",
+      "Students seeking admission to classes 9th to 12th should complete the admission process within the announced dates. Stream selection applies to 11th and 12th classes.",
     links: [{ label: "Go to Admission Form", href: "/admission" }],
   },
   {
@@ -153,7 +154,7 @@ export const NOTIFICATION_ITEMS = [
     title: "Parent Meeting for Academic Planning",
     summary: "Parents are invited for an interaction regarding academic progress and stream guidance.",
     details:
-      "The meeting will focus on attendance, board preparation, and support for students enrolled in higher secondary classes.",
+      "The meeting will focus on attendance, academic planning, and support for students enrolled from classes 9th to 12th.",
     links: [{ label: "Meeting Notice", href: "https://example.com/ptm-details" }],
   },
 ];

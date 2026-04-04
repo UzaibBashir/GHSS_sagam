@@ -5,12 +5,12 @@ const DEFAULT_INSTITUTE_DATA = {
   name: "Government Girls Higher Secondary School, Sagam",
   tagline: "Educating Girls, Building Futures",
   description:
-    "A government higher secondary institution dedicated to girls' education, academic discipline, and meaningful progress in Medical, Non-Medical, and Arts streams.",
+    "A government institution dedicated to girls' education from classes 9th to 12th, with academic discipline and meaningful progress across all levels.",
   about_us:
-    "Government Girls Higher Secondary School, Sagam serves the community by providing focused higher secondary education for girls in a safe, disciplined, and encouraging environment.",
+    "Government Girls Higher Secondary School, Sagam serves the community by providing focused education for girls from classes 9th to 12th in a safe, disciplined, and encouraging environment.",
   institute_details: [
     "A government institution committed to accessible and quality girls' education.",
-    "Supports higher secondary learning with Medical, Non-Medical, and Arts streams.",
+    "Supports learning from classes 9th to 12th, including stream options for senior secondary levels.",
     "Focused on board preparation, character formation, and future academic growth.",
   ],
   admission_form_url: "/admission",
@@ -27,7 +27,7 @@ const DEFAULT_INSTITUTE_DATA = {
   academics: [
     {
       title: "Medical Stream",
-      description: "Higher secondary study path for students focused on Biology and life science related careers.",
+      description: "Senior secondary study path for students focused on Biology and life science related careers.",
     },
     {
       title: "Non-Medical Stream",
@@ -67,7 +67,7 @@ const DEFAULT_INSTITUTE_DATA = {
     photo: "",
   },
   facilities: [
-    "Well-managed classrooms for higher secondary learning",
+    "Well-managed classrooms for classes 9th to 12th",
     "Science laboratory support for practical work",
     "Library and reading resources for girls",
     "Counseling and academic guidance support",
@@ -86,10 +86,10 @@ const DEFAULT_INSTITUTE_DATA = {
       id: "n-001",
       category: "Admissions",
       date: "2026-04-03",
-      title: "Admissions Open for Higher Secondary Classes",
+      title: "Admissions Open for Classes 9th to 12th",
       summary: "Admission process is open for eligible students in the new academic session.",
       details:
-        "Students seeking admission to Medical, Non-Medical, and Arts streams should complete the admission process within the announced dates.",
+        "Students seeking admission to classes 9th to 12th should complete the admission process within the announced dates. Stream selection applies to 11th and 12th classes.",
       image_url: "",
       link_label: "Open Admission Form",
       link_url: "/admission",
@@ -221,11 +221,11 @@ const DEFAULT_INSTITUTE_DATA = {
     stats: [
       { value: "1000+", label: "Girls Enrolled" },
       { value: "30+", label: "Teachers and Staff" },
-      { value: "90%+", label: "Higher Secondary Success" },
+      { value: "IX-XII", label: "Classes Covered" },
       { value: "3", label: "Streams Offered" },
     ],
     reasons: [
-      "Dedicated higher secondary teaching for Medical, Non-Medical, and Arts students.",
+      "Dedicated teaching from classes 9th to 12th, with stream specialization in senior classes.",
       "A disciplined government institution supporting girls' education and progression.",
       "Academic mentoring, scholarships guidance, and a supportive campus atmosphere.",
     ],
@@ -355,8 +355,9 @@ function getBootstrapStudentsFromEnv() {
 
     return parsed
       .map((item) => {
-        const rollNumber = String(item?.rollNumber || "").trim();
+        const userId = String(item?.userId || item?.rollNumber || "").trim();
         const name = String(item?.name || "").trim();
+        const dob = String(item?.dob || "").trim();
         const className = String(item?.className || "").trim();
         const stream = String(item?.stream || "").trim();
         const plainPassword = String(item?.password || "").trim();
@@ -369,13 +370,15 @@ function getBootstrapStudentsFromEnv() {
               ? hashPassword(plainPassword)
               : "";
 
-        if (!rollNumber || !name || !className || !stream || !passwordHash) {
+        if (!userId || !name || !dob || !className || !stream || !passwordHash) {
           return null;
         }
 
         return {
-          rollNumber,
+          userId,
+          rollNumber: userId,
           name,
+          dob,
           className,
           stream,
           passwordHash,
@@ -403,7 +406,7 @@ function getBootstrapTeachersFromEnv() {
 
     return parsed
       .map((item) => {
-        const username = String(item?.username || "").trim();
+        const username = String(item?.username || item?.userId || "").trim();
         const name = String(item?.name || "").trim();
         const className = String(item?.className || "").trim();
         const stream = String(item?.stream || "").trim();
@@ -425,6 +428,7 @@ function getBootstrapTeachersFromEnv() {
         }
 
         return {
+          userId: username,
           username,
           name,
           className,
@@ -620,8 +624,9 @@ function resetStudentShape(store) {
 
   store.students = (store.students || [])
     .map((item) => {
-      const rollNumber = String(item?.rollNumber || "").trim();
+      const userId = String(item?.userId || item?.rollNumber || "").trim();
       const name = String(item?.name || "").trim();
+      const dob = String(item?.dob || "").trim();
       const className = String(item?.className || "").trim();
       const stream = String(item?.stream || "").trim();
       const legacyPassword = String(item?.password || "").trim();
@@ -638,13 +643,15 @@ function resetStudentShape(store) {
         passwordHash = hashPassword(passwordHash);
       }
 
-      if (!rollNumber || !name || !className || !stream || !passwordHash) {
+      if (!userId || !name || !className || !stream || !passwordHash) {
         return null;
       }
 
       return {
-        rollNumber,
+        userId,
+        rollNumber: userId,
         name,
+        dob,
         className,
         stream,
         passwordHash,
@@ -654,8 +661,10 @@ function resetStudentShape(store) {
 
   if (!store.students.length) {
     store.students = structuredClone(DEFAULT_STUDENTS).map((item) => ({
-      rollNumber: item.rollNumber,
+      userId: item.userId || item.rollNumber,
+      rollNumber: item.userId || item.rollNumber,
       name: item.name,
+      dob: item.dob || "",
       className: item.className,
       stream: item.stream,
       passwordHash: item.passwordHash || (item.password ? hashPassword(item.password) : ""),
@@ -670,7 +679,7 @@ function resetTeacherShape(store) {
 
   store.teachers = (store.teachers || [])
     .map((item) => {
-      const username = String(item?.username || "").trim();
+      const username = String(item?.username || item?.userId || "").trim();
       const name = String(item?.name || "").trim();
       const className = String(item?.className || "").trim();
       const stream = String(item?.stream || "").trim();
@@ -696,6 +705,7 @@ function resetTeacherShape(store) {
       }
 
       return {
+        userId: username,
         username,
         name,
         className,
