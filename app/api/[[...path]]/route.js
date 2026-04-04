@@ -1839,13 +1839,18 @@ export async function POST(request, context) {
     }
 
     if (path[1] === "academics" && path[2] === "timetable" && path.length === 3) {
+      const subject = String(payload.subject || "").trim();
+      const teacher = String(payload.teacher || "").trim();
+      const detail = String(payload.detail || "").trim() || [subject, teacher].filter(Boolean).join(" - ");
       const item = {
         id: createId("tt"),
         period: assertNonEmpty("Period", payload.period),
         time: assertNonEmpty("Time", payload.time),
-        detail: assertNonEmpty("Detail", payload.detail),
+        detail: assertNonEmpty("Detail", detail),
+        subject,
+        teacher,
         class_name: assertNonEmpty("Class", payload.class_name),
-        stream: assertNonEmpty("Stream", payload.stream),
+        stream: String(payload.stream || "").trim() || "General",
       };
 
       store.instituteData.academic_content.timetable.push(item);
@@ -2200,9 +2205,15 @@ export async function PUT(request, context) {
 
       if (payload.period !== undefined) current.period = assertNonEmpty("Period", payload.period);
       if (payload.time !== undefined) current.time = assertNonEmpty("Time", payload.time);
+      if (payload.subject !== undefined) current.subject = String(payload.subject || "").trim();
+      if (payload.teacher !== undefined) current.teacher = String(payload.teacher || "").trim();
       if (payload.detail !== undefined) current.detail = assertNonEmpty("Detail", payload.detail);
       if (payload.class_name !== undefined) current.class_name = assertNonEmpty("Class", payload.class_name);
-      if (payload.stream !== undefined) current.stream = assertNonEmpty("Stream", payload.stream);
+      if (payload.stream !== undefined) current.stream = String(payload.stream || "").trim() || "General";
+      if (payload.subject !== undefined || payload.teacher !== undefined) {
+        const recomposed = [String(current.subject || "").trim(), String(current.teacher || "").trim()].filter(Boolean).join(" - ");
+        current.detail = recomposed || String(current.detail || "").trim() || "Timetable entry";
+      }
 
       return persistAndJson(store, { success: true, item: current });
     }
