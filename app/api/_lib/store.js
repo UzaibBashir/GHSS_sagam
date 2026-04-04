@@ -127,23 +127,159 @@ const DEFAULT_INSTITUTE_DATA = {
         id: "tt-1",
         period: "1",
         time: "09:00 - 09:45",
-        detail: "Core Subject",
-        class_name: "Class XI",
-        stream: "Medical",
+        subject: "English",
+        teacher: "Ms. P. Roy",
+        detail: "English - Ms. P. Roy",
+        class_name: "Class IX",
+        stream: "General",
       },
       {
         id: "tt-2",
         period: "2",
         time: "09:45 - 10:30",
-        detail: "Core Subject",
-        class_name: "Class XI",
-        stream: "Non-Medical",
+        subject: "Mathematics",
+        teacher: "Ms. S. Iyer",
+        detail: "Mathematics - Ms. S. Iyer",
+        class_name: "Class IX",
+        stream: "General",
       },
       {
         id: "tt-3",
         period: "3",
         time: "10:30 - 11:15",
-        detail: "Humanities Subject",
+        subject: "Science",
+        teacher: "Mr. T. Ali",
+        detail: "Science - Mr. T. Ali",
+        class_name: "Class X",
+        stream: "General",
+      },
+      {
+        id: "tt-4",
+        period: "4",
+        time: "11:35 - 12:20",
+        subject: "Social Science",
+        teacher: "Mr. F. Ahmad",
+        detail: "Social Science - Mr. F. Ahmad",
+        class_name: "Class X",
+        stream: "General",
+      },
+      {
+        id: "tt-5",
+        period: "1",
+        time: "09:00 - 09:45",
+        subject: "Biology",
+        teacher: "Ms. N. Jan",
+        detail: "Biology - Ms. N. Jan",
+        class_name: "Class XI",
+        stream: "Medical",
+      },
+      {
+        id: "tt-6",
+        period: "2",
+        time: "09:45 - 10:30",
+        subject: "Physics",
+        teacher: "Dr. R. Mehta",
+        detail: "Physics - Dr. R. Mehta",
+        class_name: "Class XI",
+        stream: "Medical",
+      },
+      {
+        id: "tt-7",
+        period: "1",
+        time: "09:00 - 09:45",
+        subject: "Mathematics",
+        teacher: "Ms. S. Iyer",
+        detail: "Mathematics - Ms. S. Iyer",
+        class_name: "Class XI",
+        stream: "Non-Medical",
+      },
+      {
+        id: "tt-8",
+        period: "2",
+        time: "09:45 - 10:30",
+        subject: "Physics",
+        teacher: "Dr. R. Mehta",
+        detail: "Physics - Dr. R. Mehta",
+        class_name: "Class XI",
+        stream: "Non-Medical",
+      },
+      {
+        id: "tt-9",
+        period: "1",
+        time: "09:00 - 09:45",
+        subject: "History",
+        teacher: "Mr. F. Ahmad",
+        detail: "History - Mr. F. Ahmad",
+        class_name: "Class XI",
+        stream: "Arts",
+      },
+      {
+        id: "tt-10",
+        period: "2",
+        time: "09:45 - 10:30",
+        subject: "English",
+        teacher: "Ms. P. Roy",
+        detail: "English - Ms. P. Roy",
+        class_name: "Class XI",
+        stream: "Arts",
+      },
+      {
+        id: "tt-11",
+        period: "1",
+        time: "09:00 - 09:45",
+        subject: "Biology",
+        teacher: "Ms. N. Jan",
+        detail: "Biology - Ms. N. Jan",
+        class_name: "Class XII",
+        stream: "Medical",
+      },
+      {
+        id: "tt-12",
+        period: "2",
+        time: "09:45 - 10:30",
+        subject: "Chemistry",
+        teacher: "Mr. T. Ali",
+        detail: "Chemistry - Mr. T. Ali",
+        class_name: "Class XII",
+        stream: "Medical",
+      },
+      {
+        id: "tt-13",
+        period: "1",
+        time: "09:00 - 09:45",
+        subject: "Mathematics",
+        teacher: "Ms. S. Iyer",
+        detail: "Mathematics - Ms. S. Iyer",
+        class_name: "Class XII",
+        stream: "Non-Medical",
+      },
+      {
+        id: "tt-14",
+        period: "2",
+        time: "09:45 - 10:30",
+        subject: "Chemistry",
+        teacher: "Mr. T. Ali",
+        detail: "Chemistry - Mr. T. Ali",
+        class_name: "Class XII",
+        stream: "Non-Medical",
+      },
+      {
+        id: "tt-15",
+        period: "1",
+        time: "09:00 - 09:45",
+        subject: "Political Science",
+        teacher: "Mr. F. Ahmad",
+        detail: "Political Science - Mr. F. Ahmad",
+        class_name: "Class XII",
+        stream: "Arts",
+      },
+      {
+        id: "tt-16",
+        period: "2",
+        time: "09:45 - 10:30",
+        subject: "English",
+        teacher: "Ms. P. Roy",
+        detail: "English - Ms. P. Roy",
         class_name: "Class XII",
         stream: "Arts",
       },
@@ -390,7 +526,29 @@ function getBootstrapStudentsFromEnv() {
   }
 }
 
-const DEFAULT_STUDENTS = getBootstrapStudentsFromEnv();
+const CSV_IMPORTED_STUDENTS = [
+  { userId: "Malik1014", rollNumber: "Malik1014", name: "Malik Huma Gulzar", dob: "2012-03-27", className: "Class X", stream: "General", password: "M4l!k914" },
+  { userId: "Saika1137", rollNumber: "Saika1137", name: "Saika amin", dob: "2010-03-10", className: "Class XI", stream: "Medical", password: "S@iKa137" },
+  { userId: "Sehrish1043", rollNumber: "Sehrish1043", name: "Sehrish Mukthar", dob: "2012-06-21", className: "Class X", stream: "General", password: "Seh#1043" },
+  { userId: "Imza1008", rollNumber: "Imza1008", name: "Imza Jan", dob: "2012-05-16", className: "Class X", stream: "General", password: "Imz@1008" },
+  { userId: "Arbeena1009", rollNumber: "Arbeena1009", name: "Arbeena jan", dob: "2012-05-15", className: "Class X", stream: "General", password: "Arb!1009" },
+  { userId: "Simran1106", rollNumber: "Simran1106", name: "Simran gulzar", dob: "2011-08-11", className: "Class XI", stream: "Arts", password: "Sim#1106" },
+  { userId: "Salika1026", rollNumber: "Salika1026", name: "Salika jan", dob: "2012-06-22", className: "Class X", stream: "General", password: "Sal@1026" },
+  { userId: "Athar1001", rollNumber: "Athar1001", name: "Athar Iqbal", dob: "2026-03-23", className: "Class X", stream: "General", password: "Ath!1001" },
+  { userId: "Arbeena0907", rollNumber: "Arbeena0907", name: "Arbeena fayaz", dob: "2013-03-02", className: "Class IX", stream: "General", password: "ArB@0907" },
+  { userId: "Seerat1106", rollNumber: "Seerat1106", name: "Seerat ashraf", dob: "2011-03-07", className: "Class XI", stream: "Arts", password: "See#1106" },
+  { userId: "Suraya1005", rollNumber: "Suraya1005", name: "Suraya nabi bhat", dob: "2012-04-10", className: "Class X", stream: "General", password: "Sur@1005" },
+  { userId: "Irtiza1030", rollNumber: "Irtiza1030", name: "Irtiza farooq", dob: "2011-08-07", className: "Class X", stream: "General", password: "Irt#1030" },
+  { userId: "Aisha1032", rollNumber: "Aisha1032", name: "Aisha shafi", dob: "2011-10-24", className: "Class X", stream: "General", password: "Ais@1032" },
+  { userId: "Simran1002", rollNumber: "Simran1002", name: "Simran jan", dob: "2012-07-03", className: "Class X", stream: "General", password: "Sim!1002" },
+  { userId: "Talha1019", rollNumber: "Talha1019", name: "Talha jahan", dob: "2012-10-21", className: "Class X", stream: "General", password: "Tal@1019" },
+  { userId: "Talha1047", rollNumber: "Talha1047", name: "Talha nisar", dob: "2010-12-18", className: "Class X", stream: "General", password: "TaL#1047" },
+];
+
+const DEFAULT_STUDENTS = (() => {
+  const fromEnv = getBootstrapStudentsFromEnv();
+  return fromEnv.length ? fromEnv : CSV_IMPORTED_STUDENTS;
+})();
 
 function getBootstrapTeachersFromEnv() {
   const raw = String(process.env.TEACHER_BOOTSTRAP_JSON || "").trim();
@@ -443,7 +601,22 @@ function getBootstrapTeachersFromEnv() {
   }
 }
 
-const DEFAULT_TEACHERS = getBootstrapTeachersFromEnv();
+const IMPORTED_TEACHERS = [
+  { userId: "MudasirG", username: "MudasirG", name: "Mudasir Gulzar", className: "All", stream: "All", subjects: ["English"], password: "MuD@5139" },
+  { userId: "MuzafarR", username: "MuzafarR", name: "Muzafar Rashid", className: "All", stream: "All", subjects: ["Science"], password: "MuZ#7421" },
+  { userId: "AjazR", username: "AjazR", name: "Ajaz Ahmad Rather", className: "All", stream: "All", subjects: ["Biology"], password: "AjR@6385" },
+  { userId: "AshakB", username: "AshakB", name: "Ashak Hussain Bhat", className: "All", stream: "All", subjects: ["Urdu"], password: "AsH!9042" },
+  { userId: "AshrafB", username: "AshrafB", name: "Mohammad Ashraf Bhat", className: "All", stream: "All", subjects: ["Chemistry"], password: "AsB#7754" },
+  { userId: "KhursheedS", username: "KhursheedS", name: "Khursheed Ahmad Sheikh", className: "All", stream: "All", subjects: ["Botany"], password: "KhS@4682" },
+  { userId: "SajadB", username: "SajadB", name: "Sajad Ahmad Bhat", className: "All", stream: "All", subjects: ["Mathematics"], password: "SaB!3579" },
+  { userId: "YousufB", username: "YousufB", name: "Mohammad Yousuf Bhat", className: "All", stream: "All", subjects: ["Physics"], password: "YoB#8264" },
+  { userId: "ShabirS", username: "ShabirS", name: "Shabir Ahmad Sheikh", className: "All", stream: "All", subjects: ["Zoology"], password: "ShS@5917" },
+];
+
+const DEFAULT_TEACHERS = (() => {
+  const fromEnv = getBootstrapTeachersFromEnv();
+  return fromEnv.length ? fromEnv : IMPORTED_TEACHERS;
+})();
 
 const DEFAULT_STATE = {
   contacts: [],
@@ -670,6 +843,25 @@ function resetStudentShape(store) {
       passwordHash: item.passwordHash || (item.password ? hashPassword(item.password) : ""),
     }));
   }
+
+  // Ensure CSV-imported students are present even when older persisted data already exists.
+  const existingByUserId = new Set((store.students || []).map((item) => String(item?.userId || "").trim().toLowerCase()));
+  for (const item of CSV_IMPORTED_STUDENTS) {
+    const userId = String(item?.userId || "").trim();
+    if (!userId || existingByUserId.has(userId.toLowerCase())) {
+      continue;
+    }
+    store.students.push({
+      userId,
+      rollNumber: userId,
+      name: String(item?.name || "").trim(),
+      dob: String(item?.dob || "").trim(),
+      className: String(item?.className || "").trim(),
+      stream: String(item?.stream || "").trim(),
+      passwordHash: item?.passwordHash || (item?.password ? hashPassword(String(item.password)) : ""),
+    });
+    existingByUserId.add(userId.toLowerCase());
+  }
 }
 
 function resetTeacherShape(store) {
@@ -715,6 +907,24 @@ function resetTeacherShape(store) {
       };
     })
     .filter(Boolean);
+
+  const existingByUsername = new Set((store.teachers || []).map((item) => String(item?.username || item?.userId || "").trim().toLowerCase()));
+  for (const item of IMPORTED_TEACHERS) {
+    const username = String(item?.username || item?.userId || "").trim();
+    if (!username || existingByUsername.has(username.toLowerCase())) {
+      continue;
+    }
+    store.teachers.push({
+      userId: username,
+      username,
+      name: String(item?.name || "").trim(),
+      className: String(item?.className || "").trim(),
+      stream: String(item?.stream || "").trim(),
+      subjects: Array.isArray(item?.subjects) ? item.subjects.map((subject) => String(subject || "").trim()).filter(Boolean) : [],
+      passwordHash: item?.passwordHash || (item?.password ? hashPassword(String(item.password)) : ""),
+    });
+    existingByUsername.add(username.toLowerCase());
+  }
 }
 
 function resetRateLimitShape(store) {
