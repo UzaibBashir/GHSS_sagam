@@ -64,7 +64,7 @@ export default function AdminPage() {
   const timetableItems = useMemo(() => (Array.isArray(academicContent?.timetable) ? academicContent.timetable : []), [academicContent]);
   const timetableClassOptions = useMemo(() => { const known = ["Class IX", "Class X", "Class XI", "Class XII"]; const dynamic = timetableItems.map((item) => String(item?.class_name || "").trim()).filter(Boolean); return Array.from(new Set([...known, ...dynamic])); }, [timetableItems]);
   const timetableStreamOptions = useMemo(() => { const known = ["Medical", "Non-Medical", "Arts"]; const dynamic = timetableItems.map((item) => String(item?.stream || "").trim()).filter(Boolean); return Array.from(new Set([...known, ...dynamic])); }, [timetableItems]);
-  const filteredTimetableItems = useMemo(() => timetableItems.filter((item) => normalizeComparable(item?.class_name) === normalizeComparable(timetableFilter.class_name) && normalizeComparable(item?.stream) === normalizeComparable(timetableFilter.stream)), [timetableItems, timetableFilter]);
+  const filteredTimetableItems = useMemo(() => timetableItems.filter((item) => toComparable(item?.class_name) === toComparable(timetableFilter.class_name) && toComparable(item?.stream) === toComparable(timetableFilter.stream)), [timetableItems, timetableFilter]);
   const runWithBusy = useCallback(async (m, t) => { setBusy(true); setBusyMessage(m); try { return await t(); } finally { setBusy(false); setBusyMessage(""); } }, []);
   const requestConfirmation = useCallback((m) => new Promise((resolve) => setConfirmState({ message: m, resolve })), []);
   const closeConfirmation = useCallback((c) => setConfirmState((x) => { x?.resolve?.(Boolean(c)); return null; }), []);
