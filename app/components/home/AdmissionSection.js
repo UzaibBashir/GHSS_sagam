@@ -21,7 +21,7 @@ const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Not Kno
 const CATEGORY_OPTIONS = ["OM", "RBA", "SC", "ST", "OSC", "PH"];
 const SUB_CATEGORY_OPTIONS = ["APL", "BPL", "AAY"];
 const CLASS_OPTIONS = ["9th", "10th", "11th", "12th"];
-const STREAM_OPTIONS = ["Medical", "Non-Medical", "Arts", "Others"];
+const STREAM_OPTIONS = ["Medical", "Non-Medical", "Arts"];
 const SUBJECT_OPTIONS = [
   "English",
   "Physics",

@@ -1,6 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+const CLASS_OPTIONS = ["Class IX", "Class X", "Class XI", "Class XII"];
+const STREAM_OPTIONS = ["Medical", "Non-Medical", "Arts"];
+const classRequiresStream = (className) => {
+  const value = String(className || "").trim().toLowerCase();
+  return value === "class xi" || value === "class xii";
+};
 
 function EmptyState({ message }) {
   return (
@@ -18,7 +24,11 @@ export default function AcademicsSection({ institute, studentContext = null }) {
   const lockedClass = studentContext?.className || "";
   const lockedStream = studentContext?.stream || "";
 
-  const classOptions = useMemo(() => materials.map((item) => item.class_name), [materials]);
+  const classOptions = useMemo(() => {
+    const fromMaterials = materials.map((item) => item.class_name);
+    const fromTimetable = timetableRows.map((row) => row.class_name);
+    return Array.from(new Set([...CLASS_OPTIONS, ...fromMaterials, ...fromTimetable].filter(Boolean)));
+  }, [materials, timetableRows]);
   const [selectedClass, setSelectedClass] = useState(lockedClass);
   const activeClass = lockedClass || (classOptions.includes(selectedClass) ? selectedClass : classOptions[0] || "");
 
@@ -27,17 +37,26 @@ export default function AcademicsSection({ institute, studentContext = null }) {
     [materials, activeClass]
   );
 
-  const streamOptions = useMemo(
-    () => (selectedClassData?.streams || []).map((stream) => stream.stream),
-    [selectedClassData]
-  );
+  const streamOptions = useMemo(() => {
+    if (!classRequiresStream(activeClass)) {
+      return ["General"];
+    }
+    const fromMaterials = (selectedClassData?.streams || []).map((stream) => stream.stream);
+    const fromTimetable = timetableRows
+      .filter((row) => row.class_name === activeClass)
+      .map((row) => row.stream)
+      .filter(Boolean);
+    const values = Array.from(new Set([...STREAM_OPTIONS, ...fromMaterials, ...fromTimetable]));
+    return values.length ? values : STREAM_OPTIONS;
+  }, [selectedClassData, timetableRows, activeClass]);
 
   const [selectedStream, setSelectedStream] = useState(lockedStream);
-  const activeStream =
-    lockedStream || (streamOptions.includes(selectedStream) ? selectedStream : streamOptions[0] || "");
+  const activeStream = classRequiresStream(activeClass)
+    ? (lockedStream || (streamOptions.includes(selectedStream) ? selectedStream : streamOptions[0] || "Medical"))
+    : "General";
 
   const filteredNoticeboard = useMemo(
-    () => noticeboard.filter((item) => item.class_name === activeClass && item.stream === activeStream),
+    () => noticeboard.filter((item) => item.class_name === activeClass && (!classRequiresStream(activeClass) || item.stream === activeStream)),
     [noticeboard, activeClass, activeStream]
   );
 
@@ -47,11 +66,12 @@ export default function AcademicsSection({ institute, studentContext = null }) {
   );
 
   const filteredTimetable = useMemo(
-    () => timetableRows.filter((row) => row.class_name === activeClass && row.stream === activeStream),
+    () => timetableRows.filter((row) => row.class_name === activeClass && (!classRequiresStream(activeClass) || row.stream === activeStream)),
     [timetableRows, activeClass, activeStream]
   );
 
   const streamSummary = {
+    General: "Core foundational curriculum for classes IX and X.",
     Medical: "Focused preparation in Biology, Chemistry, and science-based higher studies.",
     "Non-Medical": "A strong mathematics and physical sciences pathway for technical and analytical futures.",
     Arts: "A humanities-centered route building awareness, expression, and academic maturity.",
@@ -99,7 +119,7 @@ export default function AcademicsSection({ institute, studentContext = null }) {
               <select
                 id="stream-filter"
                 value={activeStream}
-                disabled={Boolean(lockedStream)}
+                disabled={Boolean(lockedStream) || !classRequiresStream(activeClass)}
                 onChange={(event) => setSelectedStream(event.target.value)}
                 className="rounded-2xl border border-slate-300/80 bg-white/88 px-4 py-3 text-sm shadow-[0_10px_18px_rgba(15,23,42,0.04)] outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
               >
@@ -152,7 +172,7 @@ export default function AcademicsSection({ institute, studentContext = null }) {
           <p className="section-kicker">Timetable</p>
           <h3 className="font-display mt-4 text-3xl font-semibold text-slate-950 max-md:text-2xl">Daily schedule</h3>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            Daily class schedule for {activeClass || "-"} {activeStream ? `(${activeStream})` : ""}.
+            Daily class schedule for {activeClass || "-"} {classRequiresStream(activeClass) && activeStream ? `(${activeStream})` : ""}.
           </p>
           <div className="mt-5 overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-white/86 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
             <table className="min-w-full border-collapse text-left text-sm">
@@ -160,7 +180,8 @@ export default function AcademicsSection({ institute, studentContext = null }) {
                 <tr className="bg-slate-950 text-white">
                   <th className="px-4 py-3">Period</th>
                   <th className="px-4 py-3">Time</th>
-                  <th className="px-4 py-3">Details</th>
+                  <th className="px-4 py-3">Subject</th>
+                  <th className="px-4 py-3">Teacher</th>
                 </tr>
               </thead>
               <tbody>
@@ -168,14 +189,15 @@ export default function AcademicsSection({ institute, studentContext = null }) {
                   <tr key={row.id} className={index % 2 === 0 ? "bg-white" : "bg-slate-50/80"}>
                     <td className="border-t border-slate-200/80 px-4 py-3 font-semibold text-slate-900">{row.period}</td>
                     <td className="border-t border-slate-200/80 px-4 py-3 text-slate-700">{row.time}</td>
-                    <td className="border-t border-slate-200/80 px-4 py-3 text-slate-700">{row.detail}</td>
+                    <td className="border-t border-slate-200/80 px-4 py-3 text-slate-700">{row.subject || String(row.detail || "").split("-")[0]?.trim() || "-"}</td>
+                    <td className="border-t border-slate-200/80 px-4 py-3 text-slate-700">{row.teacher || String(row.detail || "").split("-").slice(1).join("-").trim() || "-"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             {!filteredTimetable.length ? (
               <div className="p-4">
-                <EmptyState message="No timetable rows available for the selected class and stream." />
+                <EmptyState message="No timetable rows available for the selected class filter." />
               </div>
             ) : null}
           </div>
