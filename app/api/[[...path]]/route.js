@@ -1681,25 +1681,18 @@ export async function POST(request, context) {
     }
   }
 
-  if (path[0] === "student" && path[1] === "reports" && path.length === 2) {
-    try {
-      ensureSecureConfig();
-    } catch (err) {
-      return safeAdminError(err) || error(err instanceof Error ? err.message : "Server configuration error", 500);
+  if (path[0] === "student" && (path[1] === "developer-inbox" || path[1] === "reports") && path.length === 2) {
+    const verified = verifyToken(store, request.headers.get("authorization") || "", "student");
+    if (!verified.ok) {
+      return persistAndResponse(store, error(verified.detail || "Unauthorized", 401));
     }
 
-    const authError = unauthorizedIfNeeded(request, store, "student");
-    if (authError) {
-      return authError;
-    }
-
-    const rateError = rateLimitOrReject(store, request, "student-reports", config.studentRateLimit);
+    const rateError = rateLimitOrReject(store, request, "student-developer-inbox", config.studentRateLimit);
     if (rateError) {
       return persistAndResponse(store, rateError);
     }
 
     try {
-      const verified = verifyToken(store, request.headers.get("authorization") || "", "student");
       const payload = await parseJsonBody(request);
       const title = String(payload?.title || payload?.subject || "").trim() || "Student report";
       const message = assertNonEmpty("Message", payload?.message ?? payload?.details ?? payload?.response);
@@ -1722,7 +1715,7 @@ export async function POST(request, context) {
         store.developerInbox = [];
       }
       store.developerInbox.unshift(report);
-      return persistAndJson(store, { success: true, item: sanitizeDeveloperInboxItem(report) });
+      return persistAndJson(store, { success: true, item: sanitizeDeveloperInboxItem(report), stars: resolveStudentStars(student) });
     } catch (err) {
       return error(err instanceof Error ? err.message : "Invalid payload", 400);
     }
@@ -2374,6 +2367,52 @@ export async function PUT(request, context) {
       };
       store.students[index] = savedStudent;
       return persistAndJson(store, { success: true, student: sanitizeStudentForAdmin(savedStudent) });
+    }
+
+    if (path[1] === "developer-inbox" && path.length === 4 && path[3] === "stars") {
+      const stars = parseOptionalStars(payload?.stars);
+      if (stars === null) {
+        return error("Stars must be provided", 400);
+      }
+
+      const itemIndex = (store.developerInbox || []).findIndex(
+        (item) => String(item?.id || "").trim() === String(path[2] || "").trim()
+      );
+      if (itemIndex === -1) {
+        return error("Inbox item not found", 404);
+      }
+
+      const inboxItem = store.developerInbox[itemIndex] || {};
+      const studentKey = String(inboxItem.student_user_id || "").trim().toLowerCase();
+      if (!studentKey) {
+        return error("Inbox item has no linked student", 400);
+      }
+
+      const studentIndex = (store.students || []).findIndex(
+        (item) =>
+          String(item?.userId || item?.rollNumber || "").trim().toLowerCase() === studentKey
+      );
+      if (studentIndex === -1) {
+        return error("Student not found", 404);
+      }
+
+      const existingStudent = store.students[studentIndex] || {};
+      const updatedStudent = {
+        ...existingStudent,
+        stars,
+      };
+      store.students[studentIndex] = updatedStudent;
+      store.developerInbox[itemIndex] = {
+        ...inboxItem,
+        status: "reviewed",
+        stars_snapshot: stars,
+      };
+
+      return persistAndJson(store, {
+        success: true,
+        item: sanitizeDeveloperInboxItem(store.developerInbox[itemIndex]),
+        stars,
+      });
     }
     if (path[1] === "teachers" && path.length === 3) {
       const teacher = normalizeTeacherPayload(payload, { requirePassword: false });
