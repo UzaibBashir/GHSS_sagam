@@ -33,6 +33,61 @@ const MAX_MONITORING_POINTS = Number(process.env.MONITORING_MAX_POINTS || 500);
 const MAX_BACKUP_SNAPSHOTS = Number(process.env.BACKUP_MAX_SNAPSHOTS || 20);
 const BACKUP_VERSION = "2026-03-v1";
 
+function normalizeHostName(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "";
+  return text.split(",")[0].trim().split(":")[0].trim();
+}
+
+function hostNameFromUrl(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  try {
+    return String(new URL(text).hostname || "").trim().toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function getAllowedAdminWebHosts(request) {
+  const host = normalizeHostName(
+    request.headers.get("x-forwarded-host") || request.headers.get("host") || ""
+  );
+  const configuredHosts = String(process.env.ADMIN_WEB_ORIGINS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => hostNameFromUrl(item) || normalizeHostName(item))
+    .filter(Boolean);
+  return new Set([host, ...configuredHosts].filter(Boolean));
+}
+
+function isWebsiteAdminLoginRequest(request, payload) {
+  const allowedHosts = getAllowedAdminWebHosts(request);
+  const originHost = hostNameFromUrl(request.headers.get("origin") || "");
+  const refererHost = hostNameFromUrl(request.headers.get("referer") || "");
+  const secFetchSite = String(request.headers.get("sec-fetch-site") || "").trim().toLowerCase();
+  const secFetchMode = String(request.headers.get("sec-fetch-mode") || "").trim().toLowerCase();
+  const client = String(payload?.client || "").trim().toLowerCase();
+
+  const hasTrustedWebOrigin =
+    (originHost && allowedHosts.has(originHost)) || (refererHost && allowedHosts.has(refererHost));
+  if (!hasTrustedWebOrigin) {
+    return false;
+  }
+
+  const hasBrowserFetchHints = Boolean(secFetchSite || secFetchMode);
+  if (!hasBrowserFetchHints && client !== "web") {
+    return false;
+  }
+
+  if (secFetchSite && !["same-origin", "same-site", "none"].includes(secFetchSite)) {
+    return false;
+  }
+
+  return true;
+}
+
 function boundedPush(list, item, limit = MAX_MONITORING_POINTS) {
   list.push(item);
   if (list.length > limit) {
@@ -1590,6 +1645,9 @@ export async function POST(request, context) {
 
     try {
       const payload = await parseJsonBody(request);
+      if (!isWebsiteAdminLoginRequest(request, payload)) {
+        return persistAndResponse(store, error("Admin login is allowed only from the website.", 403));
+      }
       const username = String(payload.username || "").trim();
       const password = String(payload.password || "");
       const bucketKey = makeLoginBucketKey(username, request);

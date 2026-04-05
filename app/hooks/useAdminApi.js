@@ -84,7 +84,7 @@ export default function useAdminApi(token) {
     const res = await fetchWithTimeout(`${API_BASE}/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: String(username || "").trim(), password: String(password || "") }),
+      body: JSON.stringify({ username: String(username || "").trim(), password: String(password || ""), client: "web" }),
     });
     return parseResponse(res, "Login failed");
   };

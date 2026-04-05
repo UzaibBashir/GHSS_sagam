@@ -180,7 +180,8 @@ export default function HomeFooter({ institute }) {
           <p className="m-0">(c) {year} {instituteName}. All rights reserved.</p>
         </div>
         <div className="mx-auto flex w-[min(1180px,calc(100%-2rem))] flex-wrap items-center justify-between gap-3 py-4 text-xs text-slate-400 max-sm:w-[min(1180px,calc(100%-1rem))]">
-          <p className="m-0">This site is under Development and may contain subjects of error</p>
+          <p className="m-0">Application is under Development and may contain subjects of error</p>
+          <p>developed by: Uzaib Bashir</p>
         </div>
       </div>
     </footer>
