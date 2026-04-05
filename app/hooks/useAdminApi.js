@@ -113,6 +113,14 @@ export default function useAdminApi(token) {
     return parseResponse(res, "Could not clear enquiries.");
   };
 
+  const removeDeveloperInboxItem = async (id) => {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/developer-inbox/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: withAuth(),
+    });
+    return parseResponse(res, "Could not delete developer inbox item.");
+  };
+
   const addStudent = async (payload) => {
     const res = await fetchWithTimeout(`${API_BASE}/admin/students`, {
       method: "POST",
@@ -429,6 +437,7 @@ export default function useAdminApi(token) {
     loadDashboard,
     loadInstitute,
     clearContacts,
+    removeDeveloperInboxItem,
     addStudent,
     updateStudent,
     removeStudent,

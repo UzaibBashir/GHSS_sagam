@@ -237,6 +237,7 @@ export function verifyStudentCredentials(store, userId, password) {
     dob: student.dob || "",
     className: student.className,
     stream: student.stream,
+    stars: Number.isFinite(Number(student?.stars)) ? Math.max(0, Math.floor(Number(student.stars))) : 0,
   };
 }
 

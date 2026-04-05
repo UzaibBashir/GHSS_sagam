@@ -98,6 +98,7 @@ function boundedPush(list, item, limit = MAX_MONITORING_POINTS) {
 function extractBackupPayload(store) {
   return {
     contacts: structuredClone(store.contacts || []),
+    developerInbox: structuredClone(store.developerInbox || []),
     admissions: structuredClone(store.admissions || []),
     students: structuredClone(store.students || []),
     teachers: structuredClone(store.teachers || []),
@@ -118,6 +119,7 @@ function createBackupSnapshot(store, label = "Manual snapshot") {
 function applyBackupSnapshot(store, snapshot) {
   const payload = snapshot?.payload || {};
   store.contacts = Array.isArray(payload.contacts) ? structuredClone(payload.contacts) : [];
+  store.developerInbox = Array.isArray(payload.developerInbox) ? structuredClone(payload.developerInbox) : [];
   store.admissions = Array.isArray(payload.admissions) ? structuredClone(payload.admissions) : [];
   store.students = Array.isArray(payload.students) ? structuredClone(payload.students) : [];
   store.teachers = Array.isArray(payload.teachers) ? structuredClone(payload.teachers) : [];
@@ -316,6 +318,7 @@ function normalizeStudentPayload(payload, options = {}) {
     dob: assertNonEmpty("Date of birth", payload.dob),
     className: assertNonEmpty("Class", payload.className),
     stream: assertNonEmpty("Stream", payload.stream),
+    stars: parseOptionalStars(payload?.stars),
   };
 }
 
@@ -327,7 +330,61 @@ function sanitizeStudentForAdmin(student) {
     dob: String(student?.dob || "").trim(),
     className: String(student?.className || "").trim(),
     stream: String(student?.stream || "").trim(),
+    stars: Number.isFinite(Number(student?.stars)) ? Math.max(0, Math.floor(Number(student.stars))) : 0,
     password: "",
+  };
+}
+
+function parseOptionalStars(value) {
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return null;
+  }
+  const stars = Number(value);
+  if (!Number.isFinite(stars) || stars < 0) {
+    throw new Error("Stars must be a non-negative number");
+  }
+  return Math.floor(stars);
+}
+
+function resolveStudentStars(student) {
+  return Number.isFinite(Number(student?.stars)) ? Math.max(0, Math.floor(Number(student.stars))) : 0;
+}
+
+function findStudentBySession(store, session) {
+  const sessionUserId = String(session?.userId || session?.rollNumber || "").trim();
+  if (!sessionUserId) return null;
+  return (store.students || []).find(
+    (item) =>
+      String(item?.userId || item?.rollNumber || "").trim().toLowerCase() ===
+      sessionUserId.toLowerCase()
+  ) || null;
+}
+
+function toStudentProfile(session, studentRecord = null) {
+  return {
+    userId: session?.userId || session?.rollNumber || "",
+    rollNumber: session?.rollNumber || session?.userId || "",
+    name: session?.name || "",
+    dob: session?.dob || "",
+    className: session?.className || "",
+    stream: session?.stream || "",
+    stars: resolveStudentStars(studentRecord),
+  };
+}
+
+function sanitizeDeveloperInboxItem(item) {
+  return {
+    id: String(item?.id || "").trim(),
+    student_user_id: String(item?.student_user_id || "").trim(),
+    student_name: String(item?.student_name || "").trim(),
+    class_name: String(item?.class_name || "").trim(),
+    stream: String(item?.stream || "").trim(),
+    title: String(item?.title || "").trim(),
+    message: String(item?.message || "").trim(),
+    category: String(item?.category || "").trim() || "General",
+    report_type: String(item?.report_type || "").trim() || "Feedback",
+    status: String(item?.status || "").trim() || "new",
+    created_at: String(item?.created_at || "").trim(),
   };
 }
 
@@ -1232,18 +1289,12 @@ export async function GET(request, context) {
     }
 
     const verified = verifyToken(store, request.headers.get("authorization") || "", "student");
+    const studentRecord = findStudentBySession(store, verified?.session);
 
     if (path[1] === "session" && path.length === 2) {
       return json({
         authenticated: true,
-        student: {
-          userId: verified.session.userId || verified.session.rollNumber,
-          rollNumber: verified.session.rollNumber,
-          name: verified.session.name,
-          dob: verified.session.dob || "",
-          className: verified.session.className,
-          stream: verified.session.stream,
-        },
+        student: toStudentProfile(verified.session, studentRecord),
       });
     }
 
@@ -1263,14 +1314,7 @@ export async function GET(request, context) {
         }));
 
       return json({
-        student: {
-          userId: verified.session.userId || verified.session.rollNumber,
-          rollNumber: verified.session.rollNumber,
-          name: verified.session.name,
-          dob: verified.session.dob || "",
-          className: verified.session.className,
-          stream: verified.session.stream,
-        },
+        student: toStudentProfile(verified.session, studentRecord),
         academic_content: {
           ...academicContent,
           noticeboard: (academicContent.noticeboard || []).filter(
@@ -1411,6 +1455,7 @@ export async function GET(request, context) {
 
     return json({
       contacts: store.contacts || [],
+      developerInbox: (store.developerInbox || []).map(sanitizeDeveloperInboxItem),
       controls: getControls(store),
       notificationItems: store.instituteData.notification_items || [],
       academicContent: store.instituteData.academic_content || { noticeboard: [], timetable: [], materials: [] },
@@ -1434,6 +1479,7 @@ export async function GET(request, context) {
       version: item.version,
       createdAt: item.createdAt,
       admissions: item.payload?.admissions?.length || 0,
+      developerInbox: item.payload?.developerInbox?.length || 0,
       students: item.payload?.students?.length || 0,
       teachers: item.payload?.teachers?.length || 0,
       contacts: item.payload?.contacts?.length || 0,
@@ -1450,6 +1496,10 @@ export async function GET(request, context) {
 
   if (path[1] === "contacts" && path.length === 2) {
     return json(store.contacts);
+  }
+
+  if (path[1] === "developer-inbox" && path.length === 2) {
+    return json((store.developerInbox || []).map(sanitizeDeveloperInboxItem));
   }
 
   if (path[1] === "controls" && path.length === 2) {
@@ -1628,6 +1678,53 @@ export async function POST(request, context) {
       return persistAndJson(store, { success: true, token: session.token, expires_in: session.expiresIn, student });
     } catch (err) {
       return error(err instanceof Error ? err.message : "Login failed", 400);
+    }
+  }
+
+  if (path[0] === "student" && path[1] === "reports" && path.length === 2) {
+    try {
+      ensureSecureConfig();
+    } catch (err) {
+      return safeAdminError(err) || error(err instanceof Error ? err.message : "Server configuration error", 500);
+    }
+
+    const authError = unauthorizedIfNeeded(request, store, "student");
+    if (authError) {
+      return authError;
+    }
+
+    const rateError = rateLimitOrReject(store, request, "student-reports", config.studentRateLimit);
+    if (rateError) {
+      return persistAndResponse(store, rateError);
+    }
+
+    try {
+      const verified = verifyToken(store, request.headers.get("authorization") || "", "student");
+      const payload = await parseJsonBody(request);
+      const title = String(payload?.title || payload?.subject || "").trim() || "Student report";
+      const message = assertNonEmpty("Message", payload?.message ?? payload?.details ?? payload?.response);
+      const student = findStudentBySession(store, verified?.session);
+      const report = {
+        id: createId("din"),
+        student_user_id: verified?.session?.userId || verified?.session?.rollNumber || "",
+        student_name: verified?.session?.name || "",
+        class_name: verified?.session?.className || "",
+        stream: verified?.session?.stream || "",
+        title,
+        message,
+        category: String(payload?.category || "General").trim() || "General",
+        report_type: String(payload?.report_type || payload?.type || "Feedback").trim() || "Feedback",
+        status: "new",
+        created_at: new Date().toISOString(),
+        stars_snapshot: resolveStudentStars(student),
+      };
+      if (!Array.isArray(store.developerInbox)) {
+        store.developerInbox = [];
+      }
+      store.developerInbox.unshift(report);
+      return persistAndJson(store, { success: true, item: sanitizeDeveloperInboxItem(report) });
+    } catch (err) {
+      return error(err instanceof Error ? err.message : "Invalid payload", 400);
     }
   }
 
@@ -1888,6 +1985,7 @@ export async function POST(request, context) {
         dob: student.dob,
         className: student.className,
         stream: student.stream,
+        stars: student.stars ?? 0,
         passwordHash: hashPassword(student.password),
       };
       store.students.unshift(savedStudent);
@@ -2271,6 +2369,7 @@ export async function PUT(request, context) {
         dob: student.dob,
         className: student.className,
         stream: student.stream,
+        stars: student.stars === null ? resolveStudentStars(existing) : student.stars,
         passwordHash: nextPasswordHash,
       };
       store.students[index] = savedStudent;
@@ -2554,6 +2653,15 @@ export async function DELETE(request, context) {
     if (path[1] === "contacts" && path.length === 2) {
       store.contacts = [];
       return persistAndJson(store, { success: true, message: "All enquiries cleared." });
+    }
+
+    if (path[1] === "developer-inbox" && path.length === 3) {
+      const index = (store.developerInbox || []).findIndex((item) => String(item?.id || "").trim() === String(path[2] || "").trim());
+      if (index === -1) {
+        return error("Inbox item not found", 404);
+      }
+      store.developerInbox.splice(index, 1);
+      return persistAndJson(store, { success: true, message: "Inbox item deleted." });
     }
 
     if (path[1] === "notification-items" && path.length === 3) {

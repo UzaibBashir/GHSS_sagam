@@ -620,6 +620,7 @@ const DEFAULT_TEACHERS = (() => {
 
 const DEFAULT_STATE = {
   contacts: [],
+  developerInbox: [],
   admissions: [],
   adminSessions: {},
   loginFailures: {},
@@ -827,6 +828,7 @@ function resetStudentShape(store) {
         dob,
         className,
         stream,
+        stars: Number.isFinite(Number(item?.stars)) ? Math.max(0, Math.floor(Number(item.stars))) : 0,
         passwordHash,
       };
     })
@@ -840,6 +842,7 @@ function resetStudentShape(store) {
       dob: item.dob || "",
       className: item.className,
       stream: item.stream,
+      stars: Number.isFinite(Number(item?.stars)) ? Math.max(0, Math.floor(Number(item.stars))) : 0,
       passwordHash: item.passwordHash || (item.password ? hashPassword(item.password) : ""),
     }));
   }
@@ -858,6 +861,7 @@ function resetStudentShape(store) {
       dob: String(item?.dob || "").trim(),
       className: String(item?.className || "").trim(),
       stream: String(item?.stream || "").trim(),
+      stars: Number.isFinite(Number(item?.stars)) ? Math.max(0, Math.floor(Number(item.stars))) : 0,
       passwordHash: item?.passwordHash || (item?.password ? hashPassword(String(item.password)) : ""),
     });
     existingByUserId.add(userId.toLowerCase());
@@ -1010,6 +1014,9 @@ function normalizeStoreShape(store) {
   if (!Array.isArray(store.contacts)) {
     store.contacts = [];
   }
+  if (!Array.isArray(store.developerInbox)) {
+    store.developerInbox = [];
+  }
   if (!store.adminSessions || typeof store.adminSessions !== "object") {
     store.adminSessions = {};
   }
@@ -1028,6 +1035,7 @@ function getCollectionNames() {
   return {
     meta: `${base}_meta`,
     contacts: `${base}_contacts`,
+    developerInbox: `${base}_developer_inbox`,
     admissions: `${base}_admissions`,
     students: `${base}_students`,
     teachers: `${base}_teachers`,
@@ -1053,6 +1061,7 @@ async function readCollectionState(db) {
   const [
     metaDoc,
     contactsDoc,
+    developerInboxDoc,
     admissionsDoc,
     studentsDoc,
     teachersDoc,
@@ -1065,6 +1074,7 @@ async function readCollectionState(db) {
   ] = await Promise.all([
     findMainDoc(db.collection(names.meta), "Read state meta"),
     findMainDoc(db.collection(names.contacts), "Read contacts"),
+    findMainDoc(db.collection(names.developerInbox), "Read developer inbox"),
     findMainDoc(db.collection(names.admissions), "Read admissions"),
     findMainDoc(db.collection(names.students), "Read students"),
     findMainDoc(db.collection(names.teachers), "Read teachers"),
@@ -1080,6 +1090,7 @@ async function readCollectionState(db) {
     hasExistingState: Boolean(metaDoc),
     state: {
       contacts: contactsDoc?.items || [],
+      developerInbox: developerInboxDoc?.items || [],
       admissions: admissionsDoc?.items || [],
       students: studentsDoc?.items || [],
       teachers: teachersDoc?.items || [],
@@ -1139,6 +1150,13 @@ async function writeCollectionState(db, normalized, expectedVersion) {
         .updateOne({ _id: "main" }, { $set: { items: normalized.contacts, version: nextVersion, updatedAt: now } }, { upsert: true }),
       dbOperationTimeoutMs,
       "Write contacts"
+    ),
+    withTimeout(
+      db
+        .collection(names.developerInbox)
+        .updateOne({ _id: "main" }, { $set: { items: normalized.developerInbox, version: nextVersion, updatedAt: now } }, { upsert: true }),
+      dbOperationTimeoutMs,
+      "Write developer inbox"
     ),
     withTimeout(
       db
