@@ -82,14 +82,14 @@ export function proxy(request) {
   });
   const environment = (process.env.ENVIRONMENT || process.env.NODE_ENV || "").toLowerCase();
   const isProduction = environment === "production" || process.env.VERCEL_ENV === "production";
-  const strictHostCheck = String(process.env.STRICT_HOST_CHECK || "0").trim() === "1";
+  const strictHostCheck = isProduction || String(process.env.STRICT_HOST_CHECK || "0").trim() === "1";
 
   const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
   const hostName = normalizeHost(hostHeader);
   const allowedHosts = parseAllowedHosts();
 
-  // Keep strict host checks in production, but avoid blocking local/dev setups.
-  if (isProduction && strictHostCheck && hostName && !hostAllowed(hostName, allowedHosts)) {
+  // Enforce host validation in production, with an explicit dev override.
+  if (strictHostCheck && hostName && !hostAllowed(hostName, allowedHosts)) {
     return new NextResponse("Invalid host header", { status: 400 });
   }
 

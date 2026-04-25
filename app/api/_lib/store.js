@@ -1,5 +1,5 @@
-import { getDb } from "./mongodb";
-import { hashPassword, isPasswordHash } from "./auth";
+import { getDb } from "./mongodb.js";
+import { hashPassword, isPasswordHash } from "./auth.js";
 
 const DEFAULT_INSTITUTE_DATA = {
   name: "Government Girls Higher Secondary School, Sagam",

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { getDb } from "./mongodb";
+import { getDb } from "./mongodb.js";
 
 const LOCAL_PUBLIC_ROOT = path.join(process.cwd(), "public", "uploads");
 const DEFAULT_STORAGE_DRIVER = (process.env.STORAGE_DRIVER || "local").trim().toLowerCase();

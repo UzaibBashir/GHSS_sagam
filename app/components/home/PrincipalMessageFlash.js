@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ACADEMICS_CONTENT, ABOUT_PAGE_CONTENT } from "../../lib/siteContent";
 
 export default function PrincipalMessageFlash({ institute }) {
@@ -41,7 +42,7 @@ export default function PrincipalMessageFlash({ institute }) {
         <div className="flex w-full flex-wrap items-center gap-4 max-sm:gap-3">
           <div className="relative h-16 w-16 overflow-hidden rounded-full border border-amber-300/70 bg-white shadow-[0_10px_22px_rgba(217,119,6,0.25)] max-sm:h-14 max-sm:w-14">
             {principalPhoto ? (
-              <img src={principalPhoto} alt={principalName} className="h-full w-full object-cover" />
+              <Image src={principalPhoto} alt={principalName} fill className="object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-amber-100 text-sm font-black text-amber-800">
                 {principalInitials || "PR"}

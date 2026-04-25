@@ -3,8 +3,7 @@ import WebVitalsReporter from "./components/common/WebVitalsReporter";
 import "./globals.css";
 
 const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://ghss-sagam.vercel.app").trim().replace(/\/+$/, "");
-const GOOGLE_VERIFICATION_TOKEN =
-  String(process.env.GOOGLE_SITE_VERIFICATION || "E4vrrBTQEXKHQaEY-SnVq8srazdhzaNsFhEPifqGD4k").trim();
+const GOOGLE_VERIFICATION_TOKEN = String(process.env.GOOGLE_SITE_VERIFICATION || "").trim();
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -59,10 +58,13 @@ export const metadata = {
       "Official website of Government Girls Higher Secondary School, Sagam, for admissions, academics, notices, and contact information.",
     images: ["/logo.jpg"],
   },
-  verification: {
-    google: GOOGLE_VERIFICATION_TOKEN,
-  },
 };
+
+if (GOOGLE_VERIFICATION_TOKEN) {
+  metadata.verification = {
+    google: GOOGLE_VERIFICATION_TOKEN,
+  };
+}
 
 export default function RootLayout({ children }) {
   const organizationSchema = {

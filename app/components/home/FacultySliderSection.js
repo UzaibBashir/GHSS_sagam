@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Image from "next/image";
 
 const DEFAULT_FACULTIES = [
   {
@@ -103,13 +104,13 @@ export default function FacultySliderSection({ institute }) {
             className="min-w-[280px] flex-1 snap-center rounded-[1.6rem] border border-white/80 bg-white/90 p-4 shadow-[0_14px_30px_rgba(14,116,144,0.12)] backdrop-blur"
           >
             <div className="relative overflow-hidden rounded-[1.3rem] bg-[radial-gradient(circle_at_top,#cfefff_0%,#8fd0ef_45%,#0f172a_100%)] p-4">
-              <div className="mx-auto flex h-44 w-44 items-end justify-center overflow-hidden rounded-[1.6rem] border-4 border-white/70 bg-slate-200 shadow-[0_12px_24px_rgba(15,23,42,0.18)]">
+              <div className="relative mx-auto flex h-44 w-44 items-end justify-center overflow-hidden rounded-[1.6rem] border-4 border-white/70 bg-slate-200 shadow-[0_12px_24px_rgba(15,23,42,0.18)]">
                 {faculty.photo && !failedImages[index] ? (
-                  <img
+                  <Image
                     src={faculty.photo}
                     alt={faculty.name}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
+                    fill
+                    className="object-cover"
                     onError={() => setFailedImages((prev) => ({ ...prev, [index]: true }))}
                   />
                 ) : (
